@@ -128,7 +128,7 @@ eval(Xi, I, E, K, D, W, T) when is_list(Xi) orelse is_atom(Xi) ->
   {D0, T0} = eval1(Xi, I, E, K, [], W, T),
   case tcache:find(Xi, K, D, W, T) of
     {{calc, _}, _} ->
-      io:format("Could not find ~p ~p ~p~n", [Xi,K,D]),
+%%      io:format("Could not find ~p ~p ~p~n", [Xi,K,D]),
       {D0, T0};
     X ->
       X
