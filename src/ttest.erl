@@ -25,11 +25,9 @@ gte(A, B) ->
   {primop, fun erlang:'>='/2, [A, B]}.
 plus(A, B) ->
   {primop, fun (X, Y) -> 
-%%	       io:format("~p + ~p = ~p~n", [X,Y,X+Y]), 
 	       X + Y end, [A,B]}.
 times(A, B) ->
   {primop, fun (X, Y) -> 
-%%	       io:format("~p * ~p = ~p~n", [X,Y,X*Y]), 
 	       X * Y end, [A, B]}.
 minus(A, B) ->
   {primop, fun erlang:'-'/2, [A, B]}.
@@ -106,20 +104,27 @@ wheredim_test() ->
   D = [{[0],time}, {[1],space}],
   TimeD = {[0],time},
   SpaceD = {[1],space},
+  XD = {[1],x},
+  YD = {[2],y},
+
   E1 = {wheredim, 
   	{wherevar, "X",
   	 [{"X", {'#', TimeD}}]},
   	[{TimeD, 0}]},
+
   E2 = {wheredim, plus({'#', TimeD}, {'#', SpaceD}),
 	[{TimeD, 1}]},
+
   E3 = {wheredim, plus({'#', TimeD}, {'#', SpaceD}),
 	[{TimeD, 2},
 	 {SpaceD, 3}]},
+
   E4 = {wheredim, 
 	{wherevar, "X",
 	 [{"X", plus({'#', TimeD}, {'#', SpaceD})}]},
 	[{TimeD, 2},
 	 {SpaceD, 3}]},
+
   %% Sequential, multi-dimensional wheredim clause
   E5 = {wheredim, 
 	{wherevar, "N0",
@@ -133,7 +138,8 @@ wheredim_test() ->
 	    times({'@', "N1", {t, [{SpaceD, minus({'#', SpaceD}, 1)}]}}, 2)}}]},
 	[{TimeD, 10},
 	 {SpaceD, 10}]},
-  %% Parallel, multi-dimensional (tournament) wheredim clause (introducing parallelism)
+
+  %% Parallel, one-dimensional (tournament) wheredim clause (introducing parallelism)
   E6 = {wheredim,
   	{wherevar, "A", 
   	 [{"A",
@@ -150,14 +156,48 @@ wheredim_test() ->
 		       lte({'#', SpaceD}, 1024)),
 	    {'#', SpaceD},
 	    1}}]},
-  	[{TimeD, 2},
+  	[{TimeD, 14},
   	 {SpaceD, 0}]},
+
+  %% Parallel, two-dimensional (tournament)
+  E7 = {wheredim,
+	{wherevar, {'@', "Y1", {t, [{XD, 0}]}},
+	 [{"Y1",
+	   {'if', lte({'#', TimeD}, 0),
+	    "X1",
+	    {'@',
+	     plus(
+	       plus(
+		 {'@', "Y1", {t, [{XD, times({'#', XD}, 2)},
+				  {YD, times({'#', YD}, 2)}]}},
+		 {'@', "Y1", {t, [{XD, plus(times({'#', XD}, 2), 1)},
+				  {YD, times({'#', YD}, 2)}]}}
+		),
+	       plus(
+		 {'@', "Y1", {t, [{XD, times({'#', XD}, 2)}, 
+				  {YD, plus(times({'#', YD}, 2), 1)}]}},
+		 {'@', "Y1", {t, [{XD, plus(times({'#', XD}, 2), 1)}, 
+				  {YD, plus(times({'#', YD}, 2), 1)}]}}
+		)
+	      ),
+	     {t, [{TimeD, minus({'#', TimeD}, 1)}]}}}},
+	  {"X1",
+	   {'if', tand(tand(gte({'#', XD}, 1), lte({'#', YD}, 1024)),
+		       tand(gte({'#', YD}, 1), lte({'#', YD}, 1024))),
+	    {'#', XD},
+	    1}}]},
+	[{TimeD, 8},
+	 {XD, 0},
+	 {YD, 0}]},
+
+  %% Parallel, multi-dimensional matrix multiplication (the one youre all waiting for ;))
 
   ?assertMatch({0,_}, run_test(E1, [], [], [], [TimeD], 0)),
   ?assertMatch({[{[0], time}, {[1], space}],_}, run_test(E2, [], [], [], [], 0)),
   ?assertMatch({[{[0], time}, {[1], space}],_}, run_test(E3, [], [], [], [], 0)),
   ?assertMatch({5,_}, run_test(E4, [], [], [], [TimeD,SpaceD], 0)),
-  run_test(E6).
+  ?assertMatch({540160,_}, run_test(E6, [], [], [], [TimeD,SpaceD], 0)),
+  ?assertMatch({8323711,_}, run_test(E7, [], [], [], [TimeD, SpaceD], 0)).
 
 run_test(Src) ->
   I = fun (X) -> X end,
@@ -166,12 +206,10 @@ run_test(Src) ->
   D = [],
   T = 0,
   tcache:start_link(100),
-%%  SrcT = ttrans:transform([0], Src, []),
   tcore:eval(Src, I, E, K, D, self(), T).
 
 run_test(Src, I, E, K, D, T) ->
   tcache:start_link(100),
-%%  SrcT = ttrans:transform([0], Src, []),
   tcore:eval(Src, I, E, K, D, [0], T).
 
 run_tests() ->
