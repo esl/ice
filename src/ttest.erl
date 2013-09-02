@@ -190,7 +190,7 @@ wheredim_test() ->
 	 {XD, 0},
 	 {YD, 0}]},
 
-  %% Parallel, multi-dimensional matrix multiplication (the one youre all waiting for ;))
+  %% Parallel, multi-dimensional matrix multiplication (the one you're all waiting for ;))
 
   ?assertMatch({0,_}, run_test(E1, [], [], [], [TimeD], 0)),
   ?assertMatch({[{[0], time}, {[1], space}],_}, run_test(E2, [], [], [], [], 0)),
@@ -220,6 +220,3 @@ run_tests() ->
   primop_test(),
   perturb_test(),
   wheredim_test().
-  
-  
-  
