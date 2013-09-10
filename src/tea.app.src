@@ -1,0 +1,12 @@
+{application, tea,
+ [
+  {description, "A cache-based TransLucid interpreter"},
+  {vsn, "0.1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {mod, { tea_app, []}},
+  {env, []}
+ ]}.
