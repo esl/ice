@@ -156,7 +156,7 @@ wheredim_test() ->
 		       lte({'#', SpaceD}, 1024)),
 	    {'#', SpaceD},
 	    1}}]},
-  	[{TimeD, 14},
+  	[{TimeD, 2},
   	 {SpaceD, 0}]},
 
   %% Parallel, two-dimensional (tournament)
@@ -186,7 +186,7 @@ wheredim_test() ->
 		       tand(gte({'#', YD}, 1), lte({'#', YD}, 1024))),
 	    {'#', XD},
 	    1}}]},
-	[{TimeD, 8},
+	[{TimeD, 2},
 	 {XD, 0},
 	 {YD, 0}]},
 
@@ -196,8 +196,8 @@ wheredim_test() ->
   ?assertMatch({[{[0], time}, {[1], space}],_}, run_test(E2, [], [], [], [], 0)),
   ?assertMatch({[{[0], time}, {[1], space}],_}, run_test(E3, [], [], [], [], 0)),
   ?assertMatch({5,_}, run_test(E4, [], [], [], [TimeD,SpaceD], 0)),
-  ?assertMatch({540160,_}, run_test(E6, [], [], [], [TimeD,SpaceD], 0)),
-  ?assertMatch({8323711,_}, run_test(E7, [], [], [], [TimeD, SpaceD], 0)).
+  ?assertMatch({7,_}, run_test(E6, [], [], [], [TimeD,SpaceD], 0)),
+  ?assertMatch({25,_}, run_test(E7, [], [], [], [TimeD], 0)).
 
 run_test(Src) ->
   I = fun (X) -> X end,
