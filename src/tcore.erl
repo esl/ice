@@ -125,14 +125,8 @@ eval({Pos,_}=Xi, _I, _E, _K, _D, _W, T) when is_list(Pos) ->
   {Xi, T};
 
 eval(Xi, I, E, K, D, W, T) when is_list(Xi) orelse is_atom(Xi) ->
-  {D0, T0} = eval1(Xi, I, E, K, [], W, T),
-  case tcache:find(Xi, K, D, W, T) of
-    {{calc, _}, _} ->
-%%      io:format("Could not find ~p ~p ~p~n", [Xi,K,D]),
-      {D0, T0};
-    X ->
-      X
-  end.
+  {{D0, T0}, Dims} = eval1(Xi, I, E, K, [], W, T),
+  tcache:find(Xi, K, Dims, W, T).
 
 %%-------------------------------------------------------------------------------------
 %% Finding identifiers in the cache and building a
@@ -143,7 +137,7 @@ eval1(Xi, I, E, K, D, W, T) ->
     true -> 
       eval1(Xi, I, E, K, tset:union(D, D0), W, T);
     false ->
-      {D0, T0}
+      {{D0, T0}, D}
   end.
 
 eval2(Xi, I, E, K, D, W, T) ->
