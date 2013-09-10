@@ -69,6 +69,7 @@ find_update(X, K, D, W0, T, S0) ->
   Do = lists:keysort(1, D),
   case ets:lookup(S0#state.data, {X,Ko,Do}) of
     [] ->
+%%      io:format("Adding ~p ~p ~p = ~p~n", [X,Ko,Do,{calc,W0}]),      
       true = ets:insert_new(S0#state.data, {{X,Ko,Do}, {calc, W0}}),
       S2 = S0#state{ck = S0#state.ck + 1},
       {reply, {{calc, W0}, S2#state.ck},  S2};
@@ -94,7 +95,7 @@ add_update(X, K, D, W, T, V1, S0) ->
     [] ->
       {reply, hang, S0};
     [{_, {calc, W} = V0}] ->
-%%      io:format("Adding ~p ~p ~p = ~p~n", [X,Ko,Do,V1]),
+      io:format("Adding ~p ~p ~p = ~p~n", [X,Ko,Do,V1]),
       ets:insert(S0#state.data, {{X,Ko,Do}, V1}),
       S1 = S0#state{ck = S0#state.ck + 1},
       {reply, {V1, S1#state.ck}, S1};
