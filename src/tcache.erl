@@ -72,14 +72,14 @@ find_update(X, K, D, W0, _T, S0) ->
     [] ->
       Ks = [{Key,Ord} || {{_,Key},Ord} <- Ko],
       Ds = [Key || {_,Key} <- Do],
-      io:format("Adding ~p ~p ~p = ~p~n", [X,Ks,Ds,{calc,W0}]),
+      io:format(user, "Adding ~p ~p ~p = ~p~n", [X,Ks,Ds,{calc,W0}]),
       true = ets:insert_new(S0#state.data, {{X,Ko,Do}, {calc, W0}}),
       S2 = S0#state{ck = S0#state.ck + 1},
       {reply, {{calc, W0}, S2#state.ck},  S2};
     [{_, {calc, W1} = V}] ->
       case W1 =< W0 of
 	true ->
-	  io:format("Thread ~p is less than or equal to ~p~n", [W1, W0]),
+	  io:format(user, "Thread ~p is less than or equal to ~p~n", [W1, W0]),
 	  {reply, hang, S0};
 	false ->
 	  {reply, {V, S0#state.ck}, S0}
@@ -87,7 +87,7 @@ find_update(X, K, D, W0, _T, S0) ->
     [{_, V}] ->
       {reply, {V, S0#state.ck}, S0};
     [_,_|_] ->
-      io:format("Multiple objects with the same key~n"),
+      io:format(user, "Multiple objects with the same key~n", []),
       {reply, hang, S0}
   end.
 
@@ -100,18 +100,18 @@ add_update(X, K, D, W, _T, V1, S0) ->
     [{_, {calc, W}}] ->
       Ks = [{Key,Ord} || {{_,Key},Ord} <- Ko],
       Ds = [Key || {_,Key} <- Do],
-      io:format("Adding ~p ~p ~p = ~p~n", [X,Ks,Ds,V1]),
+      io:format(user, "Adding ~p ~p ~p = ~p~n", [X,Ks,Ds,V1]),
       ets:insert(S0#state.data, {{X,Ko,Do}, V1}),
       S1 = S0#state{ck = S0#state.ck + 1},
       {reply, {V1, S1#state.ck}, S1};
     [{_, {calc, _W1}}] ->
       {reply, hang, S0};
     [O1,_O2|_Os] ->
-      io:format("Multiple objects with the same key ~p ~p~n", [W, O1]),
+      io:format(user, "Multiple objects with the same key ~p ~p~n", [W, O1]),
       {reply, hang, S0};
     Other ->
       [{{_X1,_K1,_D1},V1}] = Other,
-      io:format("Other = ~p, W = ~p~n", [Other, W]),
+      io:format(user, "Other = ~p, W = ~p~n", [Other, W]),
       {reply, hang, S0}
   end.
 
