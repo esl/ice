@@ -1,0 +1,6 @@
+*~
+rebar
+rebar.d
+ebin
+.eunit
+deps
