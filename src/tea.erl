@@ -28,10 +28,15 @@ file (Filename) ->
 
 rework_tree (Tree) ->
     V = fun
-        ({where, _, Id, DimDecls, VarDecls}) ->
-            MainVar = id(Id),
-            Vars = {wherevar, MainVar,
-                [{id(Var), E} || {var_decl,_,Var,E} <- VarDecls]},
+        ({where, _, Exp, DimDecls, VarDecls}) ->
+            TopExpr = id(Exp),
+            Vars = case VarDecls of
+                [] ->
+                    TopExpr;
+                VarDecls ->
+                    {wherevar, TopExpr,
+                        [{id(Var), E} || {var_decl,_,Var,E} <- VarDecls]}
+            end,
             {wheredim, Vars,
                 [{{[0],id(Dim)},int(N)} || {dim_decl,_,Dim,N} <- DimDecls]};
 
@@ -62,7 +67,10 @@ rework_tree (Tree) ->
         ({'+'=Op, _, A, B})   -> {primop, fun erlang:Op/2, [A,B]};
         ({'-'=Op, _, A, B})   -> {primop, fun erlang:Op/2, [A,B]};
         ({'*'=Op, _, A, B})   -> {primop, fun erlang:Op/2, [A,B]};
-        ({'%'=Op, _, A, B})   -> {primop, fun mod/2, [A,B]};
+        ({'%', _, A, B})      -> {primop, fun mod/2, [A,B]};
+
+        ({raw_string, _, S})    -> {string, S};
+        ({cooked_string, _, S}) -> {string, S};
 
         ({'@', _, A, B}) -> {'@', A, B};
 
