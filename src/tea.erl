@@ -50,7 +50,12 @@ rework_tree (Tree) ->
             {'#', {[0],Val}};
 
         ({tuple, _, Assocs}) -> {t, Assocs};
-        ({tuple_element, _, Lhs, Rhs}) -> {{[0],Lhs}, Rhs};
+        ({tuple_element, _, Lhs, Rhs}) ->
+            case is_string(Lhs) of
+                    % Assumption: Lhs is a dimention (Grammar allows expr).
+                true -> {{[0],Lhs}, Rhs};
+                false -> {Lhs, Rhs}
+            end;
 
         ({'or'=Op, _, A, B})  -> {primop, fun erlang:Op/2, [A,B]};
         ({'and'=Op, _, A, B}) -> {primop, fun erlang:Op/2, [A,B]};
@@ -79,5 +84,14 @@ rework_tree (Tree) ->
         [{expr,_,TheWhereDim}] -> {ok, TheWhereDim}
         ; Else -> {ok, Else}
     end.
+
+
+is_string (List) when is_list(List) ->
+%% http://stackoverflow.com/a/8034011/1418165
+    lists:all(fun
+            (X) when X >= 32, X < 127 -> true;
+            (_)                       -> false
+        end, List);
+is_string (_) -> false.
 
 %% End of Module.
