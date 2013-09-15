@@ -51,12 +51,18 @@ rework_tree (Tree) ->
         ({tuple, _, Assocs}) -> {t, Assocs};
         ({tuple_element, _, Lhs, Rhs}) -> {{[0],Lhs}, Rhs};
 
+        ({'or'=Op, _, A, B})  -> {primop, fun erlang:Op/2, [A,B]};
         ({'and'=Op, _, A, B}) -> {primop, fun erlang:Op/2, [A,B]};
-        ({'>='=Op, _, A, B})  -> {primop, fun erlang:Op/2, [A,B]};
+        ({'<'=Op, _, A, B})   -> {primop, fun erlang:Op/2, [A,B]};
         ({'<=', _, A, B})     -> {primop, fun erlang:'=<'/2, [A,B]};
-        ({'*'=Op, _, A, B})   -> {primop, fun erlang:Op/2, [A,B]};
+        ({'=='=Op, _, A, B})  -> {primop, fun erlang:Op/2, [A,B]};
+        ({'>='=Op, _, A, B})  -> {primop, fun erlang:Op/2, [A,B]};
+        ({'>'=Op, _, A, B})   -> {primop, fun erlang:Op/2, [A,B]};
+        ({'!=', _, A, B})     -> {primop, fun erlang:'=/='/2, [A,B]};
         ({'+'=Op, _, A, B})   -> {primop, fun erlang:Op/2, [A,B]};
         ({'-'=Op, _, A, B})   -> {primop, fun erlang:Op/2, [A,B]};
+        ({'*'=Op, _, A, B})   -> {primop, fun erlang:Op/2, [A,B]};
+        ({'%'=Op, _, A, B})   -> {primop, fun mod/2, [A,B]};
 
         ({'@', _, A, B}) -> {'@', A, B};
 
@@ -73,5 +79,7 @@ id (Name) -> Name.
 
 int ({int, _, N}) -> N;
 int (N) -> N.
+
+mod (X, Y) -> (X rem Y + Y) rem Y. %% http://stackoverflow.com/a/858649/1418165
 
 %% End of Module.
