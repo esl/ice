@@ -48,7 +48,7 @@ eval({t, Es}, I, E, K, D, W, T) ->
       {Dims, MaxT};
     {false, Dis1} ->
       Tuple = lists:zip(odd_elements(Dis1), even_elements(Dis1)),
-      {{te, Tuple}, MaxT}
+      {{t, Tuple}, MaxT}
   end;
 
 %%-------------------------------------------------------------------------------------
@@ -60,7 +60,7 @@ eval({'@', E0, E1}, I, E, K, D, W, T) ->
     true ->
       {lists:filter(fun tset:is_d/1, Di), T1};
     false ->
-      {te, Di2} = Di,
+      {t, Di2} = Di,
       Ki = tset:perturb(K, Di2),
       Di3 = tset:union(D, tset:domain(Di2)),
       eval(E0, I, E, Ki, Di3, W, T1)

@@ -48,7 +48,7 @@ tuple1_test () ->
     K = [{TimeD,100}, {SpaceD,100}],
     D = [TimeD,SpaceD],
     tcache:start_link(100),
-    ?assertMatch({{te,[{TimeD,1},{SpaceD,2}]}, _}, % Uh? ‘te’? Is just ‘t’ the same?
+    ?assertMatch({{t,[{TimeD,1},{SpaceD,2}]}, _}, % Uh? ‘te’? Is just ‘t’ the same?
         tcore:eval(Tree, [],[],K, D, [0], 0)).
 
 tuple2_test () ->
