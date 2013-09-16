@@ -72,12 +72,11 @@ eval({'if', E0, E1, E2}, I, E, K, D, W, T) ->
     true ->
       {D0, T0};
     false ->
-      case D0 of
-	      true ->
-	        eval(E1, I, E, K, D, W, T0);
-	      false ->
-	        eval(E2, I, E, K, D, W, T0)
-      end
+      Branch = case D0 of
+        true -> E1;
+        false -> E2
+      end,
+      eval(Branch, I, E, K, D, W, T0);
   end;
 
 %%-------------------------------------------------------------------------------------
