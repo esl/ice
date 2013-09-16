@@ -40,10 +40,8 @@ rework_tree (Tree) ->
             {wheredim, Vars,
                 [{{[0],Dim},N} || {dim_decl,_,Dim,N} <- DimDecls]};
 
-        ({'if', _, [If|_], Else}) ->
-            % What about elsifs* ?
-            {if_expr,_,Cond,Then} = If,
-            {'if', Cond, Then, Else};
+        ({'if', _, Ifs, Else}) ->
+            {'if', [{Cond,Then} || {if_expr,_,Cond,Then} <- Ifs], Else};
 
         ({'#.', _, Val}) ->
             % Assumption: Val is always a dimention (Grammar allows expr).
