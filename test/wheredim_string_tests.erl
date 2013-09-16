@@ -94,14 +94,12 @@ e5_test () ->
                 [
                     {"N0",
                         {'if',
-                            eq({'#', TimeD}, 0),
-                            "N1",
+                            [{eq({'#', TimeD}, 0), "N1"}],
                             {'@', "N0",
                                 {t, [{TimeD, minus({'#', TimeD}, 1)}]}}}},
                     {"N1",
                         {'if',
-                            eq({'#', SpaceD}, 0),
-                            1,
+                            [{eq({'#', SpaceD}, 0), 1}],
                             times({'@', "N1", {t, [{SpaceD, minus({'#', SpaceD}, 1)}]}}
                                 , 2)
                         }}
@@ -139,8 +137,7 @@ e6_test () ->
         {wheredim,
             {wherevar, "A", [
             {"A", {'if',
-                    lte({'#', TimeD}, 0),
-                    "B",
+                    [{lte({'#', TimeD}, 0), "B"}],
                     {'@',
                         plus({'@', "A", {t, [{SpaceD,      times({'#', SpaceD}, 2    )}]}},
                              {'@', "A", {t, [{SpaceD, plus(times({'#', SpaceD}, 2), 1)}]}}),
@@ -149,9 +146,9 @@ e6_test () ->
                 }
             },
             {"B", {'if',
-                    tand(gte({'#', SpaceD}, 1),
-                         lte({'#', SpaceD}, 1024)),
-                    {'#', SpaceD},
+                    [{tand(gte({'#', SpaceD}, 1),
+                           lte({'#', SpaceD}, 1024)),
+                      {'#', SpaceD}}],
                     1
                 }
             }
@@ -189,8 +186,7 @@ e7_test () ->
                 [
                     {"Y1",
                         {'if',
-                            lte({'#', TimeD}, 0),
-                            "X1",
+                            [{lte({'#', TimeD}, 0), "X1"}],
                             {'@',
                                 plus(
                                     plus({'@', "Y1", {t, [{XD, times({'#', XD}, 2)},
@@ -205,10 +201,9 @@ e7_test () ->
                                 {t, [{TimeD, minus({'#', TimeD}, 1)}]}}}},
                     {"X1",
                         {'if',
-                            tand(
-                                tand(gte({'#', XD}, 1), lte({'#', YD}, 1024)),
-                                tand(gte({'#', YD}, 1), lte({'#', YD}, 1024))),
-                            {'#', XD},
+                            [{tand(tand(gte({'#', XD}, 1), lte({'#', YD}, 1024)),
+                                   tand(gte({'#', YD}, 1), lte({'#', YD}, 1024))),
+                              {'#', XD}}],
                             1}}
                 ]},
             [{TimeD,2}, {XD,0}, {YD,0}]},
