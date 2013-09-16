@@ -3,7 +3,7 @@
 -behaviour(gen_server).
 
 %% tcache API exports
--export([find/5, add/6, collect/0]).
+-export([find/5, add/6, collect/0, stop/0]).
 
 %% gen_server API exports
 -export([start_link/1]).
@@ -44,6 +44,9 @@ add(X, K, D, W, T, V) ->
 collect() ->
   gen_server:call(?MODULE, collect).
 
+stop() ->
+  gen_server:call(?MODULE, terminate).
+
 %%------------------------------------------------------------------------------
 %% API implementation
 %%------------------------------------------------------------------------------
@@ -60,8 +63,10 @@ handle_call({add, X, K, D, W, T, V}, _From, S0) ->
   add_update(X, K, D, W, T, V, S0);
 
 handle_call(collect, _From, S0) ->
-  {reply, ok, S0}.
+  {reply, ok, S0};
 
+handle_call(terminate, _From, S0) ->
+  {stop, normal, ok, S0}.
 %%------------------------------------------------------------------------------
 %% internal
 %%------------------------------------------------------------------------------
