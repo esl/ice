@@ -13,6 +13,10 @@ const_test () ->
     {ok, Tree} = tea:string("42"),
     ?assertEqual(42, Tree).
 
+bool_test () ->
+    {ok, Tree} = tea:string("true"),
+    ?assertEqual(true, Tree).
+
 string_test () ->
     {ok, Tree} = tea:string("\"Test\""),
     ?assertEqual({string,"Test"}, Tree).

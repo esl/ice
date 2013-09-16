@@ -14,6 +14,9 @@
 eval(Const, _I, _E, _K, _D, _W, T) when is_number(Const) ->
   {Const, T};
 
+eval(Bool, _I, _E, _K, _D, _W, T) when is_boolean(Bool) ->
+  {Bool, T};
+
 eval({string, Str}, _I, _E, _K, _D, _W, T) ->
   {{string, Str}, T};
 
