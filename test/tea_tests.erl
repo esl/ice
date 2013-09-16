@@ -82,18 +82,32 @@ perturb_test () ->
     TimeD = {[0],"t"},
     SpaceD = {[0],"s"},
     K = [{TimeD,100}, {SpaceD,100}],
+    tcache:start_link(100),
     {ok, E1} = tea:string(" #.s @ [s <- 0] "),
     ?assertMatch({0, _},
-        tcore:eval(E1, [], [], K, [SpaceD], [0], 0)),
+        tcore:eval(E1, [],[],K, [SpaceD], [0], 0)),
     {ok, E2} = tea:string(" #.t @ [s <- 0] "),
     ?assertMatch({[TimeD], _},
-        tcore:eval(E2, [], [], [], [], [0], 0)),
+        tcore:eval(E2, [],[],[], [], [0], 0)),
     {ok, E3} = tea:string(" #.t @ [s <- 0, t <- 1] "),
     ?assertMatch({1, _},
-        tcore:eval(E3, [], [], K, [TimeD], [0], 0)),
+        tcore:eval(E3, [],[],K, [TimeD], [0], 0)),
     {ok, E4} = tea:string(" #.t @ [t <- 1, s <- 0] "),
     ?assertMatch({1, _},
-        tcore:eval(E4, [], [], K, [TimeD], [0], 0)).
+        tcore:eval(E4, [],[],K, [TimeD], [0], 0)).
+
+
+elsif_test () ->
+    tcache:start_link(100),
+    {ok, E1} = tea:string(" if 1 == 0 then 1
+                         elsif 1 == 1 then 2 else 3 fi "),
+    ?assertMatch({2,_},
+        tcore:eval(E1, [],[],[], [], [0], 0)),
+    {ok, E2} = tea:string(" if 1 == 0 then 1
+                         elsif 0 == 1 then 2
+                         elsif 1 == 1 then 3 else 4 fi "),
+    ?assertMatch({3, _},
+        tcore:eval(E2, [],[],[], [], [0], 0)).
 
 %% Internals
 
