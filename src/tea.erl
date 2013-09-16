@@ -72,6 +72,7 @@ rework_tree (Tree) ->
             %% http://stackoverflow.com/a/858649/1418165
         ({'%', _, A, B})      -> {primop, fun (X,Y) -> (X rem Y + Y) rem Y end, [A,B]};
 
+        ({bool, _, Boolean}) -> Boolean;
         ({raw_string, _, S})    -> {string, S};
         ({cooked_string, _, S}) -> {string, S};
 
