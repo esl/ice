@@ -24,6 +24,32 @@ e1_test () ->
             [{TimeD, 0}]},
         Tree).
 
+wherevar_only_test () ->
+    {ok, Tree} = tea:string(
+        "X
+        where
+            var X = 46
+        end"),
+    ?assertEqual(
+        {wheredim,
+            {wherevar, "X",
+                [{"X", 46}]},
+            []},
+        Tree).
+
+wheredim_only_test () ->
+    TimeD = {[0],"t"},
+    {ok, Tree} = tea:string(
+        "#.t
+        where
+            dim t <- 58
+        end"),
+    ?assertEqual(
+        {wheredim,
+            {'#', TimeD},
+            [{TimeD, 58}]},
+        Tree).
+
 e2_test () ->
     TimeD = {[0],"t"},
     SpaceD = {[0],"s"},
