@@ -22,6 +22,29 @@ e1_test () ->
     ?assertMatch({0,_},
         tcore:eval(T, [],[],[], D, [0], 0)).
 
+wherevar_only_test () ->
+    {ok, T} = tea:string(
+        "X
+        where
+            var X = 46
+        end"),
+    D = [],
+    tcache:start_link(100),
+    ?assertMatch({46,_},
+        tcore:eval(T, [],[],[], D, [0], 0)).
+
+wheredim_only_test () ->
+    {ok, T} = tea:string(
+        "#.t
+        where
+            dim t <- 58
+        end"),
+    TimeD = {[0],"t"},
+    D = [TimeD],
+    tcache:start_link(100),
+    ?assertMatch({58,_},
+        tcore:eval(T, [],[],[], D, [0], 0)).
+
 e2_test () ->
     {ok, T} = tea:string(
         "#.t + #.s
