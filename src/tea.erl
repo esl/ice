@@ -40,8 +40,7 @@ rework_tree (Tree) ->
             {wheredim, Vars,
                 [{{[0],Dim},N} || {dim_decl,_,Dim,N} <- DimDecls]};
 
-        ({'if', _, Ifs, Else}) ->
-            {'if', [{Cond,Then} || {if_expr,_,Cond,Then} <- Ifs], Else};
+        ({'if', _, Ifs, Else}) -> unwrap_elsifs(Ifs, Else);
 
         ({'#.', _, Val}) ->
             % Assumption: Val is always a dimention (Grammar allows expr).
@@ -83,6 +82,10 @@ rework_tree (Tree) ->
         ; Else -> {ok, Else}
     end.
 
+
+unwrap_elsifs ([{if_expr,_,Cond,Then}|Rest], Else) ->
+    {'if', Cond, Then, unwrap_elsifs(Rest,Else)};
+unwrap_elsifs ([], Else) -> Else.
 
 is_string (List) when is_list(List) ->
 %% http://stackoverflow.com/a/8034011/1418165
