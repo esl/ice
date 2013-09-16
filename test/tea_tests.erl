@@ -20,6 +20,12 @@ const_test() ->
             tcore:eval(Tree, fun(X)->X end,[],[], [], self(), 0))
     end || _ <- lists:seq(1,10)].
 
+bool_test () ->
+    {ok, Tree} = tea:string(" false "),
+    tcache:start_link(100),
+    ?assertMatch({false, _},
+        tcore:eval(Tree, fun(X)->X end,[],[], [], self(), 0)).
+
 string_test () ->
     {ok, Tree} = tea:string("`Test`"),
     S = {string,"Test"},
