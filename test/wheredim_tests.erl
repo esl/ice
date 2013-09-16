@@ -9,7 +9,7 @@
 
 %% API tests.
 
-e1_test () ->
+e1_test_ () ->
     {ok, T} = tea:string(
         "X
         where
@@ -18,22 +18,28 @@ e1_test () ->
         end"),
     TimeD = {[0],"t"},
     D = [TimeD],
-    tcache:start_link(100),
-    ?assertMatch({0,_},
-        tcore:eval(T, [],[],[], D, [0], 0)).
+    {setup, fun () -> tcache:start_link(100) end,
+            fun (_) -> tcache:stop() end,
+    fun () ->
+        ?assertMatch({0,_},
+            tcore:eval(T, [],[],[], D, [0], 0))
+    end}.
 
-wherevar_only_test () ->
+wherevar_only_test_ () ->
     {ok, T} = tea:string(
         "X
         where
             var X = 46
         end"),
     D = [],
-    tcache:start_link(100),
-    ?assertMatch({46,_},
-        tcore:eval(T, [],[],[], D, [0], 0)).
+    {setup, fun () -> tcache:start_link(100) end,
+            fun (_) -> tcache:stop() end,
+    fun () ->
+        ?assertMatch({46,_},
+            tcore:eval(T, [],[],[], D, [0], 0))
+    end}.
 
-wheredim_only_test () ->
+wheredim_only_test_ () ->
     {ok, T} = tea:string(
         "#.t
         where
@@ -41,11 +47,14 @@ wheredim_only_test () ->
         end"),
     TimeD = {[0],"t"},
     D = [TimeD],
-    tcache:start_link(100),
-    ?assertMatch({58,_},
-        tcore:eval(T, [],[],[], D, [0], 0)).
+    {setup, fun () -> tcache:start_link(100) end,
+            fun (_) -> tcache:stop() end,
+    fun () ->
+        ?assertMatch({58,_},
+            tcore:eval(T, [],[],[], D, [0], 0))
+    end}.
 
-e2_test () ->
+e2_test_ () ->
     {ok, T} = tea:string(
         "#.t + #.s
         where
@@ -54,11 +63,14 @@ e2_test () ->
     TimeD = {[0],"t"},
     SpaceD = {[0],"s"},
     D = [],
-    tcache:start_link(100),
-    ?assertMatch({[TimeD,SpaceD],_},
-        tcore:eval(T, [],[],[], D, [0], 0)).
+    {setup, fun () -> tcache:start_link(100) end,
+            fun (_) -> tcache:stop() end,
+    fun () ->
+        ?assertMatch({[TimeD,SpaceD],_},
+            tcore:eval(T, [],[],[], D, [0], 0))
+    end}.
 
-e3_test () ->
+e3_test_ () ->
     {ok, T} = tea:string(
         "#.t + #.s
         where
@@ -68,11 +80,14 @@ e3_test () ->
     TimeD = {[0],"t"},
     SpaceD = {[0],"s"},
     D = [],
-    tcache:start_link(100),
-    ?assertMatch({[TimeD,SpaceD],_},
-        tcore:eval(T, [],[],[], D, [0], 0)).
+    {setup, fun () -> tcache:start_link(100) end,
+            fun (_) -> tcache:stop() end,
+    fun () ->
+        ?assertMatch({[TimeD,SpaceD],_},
+            tcore:eval(T, [],[],[], D, [0], 0))
+    end}.
 
-e4_test () ->
+e4_test_ () ->
     {ok, T} = tea:string(
         "X
         where
@@ -83,11 +98,14 @@ e4_test () ->
     TimeD = {[0],"t"},
     SpaceD = {[0],"s"},
     D = [TimeD,SpaceD],
-    tcache:start_link(100),
-    ?assertMatch({5,_},
-        tcore:eval(T, [],[],[], D, [0], 0)).
+    {setup, fun () -> tcache:start_link(100) end,
+            fun (_) -> tcache:stop() end,
+    fun () ->
+        ?assertMatch({5,_},
+            tcore:eval(T, [],[],[], D, [0], 0))
+    end}.
 
-e5_test () ->
+e5_test_ () ->
     %% Sequential, multi-dimensional wheredim clause
     {ok, T} = tea:string(
         "N0
@@ -106,11 +124,14 @@ e5_test () ->
     TimeD = {[0],"t"},
     SpaceD = {[0],"s"},
     D = [TimeD,SpaceD],
-    tcache:start_link(100),
-    ?assertMatch({1024,_}, % Not sure about 1024 here.
-        tcore:eval(T, [],[],[], D, [0], 0)).
+    {setup, fun () -> tcache:start_link(100) end,
+            fun (_) -> tcache:stop() end,
+    fun () ->
+        ?assertMatch({1024,_}, % Not sure about 1024 here.
+            tcore:eval(T, [],[],[], D, [0], 0))
+    end}.
 
-e6_test () ->
+e6_test_ () ->
     %% Parallel, one-dimensional (tournament) wheredim clause (introducing parallelism)
     {ok, T} = tea:string(
         "// Tournament in 1 dimension
@@ -138,12 +159,14 @@ e6_test () ->
     TimeD = {[0],"t"},
     SpaceD = {[0],"s"},
     D = [TimeD,SpaceD],
-    tcache:start_link(100),
-    ?assertMatch({7,_},
-        tcore:eval(T, [],[],[], D, [0], 0)).
-    % {badmatch,_} = (catch tcore:eval(bla, [],[],[], D, [0], 0)). % kills the cache.
+    {setup, fun () -> tcache:start_link(100) end,
+            fun (_) -> tcache:stop() end,
+    fun () ->
+        ?assertMatch({7, _},
+            tcore:eval(T, [],[],[], D, [0], 0))
+    end}.
 
-e7_test () ->
+e7_test_ () ->
     %% Parallel, two-dimensional (tournament)
     {ok, T} = tea:string(
         "Y1 @ [x <- 0]
@@ -166,11 +189,16 @@ e7_test () ->
         end"),
     TimeD = {[0],"t"},
     D = [TimeD],
-    tcache:start_link(100),
-    ?assertMatch({25,_},
-        tcore:eval(T, [],[],[], D, [0], 0)).
+    {setup, fun () -> tcache:start_link(100) end,
+            fun (_) -> tcache:stop() end,
+    fun () ->
+        ?assertMatch({25, _},
+            tcore:eval(T, [],[],[], D, [0], 0))
+    end}.
 
+e8_test () ->
     %% Parallel, multi-dimensional matrix multiplication (the one you're all waiting for ;))
+    ok.
 
 %% Internals
 
