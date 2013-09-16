@@ -13,6 +13,15 @@ test: compile
 	./rebar skip_deps=true eunit
 .PHONY: test
 
+DIALYZER_PLT = .dialyzer_plt
+
+dialyze: $(DIALYZER_PLT)
+	dialyzer -r src --src --plt $<
+.PHONY: dialyzer
+
+$(DIALYZER_PLT):
+	dialyzer --build_plt --output_plt $@ --apps erts kernel stdlib
+
 rebar:
 	git clone git://github.com/rebar/rebar.git rebar.d
 	cd rebar.d && ./bootstrap
