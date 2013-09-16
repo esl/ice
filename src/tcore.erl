@@ -72,12 +72,11 @@ eval({'if', E0, E1, E2}, I, E, K, D, W, T) ->
     true ->
       {D0, T0};
     false ->
-      case D0 of
-	true ->
-	  eval(E1, I, E, K, D, W, T0);
-	false ->
-	  eval(E2, I, E, K, D, W, T0)
-      end
+      Branch = case D0 of
+        true -> E1;
+        false -> E2
+      end,
+      eval(Branch, I, E, K, D, W, T0)
   end;
 
 %%-------------------------------------------------------------------------------------
@@ -96,10 +95,10 @@ eval({'#', E0}, I, E, K, D, W, T) ->
       {D0, T0};
     false ->
       case lists:member(D0, D) of
-	true ->
-	  {lookup_ordinate(D0, K), T0};
-	false ->
-	  {[D0], T0}
+	      true ->
+	        {lookup_ordinate(D0, K), T0};
+	      false ->
+	        {[D0], T0}
       end
   end;
 
@@ -148,11 +147,11 @@ eval2(Xi, I, E, K, D, W, T) ->
   case D0 of
     {calc, W} ->
       case lists:keyfind(Xi, 1, E) of
-	{_, E0} ->
-	  {D1, T1} = eval(E0, I, E, K, D, W, T0),
-	  tcache:add(Xi, K, D, W, T1, D1);
-	false ->
-	  {error, undefined_id, Xi}
+	      {_, E0} ->
+	        {D1, T1} = eval(E0, I, E, K, D, W, T0),
+	        tcache:add(Xi, K, D, W, T1, D1);
+	      false ->
+	        {error, undefined_id, Xi}
       end;
     {calc, _W1} ->
       eval2(Xi, I, E, K, D, W, T0 + 1);

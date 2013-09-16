@@ -57,6 +57,21 @@ perturb_test () ->
         {ok, {'@', {'#',TimeD}, {t,[{TimeD,1}, {SpaceD,0}]}}},
         tea:string(" #.t @ [t <- 1, s <- 0] ")).
 
+elsif_test () ->
+    ?assertEqual(
+        {ok, {'if', {primop,fun erlang:'=='/2,[1,0]}, 1,
+                {'if', {primop,fun erlang:'=='/2,[1,1]}, 2,
+                    3}}},
+        tea:string(" if 1 == 0 then 1 elsif 1 == 1 then 2 else 3 fi ")),
+    ?assertEqual(
+        {ok, {'if', {primop,fun erlang:'=='/2,[1,0]}, 1,
+                {'if', {primop,fun erlang:'=='/2,[0,1]}, 2,
+                    {'if', {primop,fun erlang:'=='/2,[1,1]}, 3,
+                        4}}}},
+        tea:string(" if 1 == 0 then 1
+                  elsif 0 == 1 then 2
+                  elsif 1 == 1 then 3 else 4 fi ")).
+
 %% Internals
 
 %% End of Module.
