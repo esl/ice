@@ -193,12 +193,12 @@ wheredim_test() ->
 
   %% Parallel, multi-dimensional matrix multiplication (the one you're all waiting for ;))
 
-  ?assertMatch({0,_}, run_test(E1, [], [], [], [TimeD], 0)),
-  ?assertMatch({[{[0], time}, {[1], space}],_}, run_test(E2, [], [], [], [], 0)),
-  ?assertMatch({[{[0], time}, {[1], space}],_}, run_test(E3, [], [], [], [], 0)),
-  ?assertMatch({5,_}, run_test(E4, [], [], [], [TimeD,SpaceD], 0)),
-  ?assertMatch({7,_}, run_test(E6, [], [], [], [TimeD,SpaceD], 0)),
-  ?assertMatch({25,_}, run_test(E7, [], [], [], [TimeD], 0)).
+  ?assertMatch({0,_}, run_test(E1, [], [], [], [], 0)),
+  ?assertMatch({[{[1], space}],_}, run_test(E2, [], [], [], [], 0)),
+  ?assertMatch({5,_}, run_test(E3, [], [], [], [], 0)),
+  ?assertMatch({5,_}, run_test(E4, [], [], [], [], 0)),
+  ?assertMatch({7,_}, run_test(E6, [], [], [], [], 0)),
+  ?assertMatch({25,_}, run_test(E7, [], [], [], [], 0)).
 
 
 run_test(Src) ->
