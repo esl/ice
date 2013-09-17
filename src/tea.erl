@@ -37,8 +37,13 @@ rework_tree (Tree) ->
                     {wherevar, TopExpr,
                         [{Var, E} || {var_decl,_,Var,E} <- VarDecls]}
             end,
-            {wheredim, Vars,
-                [{{[0],Dim},N} || {dim_decl,_,Dim,N} <- DimDecls]};
+            case DimDecls of
+                [] ->
+                    Vars;
+                DimDecls ->
+                    {wheredim, Vars,
+                        [{{[0],Dim},N} || {dim_decl,_,Dim,N} <- DimDecls]}
+            end;
 
         ({'if', _, Ifs, Else}) -> unwrap_elsifs(Ifs, Else);
 
