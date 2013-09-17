@@ -31,10 +31,7 @@ wherevar_only_test () ->
             var X = 46
         end"),
     ?assertEqual(
-        {wheredim,
-            {wherevar, "X",
-                [{"X", 46}]},
-            []},
+        {wherevar, "X", [{"X", 46}]},
         Tree).
 
 wheredim_only_test () ->
