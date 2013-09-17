@@ -15,7 +15,7 @@ who_cares_about_known_dims_test_() ->
       ?_test(context_query_needs_dim()),
       ?_test(context_perturbation_does_not_need_dim()),
       ?_test(wherevar_does_not_need_dim()),
-      %%?_test(wheredim_does_not_need_dim()), FIXME
+      ?_test(wheredim_does_not_need_dim()),
       ?_test(wherevar_inside_wheredim_does_not_need_dim())
      ]}.
 
@@ -44,12 +44,6 @@ wherevar_does_not_need_dim() ->
                  tcore:eval(T, [],[],[], D, [0], 0)).
 
 wheredim_does_not_need_dim() ->
-    %% Wheredim should act "like a context perturbation with a unique
-    %% local dimension" (ref "Multidimensional Infinite Data in the
-    %% Language Lucid", Feb 2013), therefore the "fixed dimension"
-    %% shall be added by the wheredim rule to the set of known
-    %% dimensions (the rule in the paper needs this correction re
-    %% Delta).
     TimeD = {[],"t"},
     T = {wheredim,
          {'#',TimeD},
