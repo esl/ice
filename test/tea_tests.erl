@@ -54,15 +54,6 @@ tuple1_test_ () ->
             tcore:eval(Tree, [],[],K, D, [0], 0))
     end.
 
-tuple2_test_ () ->
-    {ok, Tree} = tea:string(" [#.t <- 0, #.s <- 1] "),
-    TimeD = {[0],"t"},
-    SpaceD = {[0],"s"},
-    fun () ->
-        ?assertMatch({[TimeD,SpaceD], _},
-            tcore:eval(Tree, fun(X)->X end,[],[], [], self(), 0))
-    end.
-
 primop1_test_ () ->
     {ok, Tree} = tea:string(" 10 + 20 "),
     fun () ->
