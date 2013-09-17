@@ -16,8 +16,7 @@ e1_test_ () ->
             dim t <- 0
             var X = #.t
         end"),
-    TimeD = {[0],"t"},
-    D = [TimeD],
+    D = [],
     {setup, fun () -> tcache:start_link(100) end,
             fun (_) -> tcache:stop() end,
     fun () ->
@@ -45,8 +44,7 @@ wheredim_only_test_ () ->
         where
             dim t <- 58
         end"),
-    TimeD = {[0],"t"},
-    D = [TimeD],
+    D = [],
     {setup, fun () -> tcache:start_link(100) end,
             fun (_) -> tcache:stop() end,
     fun () ->
@@ -60,13 +58,12 @@ e2_test_ () ->
         where
             dim t <- 1
         end"),
-    TimeD = {[0],"t"},
     SpaceD = {[0],"s"},
     D = [],
     {setup, fun () -> tcache:start_link(100) end,
             fun (_) -> tcache:stop() end,
     fun () ->
-        ?assertMatch({[TimeD,SpaceD],_},
+        ?assertMatch({[SpaceD],_},
             tcore:eval(T, [],[],[], D, [0], 0))
     end}.
 
@@ -77,13 +74,11 @@ e3_test_ () ->
             dim t <- 2
             dim s <- 3
         end"),
-    TimeD = {[0],"t"},
-    SpaceD = {[0],"s"},
     D = [],
     {setup, fun () -> tcache:start_link(100) end,
             fun (_) -> tcache:stop() end,
     fun () ->
-        ?assertMatch({[TimeD,SpaceD],_},
+        ?assertMatch({5,_},
             tcore:eval(T, [],[],[], D, [0], 0))
     end}.
 
@@ -95,9 +90,7 @@ e4_test_ () ->
             dim t <- 2
             dim s <- 3
         end"),
-    TimeD = {[0],"t"},
-    SpaceD = {[0],"s"},
-    D = [TimeD,SpaceD],
+    D = [],
     {setup, fun () -> tcache:start_link(100) end,
             fun (_) -> tcache:stop() end,
     fun () ->
@@ -121,9 +114,7 @@ e5_test_ () ->
             dim t <- 10
             dim s <- 10
         end"),
-    TimeD = {[0],"t"},
-    SpaceD = {[0],"s"},
-    D = [TimeD,SpaceD],
+    D = [],
     {setup, fun () -> tcache:start_link(100) end,
             fun (_) -> tcache:stop() end,
     fun () ->
@@ -156,9 +147,7 @@ e6_test_ () ->
                     1
                 fi
         end"),
-    TimeD = {[0],"t"},
-    SpaceD = {[0],"s"},
-    D = [TimeD,SpaceD],
+    D = [],
     {setup, fun () -> tcache:start_link(100) end,
             fun (_) -> tcache:stop() end,
     fun () ->
@@ -187,8 +176,7 @@ e7_test_ () ->
             dim x <- 0
             dim y <- 0
         end"),
-    TimeD = {[0],"t"},
-    D = [TimeD],
+    D = [],
     {setup, fun () -> tcache:start_link(100) end,
             fun (_) -> tcache:stop() end,
     fun () ->

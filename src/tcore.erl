@@ -120,7 +120,27 @@ eval({wheredim, E0, XiEis}, I, E, K, D, W, T) ->
       {Dims, MaxT};
     {false, Dis} ->
       Ki1 = tset:perturb(K, lists:zip(Xis, Dis)),
-      eval(E0, I, E, Ki1, D, W, MaxT)
+      %% Check that the same wheredim hadn't already been executed in
+      %% another context. Checking this on the set of known dimensions.
+      %%
+      %% "The evaluation of a wheredim clause in one context cannot
+      %% depend on the evaluation of the same wheredim clause in
+      %% another context. To ensure that this is the case, the
+      %% transitive closure of the dependency graph for the nodes in
+      %% the abstract syntax tree must not contain any loops for
+      %% wheredim clauses."
+      %%
+      %% Ref. "Multidimensional Infinite Data in the Language Lucid",
+      %% Feb 2013
+      [] = tset:intersection(D, Xis),
+      %% Wheredim should act "like a context perturbation with a
+      %% unique local dimension" (ref "Multidimensional Infinite Data
+      %% in the Language Lucid", Feb 2013), therefore the "fixed
+      %% dimension" shall be added by the wheredim rule to the set of
+      %% known dimensions (the rule in the paper needs this correction
+      %% re Delta).
+      Di1 = tset:union(D, Xis),
+      eval(E0, I, E, Ki1, Di1, W, MaxT)
   end;
 
 %%-------------------------------------------------------------------------------------
