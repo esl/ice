@@ -48,16 +48,15 @@ rework_tree (Tree) ->
         ({'if', _, Ifs, Else}) -> unwrap_elsifs(Ifs, Else);
 
         ({'#.', _, Val}) ->
-            % Assumption: Val is always a dimention (Grammar allows expr).
+            %% On Section 6.4.4 “Querying the context” of the TL-doc-0.3.0
+            %%   it explicitly states that ‘#.’ takes a dimension as input.
             {'#', {[0],Val}};
 
         ({tuple, _, Assocs}) -> {t, Assocs};
         ({tuple_element, _, Lhs, Rhs}) ->
-            case is_string(Lhs) of
-                    % Assumption: Lhs is a dimention (Grammar allows expr).
-                true -> {{[0],Lhs}, Rhs};
-                false -> {Lhs, Rhs}
-            end;
+            %% On Section 6.4.5 “Tuples” of the TL-doc-0.3.0, tuples are
+            %%   defined as a ‘set of (dimension, value) pairs’.
+            {{[0],Lhs}, Rhs};
 
         ({'or'=Op, _, A, B})  -> {primop, fun erlang:Op/2, [A,B]};
         ({'and'=Op, _, A, B}) -> {primop, fun erlang:Op/2, [A,B]};
@@ -70,9 +69,8 @@ rework_tree (Tree) ->
         ({'+'=Op, _, A, B})   -> {primop, fun erlang:Op/2, [A,B]};
         ({'-'=Op, _, A, B})   -> {primop, fun erlang:Op/2, [A,B]};
         ({'*'=Op, _, A, B})   -> {primop, fun erlang:Op/2, [A,B]};
-        % No '/' yet because floats.
-            %% http://stackoverflow.com/a/858649/1418165
-        ({'%', _, A, B})      -> {primop, fun (X,Y) -> (X rem Y + Y) rem Y end, [A,B]};
+        % No '/' yet because lack of floats.
+        ({'%', _, A, B})      -> {primop, fun mod/2, [A,B]};
 
         ({bool, _, Boolean}) -> Boolean;
         ({raw_string, _, S})    -> {string, S};
@@ -93,12 +91,8 @@ unwrap_elsifs ([{if_expr,_,Cond,Then}|Rest], Else) ->
     {'if', Cond, Then, unwrap_elsifs(Rest,Else)};
 unwrap_elsifs ([], Else) -> Else.
 
-is_string (List) when is_list(List) ->
-%% http://stackoverflow.com/a/8034011/1418165
-    lists:all(fun
-            (X) when X >= 32, X < 127 -> true;
-            (_)                       -> false
-        end, List);
-is_string (_) -> false.
+mod (X, Y) ->
+%% http://stackoverflow.com/a/858649/1418165
+    (X rem Y + Y) rem Y.
 
 %% End of Module.
