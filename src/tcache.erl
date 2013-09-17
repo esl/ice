@@ -16,7 +16,7 @@
 -record(state, { 
 	  ck    = 0,
 	  age   = 2,
-	  data  = ets:new(tcache, []),
+	  data  = ets:new(tcache, [named_table]),
 	  limit = undefined
 	 }).
 
@@ -29,7 +29,8 @@ start_link(Limit) ->
 init([Limit]) ->
   {ok, #state{ limit = Limit }}.
 
-terminate(_, _) ->
+terminate(_, S) ->
+  true = ets:delete(S#state.data),
   ok.
 
 %%------------------------------------------------------------------------------
