@@ -8,7 +8,7 @@
 %%-------------------------------------------------------------------------------------
 %% Constant values
 %%-------------------------------------------------------------------------------------
-eval(Const, _I, _E, _K, _D, _W, T) when is_number(Const) when is_boolean(Const) ->
+eval(Const, _I, _E, _K, _D, _W, T) when is_number(Const) orelse is_boolean(Const) ->
   {Const, T};
 
 eval({string, Str}, _I, _E, _K, _D, _W, T) ->
@@ -17,7 +17,7 @@ eval({string, Str}, _I, _E, _K, _D, _W, T) ->
 %%-------------------------------------------------------------------------------------
 %% Constant dimensions
 %%-------------------------------------------------------------------------------------
-eval({'?', Dim}, I, E, K, D, W, T) ->
+eval({'?', Dim}, _I, _E, K, _D, _W, _T) ->
   lookup_ordinate(K, Dim);
 
 %%-------------------------------------------------------------------------------------
@@ -167,7 +167,7 @@ eval({Pos,_}=Xi, _I, _E, _K, _D, _W, T) when is_list(Pos) ->
   {Xi, T};
 
 eval(Xi, I, E, K, D, W, T) when is_list(Xi) orelse is_atom(Xi) ->
-  {{D0, T0}, Dims} = eval1(Xi, I, E, K, [], W, T),
+  {{_D0, _T0}, Dims} = eval1(Xi, I, E, K, [], W, T),
   tcache:find(Xi, K, Dims, W, T).
 
 %%-------------------------------------------------------------------------------------
