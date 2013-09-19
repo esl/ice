@@ -86,10 +86,10 @@ eval({'#', E0}, I, E, K, D, W, T) ->
       {D0, T0};
     false ->
       case lists:member(D0, D) of
-	      true ->
-	        {lookup_ordinate(D0, K), T0};
-	      false ->
-	        {[D0], T0}
+	true ->
+	  {lookup_ordinate(D0, K), T0};
+	false ->
+	  {[D0], T0}
       end
   end;
 
