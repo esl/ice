@@ -2,13 +2,19 @@
 %% -*- coding: utf-8 -*-
 -module(tv).
 
-%% tv: Tea visualisation.
+%% tv: Tea Visualiser.
 
--export([]).
+-export([pass/1]).
 
 %% API
 
-
+pass (Thing) ->
+    case whereis(icy) of
+        undefined ->
+            {error, {unable_to_pass,server_down}};
+        _ ->
+            icy ! {pass, Thing}
+    end.
 
 %% Internals
 
