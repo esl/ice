@@ -8,11 +8,8 @@
 %%-------------------------------------------------------------------------------------
 %% Constant values
 %%-------------------------------------------------------------------------------------
-eval(Const, _I, _E, _K, _D, _W, T) when is_number(Const) ->
+eval(Const, _I, _E, _K, _D, _W, T) when is_number(Const) when is_boolean(Const) ->
   {Const, T};
-
-eval(Bool, _I, _E, _K, _D, _W, T) when is_boolean(Bool) ->
-  {Bool, T};
 
 eval({string, Str}, _I, _E, _K, _D, _W, T) ->
   {{string, Str}, T};
@@ -21,7 +18,7 @@ eval({string, Str}, _I, _E, _K, _D, _W, T) ->
 %% Constant dimensions
 %%-------------------------------------------------------------------------------------
 eval({'?', Dim}, I, E, K, D, W, T) ->
-  eval({'#', Dim}, I, E, K, D, W, T);
+  lookup_ordinate(K, Dim);
 
 %%-------------------------------------------------------------------------------------
 %% Primop
@@ -80,12 +77,6 @@ eval({'if', E0, E1, E2}, I, E, K, D, W, T) ->
   end;
 
 %%-------------------------------------------------------------------------------------
-%% Wherevar
-%%-------------------------------------------------------------------------------------
-eval({wherevar, E0, XiEis}, I, E, K, D, W, T) ->
-  eval(E0, I, tset:perturb(E, XiEis), K, D, W, T);
-
-%%-------------------------------------------------------------------------------------
 %% Dimensional Query
 %%-------------------------------------------------------------------------------------
 eval({'#', E0}, I, E, K, D, W, T) ->
@@ -105,14 +96,35 @@ eval({'#', E0}, I, E, K, D, W, T) ->
 %%------------------------------------------------------------------------------
 %% Base Abstraction
 %%------------------------------------------------------------------------------
-eval({b_abs, Is, Params, E}, _I, _E, _K, _D, _W, _T) ->
+eval({b_abs, _Is, _Params, _E0, _P}, _I, _E, _K, _D, _W, _T) ->
+  not_implemented;
+
+eval({b_apply, _E0, _E1}, _I, _E, _K, _D, _W, _T) ->
+  not_implemented;
+
+%%------------------------------------------------------------------------------
+%% Value Abstraction
+%%------------------------------------------------------------------------------
+eval({v_abs, _Is, _Params, _E0}, _I, _E, _K, _D, _W, _T) ->
+  not_implemented;
+
+eval({v_apply, _E0, _E1}, _I, _E, _K, _D, _W, _T) ->
+  not_implemented;
+
+%%------------------------------------------------------------------------------
+%% Intension Abstraction
+%%------------------------------------------------------------------------------
+eval({i_abs, _Is, _E0}, _I, _E, _K, _D, _W, _T) ->
+  not_implemented;
+
+eval({i_apply, _E0}, _I, _E, _K, _D, _W, _T) ->
   not_implemented;
 
 %%-------------------------------------------------------------------------------------
-%% Base Application
+%% Wherevar
 %%-------------------------------------------------------------------------------------
-eval({b_apply, E0, E1}, _I, _E, _K, _D, _W, _T) ->
-  not_implemented;
+eval({wherevar, E0, XiEis}, I, E, K, D, W, T) ->
+  eval(E0, I, tset:perturb(E, XiEis), K, D, W, T);
 
 %%-------------------------------------------------------------------------------------
 %% Wheredim
@@ -175,11 +187,11 @@ eval2(Xi, I, E, K, D, W, T) ->
   case D0 of
     {calc, W} ->
       case lists:keyfind(Xi, 1, E) of
-	      {_, E0} ->
-	        {D1, T1} = eval(E0, I, E, K, D, W, T0),
-	        tcache:add(Xi, K, D, W, T1, D1);
-	      false ->
-	        {error, undefined_id, Xi}
+	{_, E0} ->
+	  {D1, T1} = eval(E0, I, E, K, D, W, T0),
+	  tcache:add(Xi, K, D, W, T1, D1);
+	false ->
+	  {error, undefined_identifier, Xi}
       end;
     {calc, _W1} ->
       eval2(Xi, I, E, K, D, W, T0 + 1);
@@ -191,7 +203,7 @@ eval2(Xi, I, E, K, D, W, T) ->
 %% Internal
 %%-------------------------------------------------------------------------------------
 lookup_ordinate(_, []) ->
-  {error, dimension_undefined};
+  {error, undefined_dimension};
 lookup_ordinate(D, [{D,Ordinate}|_]) ->
   Ordinate;
 lookup_ordinate(D, [_|K]) ->
