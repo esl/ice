@@ -65,7 +65,9 @@ tuple_test() ->
   Tup1 = [{{[0],time}, 1}, {{[1], space}, 2}],
   Tup4 = [{{'?', {[0], time}}, 0}, {{'?', {[1], space}}, 1}],
   ?assertMatch({{te, Tup1}, _}, run_test({t, Tup1}, [], [], K, D, 0)),
-  ?assertMatch({[{[0], time}, {[1], space}], _}, run_test({t, Tup4})).
+  ?assertMatch({{te, [{{error, undefined_dimension}, _},
+		      {{error, undefined_dimension}, _}]}, 
+		_}, run_test({t, Tup4})).
 
 primop_test() ->
   K = [{{[0], time}, 100}, {{[1], space}, 100}],
