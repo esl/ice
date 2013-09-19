@@ -124,6 +124,17 @@ transform0_where(Vars, Dims, E0) ->
 %%------------------------------------------------------------------------------
 %% Instant Tests - Please improve these
 %%------------------------------------------------------------------------------
+fby() ->
+  %%------------------------------------------------------------------------------
+  %% The fby function
+  %%
+  %% fun fby.d A B = if #.d <= 0 then A else B @ [d <- #.d - 1] fi
+  %%------------------------------------------------------------------------------ 
+  {fn, "fby", [{b_param, d}, {n_param, "A"}, {n_param, "B"}],
+   {'if', tprimop:lte({'#', d}, 0),
+    "A",
+    {'@', "B", {t, [{d, tprimop:minus({'#',d}, 1)}]}}}}.
+
 d1_tournament() ->
   %%------------------------------------------------------------------------------
   %% The following function should be equivalent to the following:
@@ -138,7 +149,6 @@ d1_tournament() ->
   %%     fi
   %% end
   %%------------------------------------------------------------------------------
-
   {fn, "tournament", [{b_param, d}, {b_param, lim}, {n_param, "X"}],
    {where, "Y",
     [{var, "Y",
@@ -151,7 +161,8 @@ d1_tournament() ->
 
 
 test() ->
-  transform0(d1_tournament()).
+  transform0(d1_tournament()),
+  transform0(fby()).
 
 
 
