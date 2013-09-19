@@ -65,9 +65,7 @@ transform0({where, E0, VDisEis}) ->
   %% We should probably signal an error when the body contains other elements..
   Vars = [{Xi,transform0(Ei)} || {var,Xi,Ei} <- VDisEis],
   Dims = [{Xi,transform0(Ei)} || {dim,Xi,Ei} <- VDisEis],
-  {wheredim, 
-   {wherevar, transform0(E0), Vars},
-   Dims};
+  transform0_where(Vars, Dims, E0);
 
 %%------------------------------------------------------------------------------
 %% Dimensional Query
@@ -108,6 +106,20 @@ transform0_prime([{v_param, Param}|Ps], E) ->
   transform0_prime(Ps, {v_abs, [], [Param], E});
 transform0_prime([{n_param, Param}|Ps], E) ->
   transform0_prime(Ps, {n_abs, [], [Param], E}).
+
+%%------------------------------------------------------------------------------
+%% Transform0 where transforms a where clause into wherevar / wheredims.
+%%------------------------------------------------------------------------------
+transform0_where([], [], E0) ->
+  transform0(E0);
+transform0_where([], Dims, E0) ->
+  {wheredim, transform0(E0), Dims};
+transform0_where(Vars, [], E0) ->
+  {wherevar, transform0(E0), Vars};
+transform0_where(Vars, Dims, E0) ->
+  {wheredim,
+   {wherevar, transform0(E0), Vars},
+   Dims}.
 
 %%------------------------------------------------------------------------------
 %% Instant Tests - Please improve these
