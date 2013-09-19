@@ -14,12 +14,14 @@
 %% The processes must be ordered for the cache to work. 
 %%-------------------------------------------------------------------------------------
 spawn_n(Su, N) ->
+  tv:pass({creating_threads, N}),
   spawn_n(Su, N, []).
 
 spawn_n(Su, 0, Pids) ->
   lists:sort(Pids);
 spawn_n(Su, N, Pids) ->
   Pid = spawn(tthread, evaluator, [Su]),
+  tv:pass({thread_created, Pid}),
   spawn_n(Su, N-1, [Pid|Pids]).
 
 %%-------------------------------------------------------------------------------------
@@ -29,6 +31,7 @@ join(Pids, Xs, I, E, K, D, W, T) when length(Pids) == length(Xs) ->
   join(Pids, Xs, I, E, K, D, W, T, length(Xs)).
 
 join([], [], I, E, K, D, W, T, Lim) ->
+  tv:pass({stopping_thread,W}),
   sync(Lim);
 join([Pid|Pids], [X|Xs], I, E, K, D, W, T, Lim) ->
   Pid ! {Pid, X, I, E, K, D, W, T},

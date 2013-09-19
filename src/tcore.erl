@@ -177,6 +177,7 @@ eval2(Xi, I, E, K, D, W, T) ->
 	        {error, undefined_id, Xi}
       end;
     {calc, _W1} ->
+      tv:pass({thread_waiting, _W1}),
       eval2(Xi, I, E, K, D, W, T0 + 1);
     _ ->
       {D0, T0}
