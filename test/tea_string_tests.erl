@@ -32,7 +32,7 @@ tuple_test () ->
     SpaceD = {[0],"s"},
     ?assertEqual({ok, {t, [{TimeD,1}, {SpaceD,2}]}},
         tea:string(" [t <- 1, s <- 2] ")),
-    ?assertEqual({ok, {t, [{{'#',TimeD}, 0}, {{'#',SpaceD}, 1}]}},
+    ?assertEqual({ok, {t, [{{[0],{'#',TimeD}}, 0}, {{[0],{'#',SpaceD}}, 1}]}},
         tea:string(" [#.t <- 0, #.s <- 1] ")).
 
 primop_test () ->
