@@ -27,3 +27,6 @@ rebar:
 	cd rebar.d && ./bootstrap
 	mv rebar.d/rebar $@
 	rm -rf rebar.d/
+
+icy: test
+	erl -pa .eunit -pa deps/*/ebin -s icy -eval 'io:format("Icy at http://localhost:8888\n").'
