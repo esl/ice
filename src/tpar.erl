@@ -31,12 +31,8 @@ eval_seq([], _I, _E, _K, _D, _W, T, Acc) ->
   {lists:reverse(Acc), T};
 eval_seq([X|Xs], I, E, K, D, W, T, Acc) ->
   {D0, T1} = tcore:eval(X, I, E, K, D, W, T),
-  case T1 > T of
-    true ->
-      eval_seq(Xs, I, E, K, D, W, T1, [D0|Acc]);
-    false ->
-      eval_seq(Xs, I, E, K, D, W, T, [D0|Acc])
-  end.
+  NewT = case T1 > T of true -> T1; false -> T end,
+  eval_seq(Xs, I, E, K, D, W, NewT, [D0|Acc]).
 
 
 
