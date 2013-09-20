@@ -7,7 +7,10 @@
 
 %%------------------------------------------------------------------------------
 %% @doc Evaluate expressions in parallel
-%%------------------------------------------------------------------------------
+%%
+%% The order of the evaluated results is guaranteed to be the same as
+%% the order of the expressions specified.
+%% ------------------------------------------------------------------------------
 eval(Xs, I, E, K, D, W, T) ->
   Lim = length(Xs),
   Pids = tthread:spawn_n(self(), Lim),
