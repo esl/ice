@@ -3,23 +3,18 @@
 %%-------------------------------------------------------------------------------------
 -module(tpar).
 
--export([eval/7, eval_seq/7, eval_tuple/7]).
+-export([eval/7, eval_seq/7]).
 
 %%------------------------------------------------------------------------------
 %% @doc Evaluate expressions in parallel
-%%------------------------------------------------------------------------------
+%%
+%% The order of the evaluated results is guaranteed to be the same as
+%% the order of the expressions specified.
+%% ------------------------------------------------------------------------------
 eval(Xs, I, E, K, D, W, T) ->
   Lim = length(Xs),
   Pids = tthread:spawn_n(self(), Lim),
   tthread:join(Pids, Xs, I, E, K, D, W, T).
-
-%%-------------------------------------------------------------------------------------
-%% @doc Evaluate tuples in parallel
-%%-------------------------------------------------------------------------------------
-eval_tuple(Xs, I, E, K, D, W, T) ->
-  Lim = length(Xs) * 2,
-  Pids = tthread:spawn_n(self(), Lim),
-  tthread:join_tuple(Pids, Xs, I, E, K, D, W, T).
 
 %%-------------------------------------------------------------------------------------
 %% @doc Evaluate expressions sequentially (useful for debugging)
