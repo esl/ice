@@ -27,7 +27,7 @@ eval_tuple(Xs, I, E, K, D, W, T) ->
 eval_seq(Xs, I, E, K, D, W, T) ->
   eval_seq(Xs, I, E, K, D, W, T, []).
 
-eval_seq([], I, E, K, D, W, T, Acc) ->
+eval_seq([], _I, _E, _K, _D, _W, T, Acc) ->
   {lists:reverse(Acc), T};
 eval_seq([X|Xs], I, E, K, D, W, T, Acc) ->
   {D0, T1} = tcore:eval(X, I, E, K, D, W, T),
