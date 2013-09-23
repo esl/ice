@@ -80,6 +80,7 @@ rework_tree (Tree) ->
         ({'@', _, A, B}) -> {'@', A, B};
 
         ({int,_,N}) -> N;
+        ({float,_,N}) -> N;
         ({id,_,Name}) -> Name
     end,
     case tvisitor:visit(V, Tree, bottom_up) of
