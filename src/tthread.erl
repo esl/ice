@@ -3,7 +3,7 @@
 %%-------------------------------------------------------------------------------------
 -module(tthread).
 
--export([spawn_n/2, join/8, join_tuple/8]).
+-export([spawn_n/2, join/8]).
 -export([evaluator/1]).
 
 %%-------------------------------------------------------------------------------------
@@ -33,18 +33,6 @@ join([], [], I, E, K, D, W, T, Lim) ->
 join([Pid|Pids], [X|Xs], I, E, K, D, W, T, Lim) ->
   Pid ! {Pid, X, I, E, K, D, W, T},
   join(Pids, Xs, I, E, K, D, W, T, Lim).
-
-from_tuple_list(Xs) ->
-  from_tuple_list(Xs, []).
-
-from_tuple_list([], TL) ->
-  TL;
-from_tuple_list([{Xi,Ei}|XiEis], TL) ->
-  from_tuple_list(XiEis, TL ++ [Xi, Ei]).
-
-join_tuple(Pids, Xs, I, E, K, D, W, T) ->
-  Xs1 = from_tuple_list(Xs),
-  join(Pids, Xs1, I, E, K, D, W, T).
 
 %%-------------------------------------------------------------------------------------
 %% @doc Synchronize thread W with threads W + 1 to Wn - 1 by receiving their results.
