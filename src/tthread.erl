@@ -14,7 +14,7 @@
 %% The processes must be ordered for the cache to work. 
 %%-------------------------------------------------------------------------------------
 spawn_n(Su, N) ->
-  tv:pass({creating_threads, N}),
+  tv:pass({creating_n_threads, N}),
   spawn_n(Su, N, []).
 
 spawn_n(Su, 0, Pids) ->
@@ -31,10 +31,10 @@ join(Pids, Xs, I, E, K, D, W, T) when length(Pids) == length(Xs) ->
   join(Pids, Xs, I, E, K, D, W, T, length(Xs)).
 
 join([], [], I, E, K, D, W, T, Lim) ->
-  tv:pass({stopping_thread,W}),
   sync(Lim);
 join([Pid|Pids], [X|Xs], I, E, K, D, W, T, Lim) ->
   Pid ! {Pid, X, I, E, K, D, W, T},
+  tv:pass({joining_thread,Pid}),
   join(Pids, Xs, I, E, K, D, W, T, Lim).
 
 from_tuple_list(Xs) ->
@@ -75,5 +75,6 @@ evaluator(Su) ->
 				    
 evaluator(Su, X, I, E, K, D, Wi, T) ->
   {D0, T0} = tcore:eval(X, I, E, K, D, Wi, T),
+  tv:pass({thread_evaluated, Wi, {X,D,T}, {D0,T0}}),
   Su ! {Wi, {D0, T0}}.
 
