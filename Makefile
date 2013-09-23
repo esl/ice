@@ -1,13 +1,20 @@
 all: compile
 .PHONY: all
 
-compile: rebar
-	./rebar get-deps compile
+compile: rebar deps
+	./rebar update-deps compile
 .PHONY: compile
+
+deps: rebar
+	./rebar get-deps compile
 
 clean: rebar
 	./rebar clean
 .PHONY: clean
+
+distclean: clean
+	rm -rf deps ebin .eunit rebar
+.PHONY: distclean
 
 test: compile
 	./rebar skip_deps=true eunit
