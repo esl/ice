@@ -14,6 +14,9 @@ eval(Const, _I, _E, _K, _D, _W, T) when is_number(Const) orelse is_boolean(Const
 eval({string, Str}, _I, _E, _K, _D, _W, T) ->
   {{string, Str}, T};
 
+eval({char, Str}, _I, _E, _K, _D, _W, T) ->
+  {{char, Str}, T};
+
 %%-------------------------------------------------------------------------------------
 %% Constant dimensions
 %%-------------------------------------------------------------------------------------
