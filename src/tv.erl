@@ -13,7 +13,7 @@ pass (Thing) ->
         undefined ->
             {error, {unable_to_pass,server_down}};
         _ ->
-            icy ! {pass, Thing}
+            icy:pass(Thing)
     end.
 
 %% Internals
