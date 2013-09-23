@@ -36,7 +36,8 @@ eval({primop, F, Eis}, I, E, K, D, W, T) ->
 %% Tuple Expressions
 %%-------------------------------------------------------------------------------------
 eval({t, Es}, I, E, K, D, W, T) ->
-  {Dis, MaxT} = tpar:eval_tuple(Es, I, E, K, D, W, T),
+  XiEis = lists:flatmap(fun({Xi,Ei}) -> [Xi,Ei] end, Es),
+  {Dis, MaxT} = tpar:eval(XiEis, I, E, K, D, W, T),
   case tset:union_d(Dis) of
     {true, Dims} ->
       {Dims, MaxT};
