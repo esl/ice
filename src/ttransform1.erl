@@ -335,3 +335,33 @@ wheredim_eval_test_() ->
     ?_assertMatch({46,_},
                   tcore:eval(T1, [],[], [], [], [0], 0))
    ]}.
+
+where_eval_test_() ->
+  T =
+    {where,
+     "X",
+     [{dim,"t",46},
+      {var,"X",{'#',{dim,"t"}}}]},
+  ExpectedT0 =
+    {wheredim,
+     {wherevar,
+      "X",
+      [{"X",{'#',{dim,"t"}}}]},
+     [{"t",46}]},
+  T0 = ttransform0:transform0(T),
+  ?assertEqual(ExpectedT0, T0),
+  ExpectedT1 =
+    {wheredim,
+     {wherevar,
+      "X",
+      [{"X",{'#',{dim,{[],1},"t"}}}]},
+     [{{dim,{[],1},"t"},46}]},
+  T1 = transform1(T0),
+  ?assertEqual(ExpectedT1, T1),
+  {setup,
+   _Setup = fun() -> tcache:start_link(100), ok end,
+   _Cleanup = fun(_) -> tcache:stop() end,
+   [
+    ?_assertMatch({46,_},
+                  tcore:eval(T1, [],[], [], [], [0], 0))
+   ]}.
