@@ -53,17 +53,11 @@ string_test() ->
   S = {string, "Test"},
   ?assertMatch({S, _}, run_test(S)).
 
-constant_dim_test() ->
-  CD = {'?', {dim, time}},
-  K = [{{dim, time}, 100}],
-  D = [{dim, time}],
-  ?assertMatch({100, _}, run_test(CD, [], [], K, D, 0)).
-
 tuple_test() ->
   K = [{{dim, time}, 100}, {{dim, space}, 100}],
   D = [{dim, time}, {dim, space}],
   Tup1 = [{{dim,time}, 1}, {{dim, space}, 2}],
-  Tup4 = [{{'?', {dim, time}}, 0}, {{'?', {dim, space}}, 1}],
+  Tup4 = [{{'#', {dim, time}}, 0}, {{'#', {dim, space}}, 1}], %% Is this case really usable without dimensions as ground values?
   ?assertMatch({{te, Tup1}, _}, run_test({t, Tup1}, [], [], K, D, 0)),
   ?assertMatch({{te, [{{error, undefined_dimension}, _},
 		      {{error, undefined_dimension}, _}]}, 
@@ -219,7 +213,6 @@ run_test(Src, I, E, K, D, T) ->
 run_tests() ->
   const_test(),
   string_test(),
-  constant_dim_test(),
   tuple_test(),
   primop_test(),
   perturb_test(),
