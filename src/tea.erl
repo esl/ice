@@ -75,10 +75,12 @@ rework_tree (Tree) ->
         ({bool, _, Boolean}) -> Boolean;
         ({raw_string, _, S})    -> {string, S};
         ({cooked_string, _, S}) -> {string, S};
+        ({char, _, Char}) -> {char, C};
 
         ({'@', _, A, B}) -> {'@', A, B};
 
         ({int,_,N}) -> N;
+        ({float,_,N}) -> N;
         ({id,_,Name}) -> Name
     end,
     case tvisitor:visit(V, Tree, bottom_up) of
