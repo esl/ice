@@ -66,7 +66,7 @@ primop_test() ->
   AddDims = {primop, fun erlang:'+'/2, [{'#', {dim, time}},
 					{'#', {dim, space}}]},
   ?assertMatch({30, _}, run_test(AddNs)),
-  ?assertMatch({[{dim,time},{dim,space}], _}, run_test(AddDims, [], [], K, [], 0)),
+  ?assertMatch({[{dim,space},{dim,time}], _}, run_test(AddDims, [], [], K, [], 0)),
   ?assertMatch({200, _}, run_test(AddDims, [], [], K, D, 0)).
 
 perturb_test() ->
