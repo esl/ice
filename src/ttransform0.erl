@@ -105,9 +105,15 @@ transform0({where, E0, VDisEis}) ->
   Dims = [{Xi,transform0(Ei)} || {dim,Xi,Ei} <- VDisEis],
   transform0_where(Vars, Dims, E0);
 
-%%------------------------------------------------------------------------------
-%% Identifiers
-%%------------------------------------------------------------------------------
+%%-------------------------------------------------------------------------------------
+%% Dimension Identifiers
+%%-------------------------------------------------------------------------------------
+transform0({dim, Xi}=Di) when is_list(Xi) orelse is_atom(Xi) ->
+  Di;
+
+%%-------------------------------------------------------------------------------------
+%% Variable Identifiers
+%%-------------------------------------------------------------------------------------
 transform0(Xi) when is_list(Xi) orelse is_atom(Xi) ->
   Xi.
 
@@ -151,9 +157,9 @@ fby() ->
   %% fun fby.d A B = if #.d <= 0 then A else B @ [d <- #.d - 1] fi
   %%------------------------------------------------------------------------------ 
   {fn, "fby", [{b_param, d}, {n_param, "A"}, {n_param, "B"}],
-   {'if', tprimop:lte({'#', d}, 0),
+   {'if', tprimop:lte({'#', {dim,d}}, 0),
     "A",
-    {'@', "B", {t, [{d, tprimop:minus({'#',d}, 1)}]}}}}.
+    {'@', "B", {t, [{{dim,d}, tprimop:minus({'#',{dim,d}}, 1)}]}}}}.
 
 d1_tournament() ->
   %%------------------------------------------------------------------------------
@@ -172,12 +178,12 @@ d1_tournament() ->
   {fn, "tournament", [{b_param, d}, {b_param, lim}, {n_param, "X"}],
    {where, "Y",
     [{var, "Y",
-      {'if', tprimop:lte({'#', time}, 0),
+      {'if', tprimop:lte({'#', {dim,time}}, 0),
        "X",
        {'@',
-	tprimop:plus({'@', "Y", {t, [{d, tprimop:plus(tprimop:times({'#', d}, 2), 1)}]}},
-		     {'@', "Y", {t, [{d, tprimop:times({'#', d}, 2)}]}}),
-	{t, [{time, tprimop:minus({'#', time}, 1)}]}}}}]}}.
+	tprimop:plus({'@', "Y", {t, [{{dim,d}, tprimop:plus(tprimop:times({'#', {dim,d}}, 2), 1)}]}},
+		     {'@', "Y", {t, [{{dim,d}, tprimop:times({'#', {dim,d}}, 2)}]}}),
+	{t, [{{dim,time}, tprimop:minus({'#', {dim,time}}, 1)}]}}}}]}}.
 
 
 test() ->

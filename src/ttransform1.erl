@@ -9,8 +9,8 @@
 
 %%------------------------------------------------------------------------------
 %% This transformation module transforms wheredim identifiers into hidden
-%% dimensions (e.g: t -> {dim, {Pos,Idx}, t}) and references to these
-%% identifiers to references to the hidden dimensions (e.g: t ->
+%% dimensions (e.g: {dim, t} -> {dim, {Pos,Idx}, t}) and references to these
+%% identifiers to references to the hidden dimensions (e.g: {dim, t} ->
 %% {dim, {Pos,Idx}, t}).
 %%
 %% Transformed expressions are wheredim, wherevar, intension abstractions,
@@ -144,19 +144,23 @@ transform1({wheredim, E0, XiEis}, P, H) ->
   {wheredim, NewE0,
    DimsEis};
 
-%%------------------------------------------------------------------------------
-%% Identifiers
-%%------------------------------------------------------------------------------
-%% FIXME Not distinguishing between variable identifier and "dimension
-%% identifier" leads to variable identifiers with same name of hidden
-%% dimension being replaced with {dim,...}
-transform1(Xi, _P, H) when is_list(Xi) orelse is_atom(Xi) ->
+%%-------------------------------------------------------------------------------------
+%% Dimension Identifiers
+%%-------------------------------------------------------------------------------------
+transform1({dim, Xi}=Di, _P, H) when is_list(Xi) orelse is_atom(Xi) ->
   case lists:keyfind(Xi, 3, H) of
     {dim, _, Xi} = DimXi ->
       DimXi;
     false ->
-      Xi
-  end.
+      Di
+  end;
+
+%%-------------------------------------------------------------------------------------
+%% Variable Identifiers
+%%-------------------------------------------------------------------------------------
+transform1(Xi, _P, _H) when is_list(Xi) orelse is_atom(Xi) ->
+  Xi.
+
 
 %%-------------------------------------------------------------------------------------
 %% Internal - Deterministic generation of hidden dimensions using
@@ -232,11 +236,11 @@ rules_test_() ->
             {string,"ciao"}],
   ConstTests = lists:zip(Consts, Consts),
   WheredimTest = {WheredimTree, WheredimExpected} =
-    { {where,    {'#',            "t" }, [{ dim,       "t", 46}]} ,
+    { {where,    {'#',{dim,       "t"}}, [{ dim,       "t", 46}]},
       {wheredim, {'#',{dim,{[],1},"t"}}, [{{dim,{[],1},"t"},46}]} },
   WheredimTreeF =
     fun(DimName) when is_list(DimName) ->
-        {where, {'#',DimName}, [{dim,DimName,46}]}
+        {where, {'#',{dim,DimName}}, [{dim,DimName,46}]}
     end,
   WheredimExpectedF =
     fun(DimName, Pos) when is_list(DimName), is_list(Pos) ->
@@ -281,7 +285,7 @@ nested_wheredims_test() ->
   T =
     {where,
      {where,
-      {'#',"t"},
+      {'#',{dim,"t"}},
       [{dim,"t",58}]},
      [{dim,"t",46}]},
   R = ttransform0:transform0(T),
@@ -293,7 +297,7 @@ nested_wheredims_test() ->
      [ {{dim,{[],1},"t"},46} ]},
   ?assertEqual(Expected, transform1(R)).
 
-wheredim_with_string_dim_id_test() ->
+var_id_in_wheredim_is_not_renamed_test() ->
   T =
     {where,
      "t",
@@ -302,7 +306,7 @@ wheredim_with_string_dim_id_test() ->
   Expected =
     {wheredim,
      {wherevar,
-      {dim,{[],1},"t"}, %% FIXME var id shall not be replaced
+      "t",
       [ {"t",58} ]},
      [ {{dim,{[],1},"t"},46} ]},
   ?assertEqual(Expected, transform1(R)).
