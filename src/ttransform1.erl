@@ -3,6 +3,8 @@
 %%------------------------------------------------------------------------------
 -module(ttransform1).
 
+-include_lib("eunit/include/eunit.hrl").
+
 -export([test/0]).
 
 %%------------------------------------------------------------------------------
@@ -149,9 +151,18 @@ test() ->
   transform1(R, []).
 
 
-
-
-
-			    
-
-
+nested_wheredims_test() ->
+  T =
+    {where,
+     {where,
+      {'#',"t"},
+      [{dim,"t",58}]},
+     [{dim,"t",46}]},
+  R = ttransform0:transform0(T),
+  Expected =
+    {wheredim,
+     {wheredim,
+      {'#',{'?',{dim,"t"}}},
+      [ {{dim,"t"},58} ]},
+     [ {{dim,"t"},46} ]},
+  ?assertEqual(Expected, transform1(R, [])).
