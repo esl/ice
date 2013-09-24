@@ -10,9 +10,12 @@
 
 -export([i/1]).%
 i (String) ->
+    tv:pass(?MODULE, {i, self(), String}),
     {ok, Tree} = string(String),
     tcache:start_link(100),
-    tcore:eval(Tree, [],[],[],[], [0], 0).
+    R = tcore:eval(Tree, [],[],[],[], [0], 0),
+    tv:pass(?MODULE, {result, R}),
+    R.
 
 -spec string (string()) -> {ok | error, term()}.
 string (TeaCode) ->
