@@ -130,7 +130,6 @@ where
     fi
   var A = C
 end"),
-  ?debugVal(T),
   D = [],
   ?assertMatch({46, _}, tcore:eval(T, [],[],[], D, [0], 0)).
 
