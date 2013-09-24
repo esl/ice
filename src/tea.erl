@@ -75,7 +75,7 @@ rework_tree (Tree) ->
         ({bool, _, Boolean}) -> Boolean;
         ({raw_string, _, S})    -> {string, S};
         ({cooked_string, _, S}) -> {string, S};
-        ({char, _, Char}) -> {char, C};
+        ({char, _, Char}) -> {char, Char};
 
         ({'@', _, A, B}) -> {'@', A, B};
 
