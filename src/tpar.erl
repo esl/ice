@@ -15,7 +15,7 @@ eval(Xs, I, E, K, D, W, T) ->
   Lim = length(Xs),
   Pids = tthread:spawn_n(self(), Lim),
   R = tthread:join(Pids, Xs, I, E, K, D, W, T),
-  tv:pass({par_eval, Lim, Pids, R}),
+  tv:pass({par_eval, self(), Pids, Lim, Xs, I, E, K, D, W, T, R}),
   R.
 
 %%-------------------------------------------------------------------------------------
