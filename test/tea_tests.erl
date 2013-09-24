@@ -67,7 +67,7 @@ primop2_test_ () ->
     SpaceD = {dim,"s"},
     K = [{TimeD,100}, {SpaceD,100}],
     fun () ->
-        ?assertMatch({[TimeD,SpaceD], _},
+        ?assertMatch({[SpaceD,TimeD], _},
             tcore:eval(Tree, [],[],K, [], [0], 0))
     end.
 
