@@ -63,6 +63,6 @@ evaluator(Su) ->
 				    
 evaluator(Su, X, I, E, K, D, Wi, T) ->
   {D0, T0} = tcore:eval(X, I, E, K, D, Wi, T),
-  tv:hook(thread_evaluated, {Su, {X,D,T}, {D0,T0}}),
+  tv:hook(thread_evaluated, {Su, {X, I, {e,E}, K, D, Wi, T}, {D0,T0}}),
   Su ! {Wi, {D0, T0}}.
 

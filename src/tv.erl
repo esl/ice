@@ -14,10 +14,10 @@
 -spec hook (string() | atom(), term()) -> any().
 hook (Name, Thing) ->
     case whereis(icy) of
-        undefined ->
-            {error, {unable_to_pass,server_down}};
+        _P when is_pid(_P) ->
+            icy:pass(Name, icy:time(), Thing);
         _ ->
-            icy:pass({Name, Thing})
+            {error, {unable_to_pass,server_down}}
     end.
 
 %% Internals
