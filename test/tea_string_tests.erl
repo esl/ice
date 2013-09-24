@@ -24,20 +24,20 @@ string_test () ->
 constant_dim_test () ->
     {ok, Tree} = tea:string("#.t"),
     ?assertEqual(
-        {'#', {[0],"t"}},
+        {'#', {dim,"t"}},
         Tree).
 
 tuple_test () ->
-    TimeD = {[0],"t"},
-    SpaceD = {[0],"s"},
+    TimeD = {dim,"t"},
+    SpaceD = {dim,"s"},
     ?assertEqual({ok, {t, [{TimeD,1}, {SpaceD,2}]}},
         tea:string(" [t <- 1, s <- 2] ")),
-    ?assertEqual({ok, {t, [{{[0],{'#',TimeD}}, 0}, {{[0],{'#',SpaceD}}, 1}]}},
+    ?assertEqual({ok, {t, [{{dim,{'#',TimeD}}, 0}, {{dim,{'#',SpaceD}}, 1}]}},
         tea:string(" [#.t <- 0, #.s <- 1] ")).
 
 primop_test () ->
-    TimeD = {[0],"t"},
-    SpaceD = {[0],"s"},
+    TimeD = {dim,"t"},
+    SpaceD = {dim,"s"},
     ?assertEqual(
         {ok, {primop, fun erlang:'+'/2, [10,20]}},
         tea:string(" 10 + 20 ")),
@@ -46,8 +46,8 @@ primop_test () ->
         tea:string(" #.t + #.s ")).
 
 perturb_test () ->
-    TimeD = {[0],"t"},
-    SpaceD = {[0],"s"},
+    TimeD = {dim,"t"},
+    SpaceD = {dim,"s"},
     ?assertEqual(
         {ok, {'@', {'#',SpaceD}, {t,[{SpaceD,0}]}}},
         tea:string(" #.s @ [s <- 0] ")),

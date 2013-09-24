@@ -58,7 +58,7 @@ e2_test_ () ->
         where
             dim t <- 1
         end"),
-    SpaceD = {[0],"s"},
+    SpaceD = {dim,"s"},
     D = [],
     {setup, fun () -> tcache:start_link(100) end,
             fun (_) -> tcache:stop() end,

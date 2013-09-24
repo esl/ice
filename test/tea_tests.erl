@@ -36,8 +36,8 @@ string_test_ () ->
 
 constant_dim_test_ () ->
     {ok, Tree} = tea:string("#.t"),
-    K = [{{[0],"t"}, 100}],
-    D = [{[0],"t"}],
+    K = [{{dim,"t"}, 100}],
+    D = [{dim,"t"}],
     fun () ->
         ?assertMatch({100, _},
             tcore:eval(Tree, [],[],K, D, [0], 0))
@@ -45,8 +45,8 @@ constant_dim_test_ () ->
 
 tuple1_test_ () ->
     {ok, Tree} = tea:string(" [t <- 1, s <- 2] "),
-    TimeD = {[0],"t"},
-    SpaceD = {[0],"s"},
+    TimeD = {dim,"t"},
+    SpaceD = {dim,"s"},
     K = [{TimeD,100}, {SpaceD,100}],
     D = [TimeD,SpaceD],
     fun () ->
@@ -63,8 +63,8 @@ primop1_test_ () ->
 
 primop2_test_ () ->
     {ok, Tree} = tea:string(" #.t + #.s "),
-    TimeD = {[0],"t"},
-    SpaceD = {[0],"s"},
+    TimeD = {dim,"t"},
+    SpaceD = {dim,"s"},
     K = [{TimeD,100}, {SpaceD,100}],
     fun () ->
         ?assertMatch({[TimeD,SpaceD], _},
@@ -73,8 +73,8 @@ primop2_test_ () ->
 
 primop3_test_ () ->
     {ok, Tree} = tea:string(" #.t + #.s "),
-    TimeD = {[0],"t"},
-    SpaceD = {[0],"s"},
+    TimeD = {dim,"t"},
+    SpaceD = {dim,"s"},
     K = [{TimeD,100}, {SpaceD,100}],
     D = [SpaceD, TimeD],
     fun () ->
@@ -83,8 +83,8 @@ primop3_test_ () ->
     end.
 
 perturb_test_ () ->
-    TimeD = {[0],"t"},
-    SpaceD = {[0],"s"},
+    TimeD = {dim,"t"},
+    SpaceD = {dim,"s"},
     K = [{TimeD,100}, {SpaceD,100}],
     {ok, E1} = tea:string(" #.s @ [s <- 0] "),
     {ok, E2} = tea:string(" #.t @ [s <- 0] "),

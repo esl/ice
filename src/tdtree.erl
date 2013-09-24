@@ -139,37 +139,37 @@ test_data_2() ->
     [{node, {"B", [{s, 0}], 1}, []}]}].
 
 test_data_3() ->
-  [{node,{"B",[],{i,[{[1],space}],[[{{[1],space},0}]]}},
-              [{node,{"B",[{{[1],space},0}],1},[]}]},
-        {node,{"A",[],{i,[{[0],time}],[[{{[0],time},0}],[{{[0],time},1}]]}},
-              [{node,{"A",[{{[0],time},0}],1},[]},
+  [{node,{"B",[],{i,[{dim,space}],[[{{dim,space},0}]]}},
+              [{node,{"B",[{{dim,space},0}],1},[]}]},
+        {node,{"A",[],{i,[{dim,time}],[[{{dim,time},0}],[{{dim,time},1}]]}},
+              [{node,{"A",[{{dim,time},0}],1},[]},
                {node,{"A",
-                      [{{[0],time},1}],
-                      {i,[{[1],space}],[[{{[1],space},0}]]}},
-                     [{node,{"A",[{{[0],time},1},{{[1],space},0}],{calc,[0]}},
+                      [{{dim,time},1}],
+                      {i,[{dim,space}],[[{{dim,space},0}]]}},
+                     [{node,{"A",[{{dim,time},1},{{dim,space},0}],{calc,[0]}},
                             []}]}]}].
 
 test_data_4() ->
-  [{node,{"B",[],{i,[{[1],space}],[[{{[1],space},1}]]}},
-              [{node,{"B",[{{[1],space},1}],1},[]}]},
+  [{node,{"B",[],{i,[{dim,space}],[[{{dim,space},1}]]}},
+              [{node,{"B",[{{dim,space},1}],1},[]}]},
    {node,{"A",[],
-	  {i,[{[0],time}],
-	   [[{{[0],time},0}],[{{[0],time},1}],[{{[0],time},2}]]}},
-    [{node,{"A",[{{[0],time},0}],1},[]},
+	  {i,[{dim,time}],
+	   [[{{dim,time},0}],[{{dim,time},1}],[{{dim,time},2}]]}},
+    [{node,{"A",[{{dim,time},0}],1},[]},
      {node,{"A",
-	    [{{[0],time},2}],
-	    {i,[{[1],space}],[[{{[1],space},0}]]}},
-      [{node,{"A",[{{[0],time},2},{{[1],space},0}],{calc,[0]}},
+	    [{{dim,time},2}],
+	    {i,[{dim,space}],[[{{dim,space},0}]]}},
+      [{node,{"A",[{{dim,time},2},{{dim,space},0}],{calc,[0]}},
 	[]}]},
      {node,{"A",
-	    [{{[0],time},1}],
-	    {i,[{[1],space}],[[{{[1],space},0}],[{{[1],space},1}]]}},
+	    [{{dim,time},1}],
+	    {i,[{dim,space}],[[{{dim,space},0}],[{{dim,space},1}]]}},
       [{node,{"A",
-	      [{{[0],time},1},{{[1],space},0}],
+	      [{{dim,time},1},{{dim,space},0}],
 	      {calc,[1]}},
 	[]},
        {node,{"A",
-	      [{{[0],time},1},{{[1],space},1}],
+	      [{{dim,time},1},{{dim,space},1}],
 	      {calc,[1]}},
 	[]}]}]}].
 
@@ -197,11 +197,11 @@ test() ->
   lookup({"B", [{t, 0}, {s, 0}]},DT9),
   
   DTT1 = insert({"A", [], {calc,[0]}}, []),
-  DTT2 = insert({"A", [], [{[0],t}]}, DTT1).
+  DTT2 = insert({"A", [], [{dim,t}]}, DTT1).
 
 test_2() ->  
-  lookup({"A", [{{[0],time},1},{{[1],space},0}]}, test_data_3()).
+  lookup({"A", [{{dim,time},1},{{dim,space},0}]}, test_data_3()).
 
 test_3() ->  
-  lookup({"A", [{{[0],time},1},{{[1],space},1}]}, test_data_4()).
+  lookup({"A", [{{dim,time},1},{{dim,space},1}]}, test_data_4()).
   

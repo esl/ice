@@ -20,7 +20,7 @@ who_cares_about_known_dims_test_() ->
      ]}.
 
 context_query_needs_dim() ->
-    TimeD = {[0],"t"},
+    TimeD = {dim,"t"},
     T = {'#',TimeD},
     K = [{TimeD,46}],
     D = [],
@@ -28,7 +28,7 @@ context_query_needs_dim() ->
                  tcore:eval(T, [],[], K, D, [0], 0)).
 
 context_perturbation_does_not_need_dim() ->
-    TimeD = {[0],"t"},
+    TimeD = {dim,"t"},
     T = {'@',
          {'#',TimeD},
          {t,[{TimeD,46}]}},
@@ -44,7 +44,7 @@ wherevar_does_not_need_dim() ->
                  tcore:eval(T, [],[],[], D, [0], 0)).
 
 wheredim_does_not_need_dim() ->
-    TimeD = {[],"t"},
+    TimeD = {dim,"t"},
     T = {wheredim,
          {'#',TimeD},
          [{TimeD,58}]},
@@ -53,7 +53,7 @@ wheredim_does_not_need_dim() ->
         tcore:eval(T, [],[],[], D, [0], 0)).
 
 wherevar_inside_wheredim_does_not_need_dim() ->
-    TimeD = {[0],"t"},
+    TimeD = {dim,"t"},
     T = {wheredim,
          {wherevar,"X",
           [{"X",{'#',TimeD}}]},
