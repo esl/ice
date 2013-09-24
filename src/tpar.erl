@@ -14,7 +14,9 @@
 eval(Xs, I, E, K, D, W, T) ->
   Lim = length(Xs),
   Pids = tthread:spawn_n(self(), Lim),
-  tthread:join(Pids, Xs, I, E, K, D, W, T).
+  R = tthread:join(Pids, Xs, I, E, K, D, W, T),
+  tv:pass({par_eval, Lim, Pids, R}),
+  R.
 
 %%-------------------------------------------------------------------------------------
 %% @doc Evaluate expressions sequentially (useful for debugging)

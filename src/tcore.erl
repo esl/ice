@@ -9,21 +9,25 @@
 %% Constant values
 %%-------------------------------------------------------------------------------------
 eval(Const, _I, _E, _K, _D, _W, T) when is_number(Const) orelse is_boolean(Const) ->
+  tv:pass({?MODULE, {const,Const}}),
   {Const, T};
 
 eval({string, Str}, _I, _E, _K, _D, _W, T) ->
+  tv:pass({?MODULE, {string,Str}}),
   {{string, Str}, T};
 
 %%-------------------------------------------------------------------------------------
 %% Constant dimensions
 %%-------------------------------------------------------------------------------------
 eval({'?', Dim}, _I, _E, K, _D, _W, T) ->
+  tv:pass({?MODULE, {'?',Dim}}),
   {lookup_ordinate(Dim, K), T};
 
 %%-------------------------------------------------------------------------------------
 %% Primop
 %%-------------------------------------------------------------------------------------
 eval({primop, F, Eis}, I, E, K, D, W, T) ->
+  tv:pass({?MODULE, {primop,F,Eis}}),
   {Dis, MaxT} = tpar:eval(Eis, I, E, K, D, W, T),
   case tset:union_d(Dis) of
     {true, Dims} ->
@@ -36,6 +40,7 @@ eval({primop, F, Eis}, I, E, K, D, W, T) ->
 %% Tuple Expressions
 %%-------------------------------------------------------------------------------------
 eval({t, Es}, I, E, K, D, W, T) ->
+  tv:pass({?MODULE, {t,Es}}),
   XiEis = lists:flatmap(fun({Xi,Ei}) -> [Xi,Ei] end, Es),
   {Dis, MaxT} = tpar:eval(XiEis, I, E, K, D, W, T),
   case tset:union_d(Dis) of
@@ -50,6 +55,7 @@ eval({t, Es}, I, E, K, D, W, T) ->
 %% Context Perturbation
 %%-------------------------------------------------------------------------------------
 eval({'@', E0, E1}, I, E, K, D, W, T) ->
+  tv:pass({?MODULE, {'@',E0,E1}}),
   {Di, T1} = eval(E1, I, E, K, D, W, T),
   case tset:is_k(Di) of
     true ->
@@ -65,6 +71,7 @@ eval({'@', E0, E1}, I, E, K, D, W, T) ->
 %% Conditional
 %%-------------------------------------------------------------------------------------
 eval({'if', E0, E1, E2}, I, E, K, D, W, T) ->
+  tv:pass({?MODULE, {'if',E0,E1,E2}}),
   {D0, T0} = eval(E0, I, E, K, D, W, T),
   case tset:is_k(D0) of
     true ->
@@ -81,6 +88,7 @@ eval({'if', E0, E1, E2}, I, E, K, D, W, T) ->
 %% Dimensional Query
 %%-------------------------------------------------------------------------------------
 eval({'#', E0}, I, E, K, D, W, T) ->
+  tv:pass({?MODULE, {'#',E0}}),
   {D0, T0} = eval(E0, I, E, K, D, W, T),
   case tset:is_k(D0) of
     true ->
@@ -125,12 +133,14 @@ eval({i_apply, _E0}, _I, _E, _K, _D, _W, _T) ->
 %% Wherevar
 %%-------------------------------------------------------------------------------------
 eval({wherevar, E0, XiEis}, I, E, K, D, W, T) ->
+  tv:pass({?MODULE, {wherevar,E0,XiEis}}),
   eval(E0, I, tset:perturb(E, XiEis), K, D, W, T);
 
 %%-------------------------------------------------------------------------------------
 %% Wheredim
 %%-------------------------------------------------------------------------------------
 eval({wheredim, E0, XiEis}, I, E, K, D, W, T) ->
+  tv:pass({?MODULE, {wheredim,E0,XiEis}}),
   {Xis, Eis} = lists:unzip(XiEis),
   {Dis, MaxT} = tpar:eval(Eis, I, E, K, D, W, T),
   case tset:union_d(Dis) of
@@ -165,6 +175,7 @@ eval({wheredim, E0, XiEis}, I, E, K, D, W, T) ->
 %% Identifiers = Xi
 %%-------------------------------------------------------------------------------------
 eval({Pos,_}=Xi, _I, _E, _K, _D, _W, T) when is_list(Pos) ->
+  tv:pass({?MODULE, {id,Xi}}),
   {Xi, T};
 
 eval(Xi, I, E, K, D, W, T) when is_list(Xi) orelse is_atom(Xi) ->
