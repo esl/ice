@@ -57,11 +57,7 @@ tuple_test() ->
   K = [{{dim, time}, 100}, {{dim, space}, 100}],
   D = [{dim, time}, {dim, space}],
   Tup1 = [{{dim,time}, 1}, {{dim, space}, 2}],
-  Tup4 = [{{'#', {dim, time}}, 0}, {{'#', {dim, space}}, 1}], %% Is this case really usable without dimensions as ground values?
-  ?assertMatch({{te, Tup1}, _}, run_test({t, Tup1}, [], [], K, D, 0)),
-  ?assertMatch({{te, [{{error, undefined_dimension}, _},
-		      {{error, undefined_dimension}, _}]}, 
-		_}, run_test({t, Tup4})).
+  ?assertMatch({{te, Tup1}, _}, run_test({t, Tup1}, [], [], K, D, 0)).
 
 primop_test() ->
   K = [{{dim, time}, 100}, {{dim, space}, 100}],
