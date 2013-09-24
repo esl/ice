@@ -17,6 +17,7 @@ eval({string, Str}, _I, _E, _K, _D, _W, T) ->
   {{string, Str}, T};
 
 eval({char, Str}, _I, _E, _K, _D, _W, T) ->
+  tv:pass({?MODULE, {char,Str}}),
   {{char, Str}, T};
 
 %%-------------------------------------------------------------------------------------
