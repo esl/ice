@@ -38,16 +38,16 @@ terminate(_, S) ->
 %%------------------------------------------------------------------------------
 find(X, K, D, W, T) ->
   R = gen_server:call(?MODULE, {find, X, K, D, W, T}),
-  tv:pass({?MODULE, {find, X, K, D, W, T}, R}),
+  tv:hook(?MODULE, {{find, X, K, D, W, T}, R}),
   R.
 
 add(X, K, D, W, T, V) ->
   R = gen_server:call(?MODULE, {add, X, K, D, W, T, V}),
-  tv:pass({?MODULE, {add, X, K, D, W, T, V}, R}),
+  tv:hook(?MODULE, {{add, X, K, D, W, T, V}, R}),
   R.
 
 collect() ->
-  tv:pass({?MODULE, collect}),
+  tv:hook(?MODULE, collect),
   gen_server:call(?MODULE, collect).
 
 stop() ->
