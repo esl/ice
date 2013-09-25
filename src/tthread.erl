@@ -14,14 +14,14 @@
 %% The processes must be ordered for the cache to work. 
 %%-------------------------------------------------------------------------------------
 spawn_n(Su, N) ->
-  tv:hook(creating_n_threads, N),
+  tv:hook(?MODULE, creating_n_threads, N),
   spawn_n(Su, N, []).
 
 spawn_n(Su, 0, Pids) ->
   lists:sort(Pids);
 spawn_n(Su, N, Pids) ->
   Pid = spawn(tthread, evaluator, [Su]),
-  tv:hook(thread_created, Pid),
+  tv:hook(?MODULE, thread_created, Pid),
   spawn_n(Su, N-1, [Pid|Pids]).
 
 %%-------------------------------------------------------------------------------------
@@ -34,7 +34,7 @@ join([], [], I, E, K, D, W, T, Lim) ->
   sync(Lim);
 join([Pid|Pids], [X|Xs], I, E, K, D, W, T, Lim) ->
   Pid ! {Pid, X, I, E, K, D, W, T},
-  tv:hook(joining_thread, Pid),
+  tv:hook(?MODULE, joining_thread, Pid),
   join(Pids, Xs, I, E, K, D, W, T, Lim).
 
 %%-------------------------------------------------------------------------------------
@@ -63,6 +63,6 @@ evaluator(Su) ->
 				    
 evaluator(Su, X, I, E, K, D, Wi, T) ->
   {D0, T0} = tcore:eval(X, I, E, K, D, Wi, T),
-  tv:hook(thread_evaluated, {Su, {X, I, {e,E}, K, D, Wi, T}, {D0,T0}}),
+  tv:hook(?MODULE, thread_evaluated, {Su, {X, I, {e,E}, K, D, Wi, T}, {D0,T0}}),
   Su ! {Wi, {D0, T0}}.
 

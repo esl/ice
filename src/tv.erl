@@ -4,18 +4,17 @@
 
 %% tv: Tea Visualiser.
 
--export([hook/2]).
+-export([hook/3]).
 
 %% API
 
-%% Just call it like so: `tv:hook("caching var", {D,A,T,A2})`.
-%%   Name can also  be ?MODULE or the name of the function the
-%%   hook is in. It does not need to be unique.
--spec hook (string() | atom(), term()) -> any().
-hook (Name, Thing) ->
+-type name() :: string() | atom().
+%% Just call it like so: `tv:hook(?MODULE, "caching var", {D,A,Ta})`.
+-spec hook (Module::name(), Descr::name(), Data::term()) -> any().
+hook (Name, Descr, Data) ->
     case whereis(icy) of
         _P when is_pid(_P) ->
-            icy:pass(Name, icy:time(), Thing);
+            icy:pass(Name, icy:time(), Descr, Data);
         _ ->
             {error, {unable_to_pass,server_down}}
     end.

@@ -10,11 +10,11 @@
 
 -export([i/1]).%
 i (String) ->
-    tv:hook(?MODULE, {i, self(), String}),
+    tv:hook(?MODULE, i, {self(), String}),
     {ok, Tree} = string(String),
     tcache:start_link(100),
     R = tcore:eval(Tree, [],[],[],[], [0], 0),
-    tv:hook(?MODULE, {result, R}),
+    tv:hook(?MODULE, result, R),
     R.
 
 -spec string (string()) -> {ok | error, term()}.
