@@ -6,28 +6,35 @@
 
 -export([string/1, file/1]).
 -export([eval/1]).
+-export([i/1]).
+
+-type ast() :: term().
 
 %% API
 
--export([i/1]).%
-i (String) ->
-    {ok, Tree} = string(String),
-    tcache:start_link(100),
-    tcore:eval(Tree, [],[],[],[], [0], 0).
+-spec string(string()) -> {ok | error, ast()}.
+string(TeaCode) ->
+  {ok, Tree} = tparser:string(TeaCode),
+  rework_tree(Tree).
 
--spec string (string()) -> {ok | error, term()}.
-string (TeaCode) ->
-    {ok, Tree} = tparser:string(TeaCode),
-    rework_tree(Tree).
+-spec file(string()) -> {ok | error, ast()}.
+file(Filename) ->
+  {ok, Tree} = tparser:file(Filename),
+  rework_tree(Tree).
 
--spec file (string()) -> {ok | error, term()}.
-file (Filename) ->
-    {ok, Tree} = tparser:file(Filename),
-    rework_tree(Tree).
-
--spec eval(Tree :: term()) -> term().
+-spec eval(ast()) -> term().
 eval(T) ->
-  tcore:eval(T,[],[],[],[],[0],0).
+  T0 = ttransform0:transform0(T),
+  T1 = ttransform1:transform1(T0),
+  tcore:eval(T1,[],[],[],[],[0],0).
+
+-spec i(string()) -> term().
+i(String) ->
+  {ok, Tree} = string(String),
+  tcache:start_link(100),
+  Res = eval(Tree),
+  tcache:stop(),
+  Res.
 
 %% Internals
 
@@ -35,20 +42,9 @@ rework_tree (Tree) ->
     V = fun
         ({where, _, Exp, DimDecls, VarDecls}) ->
             TopExpr = Exp,
-            Vars = case VarDecls of
-                [] ->
-                    TopExpr;
-                VarDecls ->
-                    {wherevar, TopExpr,
-                        [{Var, E} || {var_decl,_,Var,E} <- VarDecls]}
-            end,
-            case DimDecls of
-                [] ->
-                    Vars;
-                DimDecls ->
-                    {wheredim, Vars,
-                        [{{dim,Dim},N} || {dim_decl,_,Dim,N} <- DimDecls]}
-            end;
+            Vars = [{var,Var, E}|| {var_decl,_,Var,E} <- VarDecls],
+            Dims = [{dim,Dim,N} || {dim_decl,_,Dim,N} <- DimDecls],
+            {where, TopExpr, Vars ++ Dims};
 
         ({'if', _, Ifs, Else}) -> unwrap_elsifs(Ifs, Else);
 

@@ -12,9 +12,8 @@ wheredim_test_() ->
    _Setup = fun() -> {ok, Pid} = tcache:start_link(100), Pid end,
    _Cleanup = fun(Pid) -> tcache_stop(Pid) end,
    [
+    ?_assertMatch({58,_},          eval(basic())),
     ?_assertMatch({0,_},           eval(e1())),
-    ?_assertMatch({46,_},          eval(wherevar_only())),
-    ?_assertMatch({58,_},          eval(wheredim_only())),
     ?_assertMatch({[{dim,"s"}],_}, eval(e2())),
     ?_assertMatch({5,_},           eval(e3())),
     ?_assertMatch({5,_},           eval(e4())),
@@ -23,24 +22,17 @@ wheredim_test_() ->
     ?_assertMatch({25,_},          eval(e7()))
    ]}.
 
+basic() ->
+  "#.t
+  where
+      dim t <- 58
+  end".
 
 e1() ->
   "X
   where
       dim t <- 0
       var X = #.t
-  end".
-
-wherevar_only() ->
-  "X
-  where
-      var X = 46
-  end".
-
-wheredim_only() ->
-  "#.t
-  where
-      dim t <- 58
   end".
 
 e2() ->
@@ -143,6 +135,6 @@ tcache_stop(Pid) ->
 
 eval(S) ->
   {ok, T} = tea:string(S),
-  tcore:eval(T, [],[],[], [], [0], 0).
+  tea:eval(T).
 
 %% End of Module.

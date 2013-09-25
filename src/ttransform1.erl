@@ -5,6 +5,7 @@
 
 -include_lib("eunit/include/eunit.hrl").
 
+-export([transform1/1]).
 -export([test/0]).
 
 %%------------------------------------------------------------------------------
