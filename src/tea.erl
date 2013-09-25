@@ -5,6 +5,7 @@
 %% tea: interpreter for the Tea language
 
 -export([string/1, file/1]).
+-export([eval/1]).
 
 %% API
 
@@ -23,6 +24,10 @@ string (TeaCode) ->
 file (Filename) ->
     {ok, Tree} = tparser:file(Filename),
     rework_tree(Tree).
+
+-spec eval(Tree :: term()) -> term().
+eval(T) ->
+  tcore:eval(T,[],[],[],[],[0],0).
 
 %% Internals
 
