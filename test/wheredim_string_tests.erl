@@ -2,8 +2,6 @@
 %% -*- coding: utf-8 -*-
 -module(wheredim_string_tests).
 
-%% tea_string_tests: tests for function tea:string/1.
-
 -include_lib("eunit/include/eunit.hrl").
 
 
