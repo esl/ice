@@ -14,14 +14,14 @@
 %% The processes must be ordered for the cache to work. 
 %%-------------------------------------------------------------------------------------
 spawn_n(Su, N) ->
-  tv:hook(?MODULE, creating_n_threads, N),
-  spawn_n(Su, N, []).
+  Pids = spawn_n(Su, N, []),
+  tv:hook(?MODULE, creating_n_threads, {Su,N,Pids}),
+  Pids.
 
 spawn_n(Su, 0, Pids) ->
   lists:sort(Pids);
 spawn_n(Su, N, Pids) ->
   Pid = spawn(tthread, evaluator, [Su]),
-  tv:hook(?MODULE, thread_created, Pid),
   spawn_n(Su, N-1, [Pid|Pids]).
 
 %%-------------------------------------------------------------------------------------
