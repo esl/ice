@@ -75,7 +75,7 @@ find_update(X, K, D, W0, _T, S0) ->
   KD = lists:keysort(1, tset:restrict_domain(K, D)),
   case tdtree:lookup({X,KD}, S0#state.data) of
     [] ->
-      io:format(user, "Inserting {~p,~p} = {calc,~p}~n", [X,KD,{calc,W0}]),
+      io:format(user, "Inserting {~p,~p} = ~p~n", [X,KD,{calc,W0}]),
       Tr = tdtree:insert({X,KD,{calc,W0}}, S0#state.data),
       S2 = S0#state{data = Tr, ck = S0#state.ck + 1},
       {reply, {{calc,W0}, S2#state.ck},  S2};
