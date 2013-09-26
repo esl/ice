@@ -1,8 +1,8 @@
 -module(tdtree).
 
--export([new/0, new/3]).
+-export([new/0]).
 -export([lookup/2, insert/2]).
--export([test/0, test_2/0, test_3/0]).
+-export([test/0]).
 
 %%------------------------------------------------------------------------------
 %% @doc Create a new dtree node (empty dtree nodes are not allowed).
@@ -10,105 +10,134 @@
 new() ->
   [].
 
-new(Xi, K, V) ->
-  [{node, {Xi, K, V}, []}].
+%%------------------------------------------------------------------------------
+%% @doc Lookup an {Xi,K} in the dtree
+%%------------------------------------------------------------------------------
+lookup(XiK, DTree) ->
+  lookup(XiK, [], [], DTree).
 
 %%------------------------------------------------------------------------------
-%% @doc Lookup an {Xi,K} pair in the DTree
+%% When the context, delta and tree are empty, no result has been found.
 %%------------------------------------------------------------------------------
-lookup(_, []) ->
+lookup({Xi, K}, [], Dims, []) ->
+  Dims;
+
+%%------------------------------------------------------------------------------
+%% When the context, delta are empty but the root of Xi exists, we have found
+%% our result.
+%%------------------------------------------------------------------------------
+lookup({Xi, []}, [], _Dims, [{node, {Xi, [], {i, V, _}}, SNs}|Tree]) ->
+  V;
+lookup({Xi, []}, [], _Dims, [{node, {Xi, [], V}, SNs}|Tree]) ->
+  V;
+
+%%------------------------------------------------------------------------------
+%% When the context is empty, but the delta isn't, if it matches the delta in
+%% the current node then we have found our result.
+%%------------------------------------------------------------------------------
+lookup({Xi, []}, Di, _Dims, [{node, {Xi, Di, {i, V, _}}, SNs}|Tree]) ->
+  V;
+lookup({Xi, []}, Di, _Dims, [{node, {Xi, Di, V}, SNs}|Tree]) ->
+  V;
+
+%%------------------------------------------------------------------------------
+%% When the context is empty, the delta isn't, but we've run out of nodes to
+%% search for, it means the branch is empty.
+%%------------------------------------------------------------------------------
+lookup({Xi, []}, Di, _Dims, []) ->
   [];
-lookup({Xi,K}, [{node,{Xi,K,{i,V,_}},SNs}|DTree]) ->
-  %%----------------------------------------------------------------------------
-  %% If during our search we reach a context which is exactly the same as the 
-  %% one we are looking for, we know we have found the result.
-  %%------------------------------------------------------------------------------
-  V;
-lookup({Xi,K}, [{node,{Xi,K,V},SNs}|DTree]) ->
-  %%----------------------------------------------------------------------------
-  %% If during our search we reach a context which is exactly the same as the 
-  %% one we are looking for, we know we have found the result.
-  %%------------------------------------------------------------------------------
-  V;
-lookup({Xi,K0}, [{node,{Xi,K1,{i,Dims,Ords}},SNs}|DTree]) ->
-  %%----------------------------------------------------------------------------
-  %% If the context of the node we are looking at is a subset of the context we
-  %% are searching for, then we must be at the right branch, otherwise search
-  %% the rest of the branches for this particular depth.
-  %% By restricting the context we are searching for to the dimensions in the
-  %% internal node, we can tell if there is an entry for this node in the DTree.
-  %% In the case where the context K1 is a subset of K0, but there is no entry in
-  %% the DTree for this particular dimension, we can be sure that the value has
-  %% not been defined. This saves us having to search the rest of the tree.
-  %%----------------------------------------------------------------------------
-  case tset:intersection(K0, K1) of
-    K1 ->
-      case lists:any(fun (X) ->
-			 tset:restrict_domain(K0, Dims) =:= X
-		     end, Ords) of
-	true ->
-	  lookup({Xi,K0}, SNs);
-	false ->
-	  lookup({Xi,K0}, DTree)
-      end;
-    [] ->
-      lookup({Xi,K0},DTree)
-  end;
-lookup({Xi,K0}, [{node, {Xi,K1,V}, []}|DTree]) ->
-  %%----------------------------------------------------------------------------
-  %% If we reach a value in the DTree which is not an internal node, and not a
-  %% {calc, W} value, we have reached a leaf node, so search the rest of the
-  %% DTree.
-  %%----------------------------------------------------------------------------
-  lookup({Xi,K0}, DTree);
-lookup({Xi,K}, [{node, {Yi,_,_}, _}|DTree]) ->
-  %%----------------------------------------------------------------------------
-  %% When the Identifier is distinct, we are at the top level. Search the rest 
-  %% of the DTree.
-  %%----------------------------------------------------------------------------
-  lookup({Xi,K},DTree).
 
 %%------------------------------------------------------------------------------
-%% @doc Insert / Update
+%% When the node is an internal node and the delta is the same as the nodes
+%% context, we must search the rest of K0 within the subnodes of this node.
+%% If there is no intersection between the context.
 %%------------------------------------------------------------------------------
-insert({Xi,K,V}=XiKV, DTree) ->
-  insert(XiKV, DTree, []).
+lookup({Xi, K0}, Di, _Dims, [{node, {Xi, Di, {i, Dims, Ords}}, SNs}|Tree]) ->
+  NewDi = tset:restrict_domain(K0, Dims),
+  NewK0 = tset:subtract(K0, NewDi),
+  lookup({Xi, NewK0}, NewDi, Dims, SNs);
 
-insert({Xi,K,V}, [], NewTree) ->
-  [{node,{Xi,K,V},[]}|NewTree];
-insert({Xi,K,V}, [{node,{Xi,K,_},SNs}|DTree], NewTree) ->
-  %%----------------------------------------------------------------------------
-  %% The value exists in the tree, update
-  %%----------------------------------------------------------------------------
-  NewTree ++ [{node,{Xi,K,V},SNs}|DTree];
-insert({Xi,K0,V}, [{node,{Xi,K1,{i,Dims,Ords}},SNs}=Node|DTree], NewTree) ->
-  %%----------------------------------------------------------------------------
-  %% If the context of the node we want to insert is a subset of the context
-  %% we are searching for, and the ordinate for this dimension is not known, 
-  %% we need to update the known ordinates of this internal node and continue 
-  %% the insertion.
-  %% If the ordinate is known, we continue the insertion to update the value.
-  %%----------------------------------------------------------------------------
-  case tset:intersection(K0, K1) of
-    K1 ->
-      case lists:any(fun (X) ->
-			 tset:restrict_domain(K0, Dims) =:= X
-		     end, Ords) of
-	true ->
-	  NewTree ++ [{node,{Xi,K1,{i,Dims,Ords}},
-		       insert({Xi,K0,V},SNs)}|DTree];
-	false ->
-	  UOrds = [tset:restrict_domain(K0,Dims)|Ords],
-	  NewTree ++ [{node,{Xi,K1,{i,Dims,UOrds}},
-		       insert({Xi,K0,V},SNs)}|DTree]
-      end;
-    [] ->
-      insert({Xi,K0,V}, DTree, [Node|NewTree])
-  end;
-insert({Xi,K,V0}, [{node, {Xi,K1,V1}, []}|DTree], NewTree) ->
-  insert({Xi,K,V0}, DTree, [{node,{Xi,K1,V1},[]}|NewTree]);
-insert({Xi,K,V}, [{node, {Yi,_,_}, _}=Node|DTree], NewTree) ->
-  insert({Xi,K,V}, DTree, [Node|NewTree]).
+%%------------------------------------------------------------------------------
+%% When the node is not an internal node and the delta is the same as the
+%% nodes context but K0 is nonempty, it means the tag contained too much
+%% information (hopefully), return V.
+%%------------------------------------------------------------------------------
+lookup({Xi, K}, Di, _Dims, [{node, {Xi, Di, V}, SNs}|Tree]) ->
+  V;
+
+lookup({Xi, K}, [], _Dims, []) ->
+  [];
+
+%%------------------------------------------------------------------------------
+%% When the nodes delta is distinct from the nodes context, we must search for 
+%% the rest of K0 within the siblings of this node.
+%%------------------------------------------------------------------------------
+lookup({Xi, K}, Di, Dims, [Node|Tree]) ->
+  lookup({Xi, K}, Di, Dims, Tree).
+
+
+%%------------------------------------------------------------------------------
+%% @doc Insert / Update an {Xi, K, V} in the dtree
+%%------------------------------------------------------------------------------
+insert(XiKV, Tree) ->
+  insert(XiKV, [], Tree, []).
+
+%%------------------------------------------------------------------------------
+%% When the context, delta and tree are empty, insert new
+%%------------------------------------------------------------------------------
+insert({Xi, [], V}, [], [], Acc) ->
+  Acc ++ [{node, {Xi, [], V}, []}];
+
+%%------------------------------------------------------------------------------
+%% When the context, delta are empty but the root of Xi exists, update
+%%------------------------------------------------------------------------------
+insert({Xi, [], V}, [], [{node, {Xi, [], _}, SNs}|Tree], Acc) ->
+  Acc ++ [{node, {Xi, [], V}, SNs}] ++ Tree;
+
+%%------------------------------------------------------------------------------
+%% When the context is empty, but the delta isn't, if it matches the delta in 
+%% the current node, update
+%%------------------------------------------------------------------------------
+insert({Xi, [], V}, Di, [{node, {Xi, Di, _}, SNs}|Tree], Acc) ->
+  Acc ++ [{node, {Xi, Di, V}, SNs}] ++ Tree;
+
+insert({Xi, [], V}, Di, [], Acc) ->
+  Acc ++ [{node, {Xi, Di, V}, []}];
+
+%%------------------------------------------------------------------------------
+%% When the node is an internal node and the delta is the same as the nodes
+%% context, we must search for the rest of K0 within the subnodes of this node
+%%------------------------------------------------------------------------------
+insert({Xi, K0, V}, Di, [{node, {Xi, Di, {i, Dims, Ords}}, SNs}|Tree], Acc) ->
+  NewDi = tset:restrict_domain(K0, Dims),
+  NewK0 = tset:subtract(K0, NewDi),
+  UOrds = tset:union([NewDi], Ords),
+  Acc ++ [{node, {Xi, Di, {i, Dims, UOrds}},
+	   insert({Xi, NewK0, V}, NewDi, SNs, [])}] ++ Tree;
+
+insert({Xi, K0, V}, Di, [], Acc) ->
+  throw(undefined_branch);
+
+%%------------------------------------------------------------------------------
+%% When the node is not an internal node and the delta is the same as the nodes
+%% context but K0 is nonempty, we cannot insert the node in a subnode (error)
+%%------------------------------------------------------------------------------
+insert({Xi, K, V0}, Di, [{node, {Xi, Di, V1}, SNs}|Tree], Acc) ->
+  throw(not_an_internal_node);
+
+%%------------------------------------------------------------------------------
+%% When the delta is empty, and the tree is empty, insert it
+%%------------------------------------------------------------------------------
+insert({Xi, K0, V}, [], [], Acc) ->
+  Acc ++ [{node, {Xi, K0, V}, []}];
+
+%%------------------------------------------------------------------------------
+%% When the nodes delta is distinct from the nodes context, we must search for 
+%% the rest of K0 within the siblings of this node.
+%%------------------------------------------------------------------------------
+insert({Xi, K0, V}, Di0, [Node|Tree], Acc) ->
+  [Node|Acc] ++ insert({Xi, K0, V}, Di0, Tree, []).
+
 
 %%------------------------------------------------------------------------------
 %% @doc Remove
@@ -125,83 +154,62 @@ insert({Xi,K,V}, [{node, {Yi,_,_}, _}=Node|DTree], NewTree) ->
 %%------------------------------------------------------------------------------
 %% Tests
 %%------------------------------------------------------------------------------
-test_data_1() ->
-  [{node, {"A", [], {i, [t], [[{t, 0}], [{t, 1}]]}},
-    [{node, {"A", [{t, 1}], {i, [s], [[{s, 0}]]}},
-      [{node, {"A", [{t, 1}, {s, 0}], {calc, [0]}},
-	[]}]},
-     {node, {"A", [{t, 0}], {i, [s], [[{s, 0}], [{s, 1}]]}},
-      [{node, {"A", [{t, 0}, {s, 0}], 1}, []},
-       {node, {"A", [{t, 0}, {s, 1}], {calc, [1]}}, []}]}]}].
+correct_tree() ->
+  [{node, {"A", [], {i,[{[0],t}],[[{{[0],t},0}],[{{[0],t},1}], [{{[0],t},2}]]}},
+    [{node, {"A", [{{[0],t},0}], {i,[s],[[{s,0}],[{s,1}]]}},
+      [{node, {"A", [{s,0}], 1}, []}]},
+     {node, {"A", [{{[0],t},1}], {i,[s],[[{s,0}],[{s,1}]]}},
+      [{node, {"A", [{s,0}], 2}, []},
+       {node, {"A", [{s,1}], 3}, []}]},
+     {node, {"A", [{{[0],t},2}], {calc, [0]}}, []}]},
+   {node, {"B", [], {i,[s],[[{s,0}],[{s,1}]]}},
+    [{node, {"B", [{s,0}], 1}, []},
+     {node, {"B", [{s,1}], 1}, []}]}].
 
-test_data_2() ->
-  [{node, {"B", [], {i, [s], [[{s, 0}]]}},
-    [{node, {"B", [{s, 0}], 1}, []}]}].
-
-test_data_3() ->
-  [{node,{"B",[],{i,[{[1],space}],[[{{[1],space},0}]]}},
-              [{node,{"B",[{{[1],space},0}],1},[]}]},
-        {node,{"A",[],{i,[{[0],time}],[[{{[0],time},0}],[{{[0],time},1}]]}},
-              [{node,{"A",[{{[0],time},0}],1},[]},
-               {node,{"A",
-                      [{{[0],time},1}],
-                      {i,[{[1],space}],[[{{[1],space},0}]]}},
-                     [{node,{"A",[{{[0],time},1},{{[1],space},0}],{calc,[0]}},
-                            []}]}]}].
-
-test_data_4() ->
-  [{node,{"B",[],{i,[{[1],space}],[[{{[1],space},1}]]}},
-              [{node,{"B",[{{[1],space},1}],1},[]}]},
-   {node,{"A",[],
-	  {i,[{[0],time}],
-	   [[{{[0],time},0}],[{{[0],time},1}],[{{[0],time},2}]]}},
-    [{node,{"A",[{{[0],time},0}],1},[]},
-     {node,{"A",
-	    [{{[0],time},2}],
-	    {i,[{[1],space}],[[{{[1],space},0}]]}},
-      [{node,{"A",[{{[0],time},2},{{[1],space},0}],{calc,[0]}},
-	[]}]},
-     {node,{"A",
-	    [{{[0],time},1}],
-	    {i,[{[1],space}],[[{{[1],space},0}],[{{[1],space},1}]]}},
-      [{node,{"A",
-	      [{{[0],time},1},{{[1],space},0}],
-	      {calc,[1]}},
-	[]},
-       {node,{"A",
-	      [{{[0],time},1},{{[1],space},1}],
-	      {calc,[1]}},
-	[]}]}]}].
+test_tree_1()->
+  [{node, {"A", [], {i, [t], [[{t,1}]]}},
+    [{node, {"A", [{t,1}], {i, [s], []}},
+      []}]}].
 
 test() ->
-  lookup({"A",[]}, test_data_1()),
-  [] = lookup({"B",[]}, test_data_1()),
-  lookup({"A", [{t, 1}]}, test_data_1()),
-  lookup({"A", [{t, 1}, {s, 0}]}, test_data_1()),
-  lookup({"A", [{t, 0}, {s, 0}]}, test_data_1()),
-  lookup({"A", [{t, 0}, {s, 1}]}, test_data_1()),
-  
-  lookup({"B", []}, test_data_2()),
-  lookup({"B", [{s, 0}]}, test_data_2()),
-  lookup({"B", [{t, 0}, {s, 0}]}, test_data_2()),
+  T1 = correct_tree(),
+  [{[0],t}] = lookup({"A",[]}, T1),
+  [s] = lookup({"A",[{{[0],t},0}]}, T1),
+  1 = lookup({"A",[{{[0],t},0},{s,0}]}, T1),
+  [s] = lookup({"B",[{{[0],t},0}]}, T1),
+  [] = lookup({"B",[{s,2}]}, T1),
+  1 = lookup({"B",[{{[0],t},0},{s,0}]}, T1),
+  {calc,[0]} = lookup({"A",[{{[0],t},2}]}, T1),
+  2 = lookup({"A",[{{[0],t},1},{s,0}]}, T1),
+  3 = lookup({"A",[{{[0],t},1},{s,1}]}, T1),
 
-  DT1 = insert({"A",[],{i,[t],[]}},[]),
-  DT2 = insert({"A",[{t,1}],{i,[s],[]}}, DT1),
-  DT3 = insert({"A",[{t,1},{s,0}], {calc, [0]}}, DT2),
-  DT4 = insert({"A",[{t,1},{s,0}], 2}, DT3),
-  DT5 = insert({"A",[{t,0}], {i, [s], []}}, DT4),
-  DT6 = insert({"A",[{t,0},{s,0}], 1}, DT5),
-  DT7 = insert({"A",[{t,0},{s,1}], 1}, DT6),
-  DT8 = insert({"B",[],{i,[s],[]}},DT7),
-  DT9 = insert({"B",[{s,0}],0},DT8),
-  lookup({"B", [{t, 0}, {s, 0}]},DT9),
-  
-  DTT1 = insert({"A", [], {calc,[0]}}, []),
-  DTT2 = insert({"A", [], [{[0],t}]}, DTT1).
+  X = lookup({"A", [{s, 1}, {{[0],t}, 0}]}, T1),
+  io:format("A [s <- 0, t <- 0] = ~p~n", [X]),
 
-test_2() ->  
-  lookup({"A", [{{[0],time},1},{{[1],space},0}]}, test_data_3()).
+  T2 = test_tree_1(),
+  [] = lookup({"A", [{t,1},{s,0}]}, T2),
 
-test_3() ->  
-  lookup({"A", [{{[0],time},1},{{[1],space},1}]}, test_data_4()).
+  DT1 = insert({"A",[],{calc,[0]}},[]),
+  DT1 = [{node,{"A",[],{calc,[0]}},[]}],
+
+  DT2 = insert({"A",[],{i,[{[0],t}],[]}},DT1),
+  DT2 = [{node,{"A",[],{i,[{[0],t}],[]}},[]}],
+
+  DT3 = insert({"A",[{{[0],t},1}],{calc,[1]}},DT2),
+  DT3 = [{node,{"A",[],{i,[{[0],t}],[[{{[0],t},1}]]}},
+	  [{node,{"A",[{{[0],t},1}],{calc,[1]}},[]}]}],
+
+  DT4 = insert({"A",[{{[0],t},1}],{i,[s],[]}},DT3),
+  DT4 = [{node,{"A",[],{i,[{[0],t}],[[{{[0],t},1}]]}},
+	  [{node,{"A",[{{[0],t},1}],{i,[s],[]}},[]}]}],
+
+  DT5 = insert({"A",[{{[0],t},1},{s,0}],1},DT4),
+  DT5 = [{node,{"A",[],{i,[{[0],t}],[[{{[0],t},1}]]}},
+ 	  [{node,{"A",[{{[0],t},1}],{i,[s],[[{s,0}]]}},
+ 	    [{node,{"A",[{s,0}],1},[]}]}]}],
+
+  DT6 = insert({"A", [{{[0],t},0}], {i, [s], []}}, DT5),
   
+  DT7 = insert({"A", [{{[0],t},0},{s,0}], {calc,[2]}},DT6).
+  
+
