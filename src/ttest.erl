@@ -141,7 +141,7 @@ wheredim_test() ->
 
   %% Parallel, one-dimensional (tournament) wheredim clause (introducing parallelism)
   E6 = {wheredim,
-  	{wherevar, "A", 
+  	{wherevar, "A",
   	 [{"A",
   	   {'if', lte({'#', TimeD}, 0),
 	    "B",
@@ -193,12 +193,12 @@ wheredim_test() ->
 
   %% Parallel, multi-dimensional matrix multiplication (the one you're all waiting for ;))
 
-%%  ?assertMatch({0,_}, run_test(E1, [], [], [], [], 0)),
-%%  ?assertMatch({[{[1], space}],_}, run_test(E2, [], [], [], [], 0)),
-%%  ?assertMatch({5,_}, run_test(E3, [], [], [], [], 0)),
-%%  ?assertMatch({5,_}, run_test(E4, [], [], [], [], 0)),
-  ?assertMatch({2,_}, run_test(E6, [], [], [], [], 0)).
-%%  ?assertMatch({25,_}, run_test(E7, [], [], [], [], 0)).
+  ?assertMatch({0,_}, run_test(E1, [], [], [], [], 0)),
+  ?assertMatch({[{[1], space}],_}, run_test(E2, [], [], [], [], 0)),
+  ?assertMatch({5,_}, run_test(E3, [], [], [], [], 0)),
+  ?assertMatch({5,_}, run_test(E4, [], [], [], [], 0)),
+  ?assertMatch({2,_}, run_test(E6, [], [], [], [], 0)),
+  ?assertMatch({25,_}, run_test(E7, [], [], [], [], 0)).
 
 
 run_test(Src) ->
