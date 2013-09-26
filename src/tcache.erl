@@ -47,7 +47,6 @@ add(X, K, D, W, T, V) ->
   R.
 
 collect() ->
-  tv:hook(?MODULE, collect, {}),
   gen_server:call(?MODULE, collect).
 
 stop() ->
@@ -84,6 +83,7 @@ find_update(X, K, D, W0, _T, S0) ->
       Ks = [{Key,Ord} || {{_,Key},Ord} <- Ko],
       Ds = [Key || {_,Key} <- Do],
       io:format(user, "Adding ~p ~p ~p = ~p~n", [X,Ks,Ds,{calc,W0}]),
+      tv:hook(?MODULE, find_update, {X,Ks,Ds,{calc,W0}}),
       true = ets:insert_new(S0#state.data, {{X,Ko,Do}, {calc, W0}}),
       S2 = S0#state{ck = S0#state.ck + 1},
       {reply, {{calc, W0}, S2#state.ck},  S2};
@@ -112,6 +112,7 @@ add_update(X, K, D, W, _T, V1, S0) ->
       Ks = [{Key,Ord} || {{_,Key},Ord} <- Ko],
       Ds = [Key || {_,Key} <- Do],
       io:format(user, "Adding ~p ~p ~p = ~p~n", [X,Ks,Ds,V1]),
+      tv:hook(?MODULE, add_update, {X,Ks,Ds,V1}),
       ets:insert(S0#state.data, {{X,Ko,Do}, V1}),
       S1 = S0#state{ck = S0#state.ck + 1},
       {reply, {V1, S1#state.ck}, S1};
