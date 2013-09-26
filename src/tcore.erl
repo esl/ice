@@ -164,8 +164,8 @@ eval({dim,{_Pos,_Idx},Xi}=Di, _I, _E, _K, _D, _W, T) when is_list(Xi) orelse is_
 %% Variable Identifiers
 %%-------------------------------------------------------------------------------------
 eval(Xi, I, E, K, D, W, T) when is_list(Xi) orelse is_atom(Xi) ->
-  {{_D0, _T0}, Dims} = eval1(Xi, I, E, K, [], W, T),
-  tcache:find(Xi, K, Dims, W, T).
+  {_D0, _T0} = eval1(Xi, I, E, K, [], W, T),
+  tcache:find(Xi, K, D, W, T).
 
 %%-------------------------------------------------------------------------------------
 %% Finding identifiers in the cache
@@ -176,7 +176,7 @@ eval1(Xi, I, E, K, D, W, T) ->
     true -> 
       eval1(Xi, I, E, K, tset:union(D, D0), W, T);
     false ->
-      {{D0, T0}, D}
+      {D0, T0}
   end.
 
 eval2(Xi, I, E, K, D, W, T) ->

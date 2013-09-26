@@ -24,9 +24,7 @@ lte(A, B) ->
 gte(A, B) ->
   {primop, fun erlang:'>='/2, [A, B]}.
 plus(A, B) ->
-  {primop, fun (X, Y) -> 
-%%	       io:format("X = ~p, Y = ~p~n", [X,Y]),
-	       X + Y end, [A,B]}.
+  {primop, fun (X, Y) -> X + Y end, [A,B]}.
 times(A, B) ->
   {primop, fun (X, Y) -> X * Y end, [A, B]}.
 minus(A, B) ->
@@ -133,10 +131,10 @@ wheredim_test() ->
 
   %% Parallel, one-dimensional (tournament) wheredim clause (introducing parallelism)
   E6 = {wheredim,
-  	{wherevar, "A", 
+  	{wherevar, "A",
   	 [{"A",
   	   {'if', lte({'#', TimeD}, 0),
-	    "B", 
+	    "B",
 	    %% for time = 1 => depends on 
 	         %% "B" @ [space <- 0, time <- 0], 
 	         %% "B" @ [space <- 1, time <- 0]
@@ -149,7 +147,7 @@ wheredim_test() ->
 		       lte({'#', SpaceD}, 1024)),
 	    {'#', SpaceD},
 	    1}}]},
-  	[{TimeD, 2},
+  	[{TimeD, 1},
   	 {SpaceD, 0}]},
 
   %% Parallel, two-dimensional (tournament)
@@ -189,7 +187,7 @@ wheredim_test() ->
   ?assertMatch({[{dim, space}],_}, run_test(E2, [], [], [], [], 0)),
   ?assertMatch({5,_}, run_test(E3, [], [], [], [], 0)),
   ?assertMatch({5,_}, run_test(E4, [], [], [], [], 0)),
-  ?assertMatch({7,_}, run_test(E6, [], [], [], [], 0)),
+  ?assertMatch({2,_}, run_test(E6, [], [], [], [], 0)),
   ?assertMatch({25,_}, run_test(E7, [], [], [], [], 0)).
 
 
