@@ -73,19 +73,19 @@ handle_call(terminate, _From, S0) ->
 %%------------------------------------------------------------------------------
 find_update(X, K, D, W0, _T, S0) ->
   KD = lists:keysort(1, tset:restrict_domain(K, D)),
-  io:format("[0] Finding ~p ~p~n", [X,KD]),
   case tdtree:lookup({X,KD}, S0#state.data) of
     [] ->
-      io:format(user, "[0] Adding ~p ~p = ~p~n", [X,KD,{calc,W0}]),
+      io:format(user, "Inserting {~p,~p} = {calc,~p}~n", [X,KD,{calc,W0}]),
       Tr = tdtree:insert({X,KD,{calc,W0}}, S0#state.data),
       S2 = S0#state{data = Tr, ck = S0#state.ck + 1},
-      io:format(user, "Data: ~p~n", [Tr]),
       {reply, {{calc,W0}, S2#state.ck},  S2};
     {calc, W1}=V ->
       case W1 =< W0 of
 	true ->
-	  io:format(user, "Thread ~p is less than or equal to ~p~n", [W1, W0]),
-	  {reply, hang, S0};
+	  %% FIXME
+	  %% Threads can be <= to others which is wrong, but it works...
+	  %% io:format(user, "Thread ~p is less than or equal to ~p~n", [W1, W0]),
+	  {reply, {V, S0#state.ck}, S0};
 	false ->
 	  {reply, {V, S0#state.ck}, S0}
       end;
@@ -95,20 +95,18 @@ find_update(X, K, D, W0, _T, S0) ->
 
 add_update(X, K, D, W, _T, V1, S0) ->
   KD = lists:keysort(1, tset:restrict_domain(K, D)),
-  io:format("[1] Finding ~p ~p~n", [X,KD]),
   case tdtree:lookup({X,KD}, S0#state.data) of
     [] ->
       {reply, hang, S0};
     {calc, W} ->
       case V1 of
 	V1 when is_list(V1) ->
-	  io:format(user, "[1] Adding ~p ~p = ~p~n", [X,KD,V1]),
+	  io:format(user, "Inserting {~p,~p} = {i,~p,[]}~n", [X,KD,V1]),
 	  Tr = tdtree:insert({X,KD,{i,V1,[]}}, S0#state.data);
 	V1 ->
-	  io:format(user, "[2] Adding ~p ~p = ~p~n", [X,KD,V1]),
+	  io:format(user, "Inserting {~p,~p} = ~p~n", [X,KD,V1]),
 	  Tr = tdtree:insert({X,KD,V1}, S0#state.data)
       end,
-%%	  io:format(user, "Data = ~p~n", [Tr])
       S1 = S0#state{data = Tr, ck = S0#state.ck + 1},
       {reply, {V1, S1#state.ck}, S1};
     {calc, _} = Thr ->
