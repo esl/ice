@@ -157,7 +157,7 @@ eval({wheredim, E0, XiEis}, I, E, K, D, W, T) ->
       %% known dimensions (the rule in the paper needs this correction
       %% re Delta).
       Di1 = tset:union(D, Xis),
-      eval(E0, I, E, Ki1, D, W, MaxT)
+      eval(E0, I, E, Ki1, Di1, W, MaxT)
   end;
 
 %%-------------------------------------------------------------------------------------
@@ -167,12 +167,8 @@ eval({Pos,_}=Xi, _I, _E, _K, _D, _W, T) when is_list(Pos) ->
   {Xi, T};
 
 eval(Xi, I, E, K, D, W, T) when is_list(Xi) orelse is_atom(Xi) ->
-  io:format(user, "~nEval Xi = ~p, K = []~n", [Xi]),
   {_D0, _T0} = eval1(Xi, I, E, K, [], W, T),
-%%  io:format(user, "Finding Xi = ~p, K = ~p~n", [Xi, tset:restrict_domain(K, D)]),
-  R = tcache:find(Xi, K, D, W, T),
-%%  io:format(user, "Found Xi = ~p, K = ~p, R = ~p~n", [R]),
-  R.
+  tcache:find(Xi, K, D, W, T).
 
 %%-------------------------------------------------------------------------------------
 %% Finding identifiers in the cache
@@ -187,9 +183,7 @@ eval1(Xi, I, E, K, D, W, T) ->
   end.
 
 eval2(Xi, I, E, K, D, W, T) ->
-%%  io:format(user, "Finding Xi = ~p, K = ~p~n", [Xi, tset:restrict_domain(K, D)]),
   {D0, T0} = tcache:find(Xi, K, D, W, T),
-  io:format(user, "Found D0 = ~p~n", [D0]),
   case D0 of
     {calc, W} ->
       case lists:keyfind(Xi, 1, E) of
