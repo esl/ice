@@ -14,6 +14,7 @@ i (String) ->
     {ok, Tree} = string(String),
     tcache:start_link(100),
     R = tcore:eval(Tree, [],[],[],[], [0], 0),
+    tcache:stop(),
     tv:hook(?MODULE, result, R),
     R.
 
