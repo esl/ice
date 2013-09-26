@@ -131,6 +131,7 @@ insert({Xi, K0, V}, Di, [{node, {Xi, Di, {i, Dims, Ords}}, SNs}|Tree], Acc) ->
 	   insert({Xi, NewK0, V}, NewDi, SNs, [])}] ++ Tree;
 
 insert({Xi, K0, V}, Di, [], Acc) ->
+%%  Acc ++ [{node, {Xi, K0, V}, []}];
   throw(undefined_branch);
 
 %% When the node is not an internal node and the delta is the same as the nodes
