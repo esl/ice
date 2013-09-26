@@ -156,7 +156,7 @@ eval({wheredim, E0, XiEis}, I, E, K, D, W, T) ->
       %% dimension" shall be added by the wheredim rule to the set of
       %% known dimensions (the rule in the paper needs this correction
       %% re Delta).
-%%      Di1 = tset:union(D, Xis),
+      Di1 = tset:union(D, Xis),
       eval(E0, I, E, Ki1, D, W, MaxT)
   end;
 
