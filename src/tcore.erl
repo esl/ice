@@ -37,7 +37,9 @@ eval({primop, F, Eis}, I, E, K, D, W, T) ->
     {true, Dims} ->
       {Dims, MaxT};
     {false, Dis1} ->
-      {apply(F, Dis1), MaxT}
+      R = apply(F, Dis1),
+      tv:hook(?MODULE, primop_apply, {F,Dis1,R}),
+      {R, MaxT}
   end;
       
 %%-------------------------------------------------------------------------------------
