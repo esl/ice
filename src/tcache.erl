@@ -71,7 +71,7 @@ handle_call(terminate, _From, S0) ->
 %%------------------------------------------------------------------------------
 %% internal
 %%------------------------------------------------------------------------------
-find_update(X, K, D, W0, _T, S0) ->
+find_update(X, K, D, {Id0,_}=W0, _T, S0) ->
   KD = lists:keysort(1, tset:restrict_domain(K, D)),
   case tdtree:lookup({X,KD}, S0#state.data) of
     [] ->
@@ -79,13 +79,13 @@ find_update(X, K, D, W0, _T, S0) ->
       Tr = tdtree:insert({X,KD,{calc,W0}}, S0#state.data),
       S2 = S0#state{data = Tr, ck = S0#state.ck + 1},
       {reply, {{calc,W0}, S2#state.ck},  S2};
-    {calc, W1}=V ->
-      case W1 =< W0 of
+    {calc, {Id1,_}=W1} = V ->
+      case lists:prefix(Id1, Id0) of
 	true ->
 	  %% FIXME
 	  %% Threads can be <= to others which is wrong, but it works...
 	  %% io:format(user, "Thread ~p is less than or equal to ~p~n", [W1, W0]),
-	  {reply, {V, S0#state.ck}, S0};
+	  {reply, hang, S0};
 	false ->
 	  {reply, {V, S0#state.ck}, S0}
       end;
