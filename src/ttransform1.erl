@@ -329,8 +329,8 @@ wheredim_eval_test_() ->
   T1 = transform1(T0),
   ?assertEqual(ExpectedT1, T1),
   {setup,
-   _Setup = fun() -> tcache:start_link(100), ok end,
-   _Cleanup = fun(_) -> tcache:stop() end,
+   _Setup = fun() -> {ok, Pid} = tcache:start_link(100), Pid end,
+   _Cleanup = fun(Pid) -> tcache_stop(Pid) end,
    [
     ?_assertMatch({46,_},
                   tcore:eval(T1, [],[], [], [], [0], 0))
@@ -359,9 +359,18 @@ where_eval_test_() ->
   T1 = transform1(T0),
   ?assertEqual(ExpectedT1, T1),
   {setup,
-   _Setup = fun() -> tcache:start_link(100), ok end,
-   _Cleanup = fun(_) -> tcache:stop() end,
+   _Setup = fun() -> {ok, Pid} = tcache:start_link(100), Pid end,
+   _Cleanup = fun(Pid) -> tcache_stop(Pid) end,
    [
     ?_assertMatch({46,_},
                   tcore:eval(T1, [],[], [], [], [0], 0))
    ]}.
+
+tcache_stop(Pid) ->
+  catch tcache:stop(),
+  case is_process_alive(Pid) of
+    false ->
+      ok;
+    true ->
+      tcache_stop(Pid)
+  end.

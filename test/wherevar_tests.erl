@@ -9,8 +9,8 @@
 
 wherevar_test_() ->
   {foreach,
-   _Setup = fun() -> tcache:start_link(100), ok end,
-   _Cleanup = fun(_) -> tcache:stop() end,
+   _Setup = fun() -> {ok, Pid} = tcache:start_link(100), Pid end,
+   _Cleanup = fun(Pid) -> tcache_stop(Pid) end,
    [
     ?_test(basic()),
     ?_test(var_can_refer_to_var_defined_above_in_same_wherevar()),
@@ -134,5 +134,14 @@ end"),
   ?assertMatch({46, _}, tcore:eval(T, [],[],[], D, [0], 0)).
 
 %% Internals
+
+tcache_stop(Pid) ->
+  catch tcache:stop(),
+  case is_process_alive(Pid) of
+    false ->
+      ok;
+    true ->
+      tcache_stop(Pid)
+  end.
 
 %% End of Module.

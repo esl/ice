@@ -9,8 +9,8 @@
 
 who_cares_about_known_dims_test_() ->
     {foreach,
-     _Setup = fun() -> tcache:start_link(100), ok end,
-     _Cleanup = fun(_) -> tcache:stop() end,
+     _Setup = fun() -> {ok, Pid} = tcache:start_link(100), Pid end,
+     _Cleanup = fun(Pid) -> tcache_stop(Pid) end,
      [
       ?_test(context_query_needs_dim()),
       ?_test(context_perturbation_does_not_need_dim()),
@@ -64,5 +64,14 @@ wherevar_inside_wheredim_does_not_need_dim() ->
 
 
 %% Internals
+
+tcache_stop(Pid) ->
+  catch tcache:stop(),
+  case is_process_alive(Pid) of
+    false ->
+      ok;
+    true ->
+      tcache_stop(Pid)
+  end.
 
 %% End of Module.
