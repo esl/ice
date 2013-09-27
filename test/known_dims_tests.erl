@@ -9,8 +9,8 @@
 
 who_cares_about_known_dims_test_() ->
     {foreach,
-     _Setup = fun() -> tcache:start_link(100), ok end,
-     _Cleanup = fun(_) -> tcache:stop() end,
+     _Setup = fun() -> {ok, Pid} = tcache:start_link(100), Pid end,
+     _Cleanup = fun(Pid) -> tcache_stop(Pid) end,
      [
       ?_test(context_query_needs_dim()),
       ?_test(context_perturbation_does_not_need_dim()),
@@ -20,7 +20,7 @@ who_cares_about_known_dims_test_() ->
      ]}.
 
 context_query_needs_dim() ->
-    TimeD = {[0],"t"},
+    TimeD = {dim,"t"},
     T = {'#',TimeD},
     K = [{TimeD,46}],
     D = [],
@@ -28,7 +28,7 @@ context_query_needs_dim() ->
                  tcore:eval(T, [],[], K, D, [0], 0)).
 
 context_perturbation_does_not_need_dim() ->
-    TimeD = {[0],"t"},
+    TimeD = {dim,"t"},
     T = {'@',
          {'#',TimeD},
          {t,[{TimeD,46}]}},
@@ -44,7 +44,7 @@ wherevar_does_not_need_dim() ->
                  tcore:eval(T, [],[],[], D, [0], 0)).
 
 wheredim_does_not_need_dim() ->
-    TimeD = {[],"t"},
+    TimeD = {dim,"t"},
     T = {wheredim,
          {'#',TimeD},
          [{TimeD,58}]},
@@ -53,7 +53,7 @@ wheredim_does_not_need_dim() ->
         tcore:eval(T, [],[],[], D, [0], 0)).
 
 wherevar_inside_wheredim_does_not_need_dim() ->
-    TimeD = {[0],"t"},
+    TimeD = {dim,"t"},
     T = {wheredim,
          {wherevar,"X",
           [{"X",{'#',TimeD}}]},
@@ -64,5 +64,14 @@ wherevar_inside_wheredim_does_not_need_dim() ->
 
 
 %% Internals
+
+tcache_stop(Pid) ->
+  catch tcache:stop(),
+  case is_process_alive(Pid) of
+    false ->
+      ok;
+    true ->
+      tcache_stop(Pid)
+  end.
 
 %% End of Module.

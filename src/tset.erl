@@ -101,19 +101,14 @@ identical(A,B) ->
 %%-------------------------------------------------------------------------------------
 %% @doc Check whether A is a set of known dimensions
 %%-------------------------------------------------------------------------------------
-is_d(A) when is_list(A) orelse is_atom(A) ->
+is_d({dim, A}) when is_list(A) orelse is_atom(A) ->
   true;
-is_d({Id, X}) when is_list(Id) andalso (is_list(X) orelse is_atom(X)) ->
+is_d({dim, {_Pos,_Idx}, A}) when is_list(A) orelse is_atom(A) ->
   true;
-is_d({hidden, Id}) when is_list(Id) ->
-  true;
-is_d(X) ->
+is_d(_) ->
   false.
 
 is_k(A) when is_list(A) ->
-  lists:any(fun (X) -> is_d(X) end, A);
-is_k(A) ->
+  lists:any(fun (X) -> is_d(X) end, A); %% XXX Why any and not all?
+is_k(_) ->
   false.
-
-  
-		 

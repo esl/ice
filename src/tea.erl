@@ -42,7 +42,7 @@ rework_tree (Tree) ->
                     Vars;
                 DimDecls ->
                     {wheredim, Vars,
-                        [{{[0],Dim},N} || {dim_decl,_,Dim,N} <- DimDecls]}
+                        [{{dim,Dim},N} || {dim_decl,_,Dim,N} <- DimDecls]}
             end;
 
         ({'if', _, Ifs, Else}) -> unwrap_elsifs(Ifs, Else);
@@ -50,13 +50,13 @@ rework_tree (Tree) ->
         ({'#.', _, Val}) ->
             %% On Section 6.4.4 “Querying the context” of the TL-doc-0.3.0
             %%   it explicitly states that ‘#.’ takes a dimension as input.
-            {'#', {[0],Val}};
+            {'#', {dim,Val}};
 
         ({tuple, _, Assocs}) -> {t, Assocs};
         ({tuple_element, _, Lhs, Rhs}) ->
             %% On Section 6.4.5 “Tuples” of the TL-doc-0.3.0, tuples are
             %%   defined as a ‘set of (dimension, value) pairs’.
-            {{[0],Lhs}, Rhs};
+            {{dim,Lhs}, Rhs};
 
         ({'or'=Op, _, A, B})  -> {primop, fun erlang:Op/2, [A,B]};
         ({'and'=Op, _, A, B}) -> {primop, fun erlang:Op/2, [A,B]};

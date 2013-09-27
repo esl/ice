@@ -17,8 +17,8 @@ e1_test_ () ->
             var X = #.t
         end"),
     D = [],
-    {setup, fun () -> tcache:start_link(100) end,
-            fun (_) -> tcache:stop() end,
+    {setup, fun () -> {ok, Pid} = tcache:start_link(100), Pid end,
+            fun (Pid) -> tcache_stop(Pid) end,
     fun () ->
         ?assertMatch({0,_},
             tcore:eval(T, [],[],[], D, [0], 0))
@@ -31,8 +31,8 @@ wherevar_only_test_ () ->
             var X = 46
         end"),
     D = [],
-    {setup, fun () -> tcache:start_link(100) end,
-            fun (_) -> tcache:stop() end,
+    {setup, fun () -> {ok, Pid} = tcache:start_link(100), Pid end,
+            fun (Pid) -> tcache_stop(Pid) end,
     fun () ->
         ?assertMatch({46,_},
             tcore:eval(T, [],[],[], D, [0], 0))
@@ -45,8 +45,8 @@ wheredim_only_test_ () ->
             dim t <- 58
         end"),
     D = [],
-    {setup, fun () -> tcache:start_link(100) end,
-            fun (_) -> tcache:stop() end,
+    {setup, fun () -> {ok, Pid} = tcache:start_link(100), Pid end,
+            fun (Pid) -> tcache_stop(Pid) end,
     fun () ->
         ?assertMatch({58,_},
             tcore:eval(T, [],[],[], D, [0], 0))
@@ -58,10 +58,10 @@ e2_test_ () ->
         where
             dim t <- 1
         end"),
-    SpaceD = {[0],"s"},
+    SpaceD = {dim,"s"},
     D = [],
-    {setup, fun () -> tcache:start_link(100) end,
-            fun (_) -> tcache:stop() end,
+    {setup, fun () -> {ok, Pid} = tcache:start_link(100), Pid end,
+            fun (Pid) -> tcache_stop(Pid) end,
     fun () ->
         ?assertMatch({[SpaceD],_},
             tcore:eval(T, [],[],[], D, [0], 0))
@@ -75,8 +75,8 @@ e3_test_ () ->
             dim s <- 3
         end"),
     D = [],
-    {setup, fun () -> tcache:start_link(100) end,
-            fun (_) -> tcache:stop() end,
+    {setup, fun () -> {ok, Pid} = tcache:start_link(100), Pid end,
+            fun (Pid) -> tcache_stop(Pid) end,
     fun () ->
         ?assertMatch({5,_},
             tcore:eval(T, [],[],[], D, [0], 0))
@@ -91,8 +91,8 @@ e4_test_ () ->
             dim s <- 3
         end"),
     D = [],
-    {setup, fun () -> tcache:start_link(100) end,
-            fun (_) -> tcache:stop() end,
+    {setup, fun () -> {ok, Pid} = tcache:start_link(100), Pid end,
+            fun (Pid) -> tcache_stop(Pid) end,
     fun () ->
         ?assertMatch({5,_},
             tcore:eval(T, [],[],[], D, [0], 0))
@@ -115,8 +115,8 @@ e5_test_ () ->
             dim s <- 10
         end"),
     D = [],
-    {setup, fun () -> tcache:start_link(100) end,
-            fun (_) -> tcache:stop() end,
+    {setup, fun () -> {ok, Pid} = tcache:start_link(100), Pid end,
+            fun (Pid) -> tcache_stop(Pid) end,
     fun () ->
         ?assertMatch({1024,_}, % Not sure about 1024 here.
             tcore:eval(T, [],[],[], D, [0], 0))
@@ -148,8 +148,8 @@ e6_test_ () ->
                 fi
         end"),
     D = [],
-    {setup, fun () -> tcache:start_link(100) end,
-            fun (_) -> tcache:stop() end,
+    {setup, fun () -> {ok, Pid} = tcache:start_link(100), Pid end,
+            fun (Pid) -> tcache_stop(Pid) end,
     fun () ->
         ?assertMatch({7, _},
             tcore:eval(T, [],[],[], D, [0], 0))
@@ -177,8 +177,8 @@ e7_test_ () ->
             dim y <- 0
         end"),
     D = [],
-    {setup, fun () -> tcache:start_link(100) end,
-            fun (_) -> tcache:stop() end,
+    {setup, fun () -> {ok, Pid} = tcache:start_link(100), Pid end,
+            fun (Pid) -> tcache_stop(Pid) end,
     fun () ->
         ?assertMatch({25, _},
             tcore:eval(T, [],[],[], D, [0], 0))
@@ -189,5 +189,14 @@ e8_test () ->
     ok.
 
 %% Internals
+
+tcache_stop(Pid) ->
+  catch tcache:stop(),
+  case is_process_alive(Pid) of
+    false ->
+      ok;
+    true ->
+      tcache_stop(Pid)
+  end.
 
 %% End of Module.

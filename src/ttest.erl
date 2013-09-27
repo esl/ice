@@ -51,39 +51,29 @@ string_test() ->
   S = {string, "Test"},
   ?assertMatch({S, _}, run_test(S)).
 
-constant_dim_test() ->
-  CD = {'?', {[0], time}},
-  K = [{{[0], time}, 100}],
-  D = [{[0], time}],
-  ?assertMatch({100, _}, run_test(CD, [], [], K, D, 0)).
-
 tuple_test() ->
-  K = [{{[0], time}, 100}, {{[1], space}, 100}],
-  D = [{[0], time}, {[1], space}],
-  Tup1 = [{{[0],time}, 1}, {{[1],space}, 2}],
-  Tup4 = [{{'?', {[0], time}}, 0}, {{'?', {[1], space}}, 1}],
-  ?assertMatch({{te, Tup1}, _}, run_test({t, Tup1}, [], [], K, D, 0)),
-  ?assertMatch({{te, [{{error, undefined_dimension}, _},
-		      {{error, undefined_dimension}, _}]}, 
-		_}, run_test({t, Tup4})).
+  K = [{{dim, time}, 100}, {{dim, space}, 100}],
+  D = [{dim, time}, {dim, space}],
+  Tup1 = [{{dim,time}, 1}, {{dim, space}, 2}],
+  ?assertMatch({{te, Tup1}, _}, run_test({t, Tup1}, [], [], K, D, 0)).
 
 primop_test() ->
-  K = [{{[0], time}, 100}, {{[1], space}, 100}],
-  D = [{[1], space}, {[0], time}],
+  K = [{{dim, time}, 100}, {{dim, space}, 100}],
+  D = [{dim, space}, {dim, time}],
   AddNs = {primop, fun erlang:'+'/2, [10,20]},
-  AddDims = {primop, fun erlang:'+'/2, [{'#', {[0], time}},
-					{'#', {[1], space}}]},
+  AddDims = {primop, fun erlang:'+'/2, [{'#', {dim, time}},
+					{'#', {dim, space}}]},
   ?assertMatch({30, _}, run_test(AddNs)),
-  ?assertMatch({[{[0],time},{[1],space}], _}, run_test(AddDims, [], [], K, [], 0)),
+  ?assertMatch({[{dim,space},{dim,time}], _}, run_test(AddDims, [], [], K, [], 0)),
   ?assertMatch({200, _}, run_test(AddDims, [], [], K, D, 0)).
 
 perturb_test() ->
-  K = [{{[0], time}, 100}, {{[1], space}, 100}],
-  D0 = [{[0], time}, {[1], space}],
-  D1 = [{[0], time}],
-  D2 = [{[0], space}],
-  TimeD = {[0], time},
-  SpaceD = {[1], space},
+  K = [{{dim, time}, 100}, {{dim, space}, 100}],
+  D0 = [{dim, time}, {dim, space}],
+  D1 = [{dim, time}],
+  D2 = [{dim, space}],
+  TimeD = {dim, time},
+  SpaceD = {dim, space},
   E1 = {'@', {'#', SpaceD}, 
 	{t, [{SpaceD, 0}]}},
   E2 = {'@', {'#', TimeD},
@@ -101,11 +91,11 @@ perturb_test() ->
 
 wheredim_test() ->
   K = [],
-  D = [{[0],time}, {[1],space}],
-  TimeD = {[0],time},
-  SpaceD = {[1],space},
-  XD = {[1],x},
-  YD = {[2],y},
+  D = [{dim,time}, {dim,space}],
+  TimeD = {dim,time},
+  SpaceD = {dim,space},
+  XD = {dim,x},
+  YD = {dim,y},
 
   E1 = {wheredim, 
   	{wherevar, "X",
@@ -194,7 +184,7 @@ wheredim_test() ->
   %% Parallel, multi-dimensional matrix multiplication (the one you're all waiting for ;))
 
   ?assertMatch({0,_}, run_test(E1, [], [], [], [], 0)),
-  ?assertMatch({[{[1], space}],_}, run_test(E2, [], [], [], [], 0)),
+  ?assertMatch({[{dim, space}],_}, run_test(E2, [], [], [], [], 0)),
   ?assertMatch({5,_}, run_test(E3, [], [], [], [], 0)),
   ?assertMatch({5,_}, run_test(E4, [], [], [], [], 0)),
   ?assertMatch({7,_}, run_test(E6, [], [], [], [], 0)),
@@ -217,7 +207,6 @@ run_test(Src, I, E, K, D, T) ->
 run_tests() ->
   const_test(),
   string_test(),
-  constant_dim_test(),
   tuple_test(),
   primop_test(),
   perturb_test(),

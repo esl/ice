@@ -10,7 +10,7 @@
 %% API tests.
 
 e1_test () ->
-    TimeD = {[0],"t"},
+    TimeD = {dim,"t"},
     {ok, Tree} = tea:string(
         "X
         where
@@ -35,7 +35,7 @@ wherevar_only_test () ->
         Tree).
 
 wheredim_only_test () ->
-    TimeD = {[0],"t"},
+    TimeD = {dim,"t"},
     {ok, Tree} = tea:string(
         "#.t
         where
@@ -48,8 +48,8 @@ wheredim_only_test () ->
         Tree).
 
 e2_test () ->
-    TimeD = {[0],"t"},
-    SpaceD = {[0],"s"},
+    TimeD = {dim,"t"},
+    SpaceD = {dim,"s"},
     {ok, Tree} = tea:string(
         "#.t + #.s
         where
@@ -62,8 +62,8 @@ e2_test () ->
         Tree).
 
 e3_test () ->
-    TimeD = {[0],"t"},
-    SpaceD = {[0],"s"},
+    TimeD = {dim,"t"},
+    SpaceD = {dim,"s"},
     {ok, Tree} = tea:string(
         "#.t + #.s
         where
@@ -77,8 +77,8 @@ e3_test () ->
         Tree).
 
 e4_test () ->
-    TimeD = {[0],"t"},
-    SpaceD = {[0],"s"},
+    TimeD = {dim,"t"},
+    SpaceD = {dim,"s"},
     {ok, Tree} = tea:string(
         "X
         where
@@ -95,8 +95,8 @@ e4_test () ->
         Tree).
 
 e5_test () ->
-    TimeD = {[0],"t"},
-    SpaceD = {[0],"s"},
+    TimeD = {dim,"t"},
+    SpaceD = {dim,"s"},
     {ok, Tree} = tea:string(
         "N0
         where
@@ -133,8 +133,8 @@ e5_test () ->
         Tree).
 
 e6_test () ->
-    TimeD = {[0],"t"},
-    SpaceD = {[0],"s"},
+    TimeD = {dim,"t"},
+    SpaceD = {dim,"s"},
     {ok, Tree} = tea:string(
         "// Tournament in 1 dimension
         A
@@ -183,9 +183,9 @@ e6_test () ->
         Tree).
 
 e7_test () ->
-    TimeD = {[0],"t"},
-    XD = {[0], "x"},
-    YD = {[0], "y"},
+    TimeD = {dim,"t"},
+    XD = {dim, "x"},
+    YD = {dim, "y"},
     {ok, Tree} = tea:string(
         "Y1 @ [x <- 0]
         where
