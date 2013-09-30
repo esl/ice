@@ -147,7 +147,7 @@ wheredim_test() ->
 		       lte({'#', SpaceD}, 1024)),
 	    {'#', SpaceD},
 	    1}}]},
-  	[{TimeD, 1},
+  	[{TimeD, 2},
   	 {SpaceD, 0}]},
 
   %% Parallel, two-dimensional (tournament)
@@ -187,7 +187,7 @@ wheredim_test() ->
   ?assertMatch({[{dim, space}],_}, run_test(E2, [], [], [], [], 0)),
   ?assertMatch({5,_}, run_test(E3, [], [], [], [], 0)),
   ?assertMatch({5,_}, run_test(E4, [], [], [], [], 0)),
-  ?assertMatch({2,_}, run_test(E6, [], [], [], [], 0)),
+  ?assertMatch({7,_}, run_test(E6, [], [], [], [], 0)),
   ?assertMatch({25,_}, run_test(E7, [], [], [], [], 0)).
 
 
@@ -198,11 +198,11 @@ run_test(Src) ->
   D = [],
   T = 0,
   tcache:start_link(100),
-  tcore:eval(Src, I, E, K, D, self(), T).
+  tcore:eval(Src, I, E, K, D, {[0], self()}, T).
 
 run_test(Src, I, E, K, D, T) ->
   tcache:start_link(100),
-  tcore:eval(Src, I, E, K, D, [0], T).
+  tcore:eval(Src, I, E, K, D, {[0],self()}, T).
 
 run_tests() ->
   const_test(),

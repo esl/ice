@@ -13,14 +13,14 @@
 %% the most efficient way of handling the problem.
 %% The processes must be ordered for the cache to work. 
 %%-------------------------------------------------------------------------------------
-spawn_n(Su, N) ->
-  spawn_n(Su, N, []).
+spawn_n({P, Su} = W, Lim) ->
+  spawn_n(W, 0, Lim, []).
 
-spawn_n(Su, 0, Pids) ->
-  lists:sort(Pids);
-spawn_n(Su, N, Pids) ->
+spawn_n(_W, N, Lim, Pids) when N >= Lim->
+  lists:reverse(Pids);
+spawn_n({P, Su} = W, N, Lim, Pids) ->
   Pid = spawn(tthread, evaluator, [Su]),
-  spawn_n(Su, N-1, [Pid|Pids]).
+  spawn_n(W, N+1, Lim, [{P ++ [N], Pid}|Pids]).
 
 %%-------------------------------------------------------------------------------------
 %% @doc Join sorted threads to ordered expressions.
@@ -30,9 +30,9 @@ join(Pids, Xs, I, E, K, D, W, T) when length(Pids) == length(Xs) ->
 
 join([], [], I, E, K, D, W, T, Lim) ->
   sync(Lim);
-join([Pid|Pids], [X|Xs], I, E, K, D, W, T, Lim) ->
-  Pid ! {Pid, X, I, E, K, D, W, T},
-  join(Pids, Xs, I, E, K, D, W, T, Lim).
+join([{_,Pid}=W1|Pids], [X|Xs], I, E, K, D, W0, T, Lim) ->
+  Pid ! {W1, X, I, E, K, D, W0, T},
+  join(Pids, Xs, I, E, K, D, W0, T, Lim).
 
 %%-------------------------------------------------------------------------------------
 %% @doc Synchronize thread W with threads W + 1 to Wn - 1 by receiving their results.
@@ -55,8 +55,8 @@ sync(N, Acc) ->
 %% Internal
 %%-------------------------------------------------------------------------------------
 evaluator(Su) ->
-  {Pid, X, I, E, K, D, W, T} = receive M -> M end,
-  evaluator(Su, X, I, E, K, D, Pid, T).
+  {W1, X, I, E, K, D, W0, T} = receive M -> M end,
+  evaluator(Su, X, I, E, K, D, W1, T).
 				    
 evaluator(Su, X, I, E, K, D, Wi, T) ->
   {D0, T0} = tcore:eval(X, I, E, K, D, Wi, T),
