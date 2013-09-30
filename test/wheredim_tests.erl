@@ -25,51 +25,55 @@ wheredim_test_() ->
 basic() ->
   "#.t
   where
-      dim t <- 58
+    dim t <- 58
   end".
 
 e1() ->
   "X
   where
-      dim t <- 0
-      var X = #.t
+    dim t <- 0
+    var X = #.t
   end".
 
 e2() ->
   "#.t + #.s
   where
-      dim t <- 1
+    dim t <- 1
   end".
 
 e3() ->
   "#.t + #.s
   where
-      dim t <- 2
-      dim s <- 3
+    dim t <- 2
+    dim s <- 3
   end".
 
 e4() ->
   "X
   where
-      var X = #.t + #.s
-      dim t <- 2
-      dim s <- 3
+    var X = #.t + #.s
+    dim t <- 2
+    dim s <- 3
   end".
 
 e5() ->
   %% Sequential, multi-dimensional wheredim clause
   "N0
   where
-      var N0 = if #.t == 0
-         then N1
-         else N0 @ [t <- #.t - 1]
-         fi
-      var N1 = if #.s == 0
-         then 1
-         else N1 @ [s <- #.s - 1] * 2
-         fi
-      dim t <- 10
-      dim s <- 10
+    var N0 =
+      if #.t == 0 then
+        N1
+      else
+        N0 @ [t <- #.t - 1]
+      fi
+    var N1 =
+      if #.s == 0 then
+        1
+      else
+        N1 @ [s <- #.s - 1] * 2
+      fi
+    dim t <- 10
+    dim s <- 10
   end".
 
 e6() ->
@@ -77,45 +81,50 @@ e6() ->
   "// Tournament in 1 dimension
   A
   where
-      dim t <- 2
-      dim s <- 0
+    dim t <- 2
+    dim s <- 0
 
-      // Compute A across space
-      var A =
-    if #.t <= 0 then
+    // Compute A across space
+    var A =
+      if #.t <= 0 then
         B
-    else
+      else
         (A @ [s <- #.s * 2] + A @ [s <- #.s * 2 + 1]) @ [t <- #.t - 1]
-    fi
+      fi
 
-      // Ensure spatial values are between 1 and 1024
-      var B =
-         if #.s >= 1 and #.s <= 1024 then
+    // Ensure spatial values are between 1 and 1024
+    var B =
+      if #.s >= 1 and #.s <= 1024 then
         #.s
-    else
+      else
         1
-    fi
+      fi
   end".
 
 e7() ->
   %% Parallel, two-dimensional (tournament)
   "Y1 @ [x <- 0]
   where
-      dim t <- 2
-      var Y1 = if #.t <= 0 then X1
-         else ( Y1 @ [x <- #.x * 2,     y <- #.y * 2]
+    dim t <- 2
+    var Y1 =
+      if #.t <= 0 then
+        X1
+      else
+        ( Y1 @ [x <- #.x * 2,     y <- #.y * 2]
         + Y1 @ [x <- #.x * 2 + 1, y <- #.y * 2]
         + Y1 @ [x <- #.x * 2,     y <- #.y * 2 + 1]
         + Y1 @ [x <- #.x * 2 + 1, y <- #.y * 2 + 1]
         ) @ [t <- #.t - 1]
-         fi
-      var X1 = if     #.x >= 1 and #.x <= 1024
-      and #.y >= 1 and #.y <= 1024
-         then #.x
-         else 1
-         fi
-      dim x <- 0
-      dim y <- 0
+      fi
+    var X1 =
+      if #.x >= 1 and #.x <= 1024 and
+         #.y >= 1 and #.y <= 1024 then
+        #.x
+      else
+        1
+      fi
+    dim x <- 0
+    dim y <- 0
   end".
 
 e8_test () ->
