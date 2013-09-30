@@ -12,9 +12,10 @@
 %% Just call it like so: `tv:hook(?MODULE, "caching var", {D,A,Ta})`.
 -spec hook (Module::name(), Descr::name(), Data::term()) -> any().
 hook (Name, Descr, Data) ->
-    case whereis(icy) of
+    Tv = isee,
+    case whereis(Tv) of
         _P when is_pid(_P) ->
-            icy:pass(Name, icy:time(), Descr, Data);
+            Tv:pass(Name, Tv:time(), Descr, Data);
         _ ->
             {error, {unable_to_pass,server_down}}
     end.

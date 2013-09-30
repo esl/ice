@@ -35,5 +35,6 @@ rebar:
 	mv rebar.d/rebar $@
 	rm -rf rebar.d/
 
-icy: test
-	erl -pa .eunit -pa deps/*/ebin -s icy -eval 'io:format("Icy at http://localhost:8888\n").'
+isee: test
+	erl -pa .eunit -pa deps/*/ebin -s isee -eval 'io:format("Visualisor up at http://localhost:8888\n").'
+.PHONY: isee
