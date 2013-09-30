@@ -80,7 +80,6 @@ find_update(X, K, D, {Id0,_}=W0, _T, S0) ->
   case tdtree:lookup({X,KD}, S0#state.data) of
     [] ->
       io:format(user, "Inserting {~p,~p} = ~p~n", [X,KD,{calc,W0}]),
-      tv:hook(?MODULE, find_update, {X,KD,{calc,W0}}),
       Tr = tdtree:insert({X,KD,{calc,W0}}, S0#state.data),
       S2 = S0#state{data = Tr, ck = S0#state.ck + 1},
       {reply, {{calc,W0}, S2#state.ck},  S2};
@@ -107,11 +106,9 @@ add_update(X, K, D, W, _T, V1, S0) ->
       case V1 of
         V1 when is_list(V1) ->
           io:format(user, "Inserting {~p,~p} = {i,~p,[]}~n", [X,KD,V1]),
-          tv:hook(?MODULE, add_update, {X,KD,V1}),
           Tr = tdtree:insert({X,KD,{i,V1,[]}}, S0#state.data);
         V1 ->
           io:format(user, "Inserting {~p,~p} = ~p~n", [X,KD,V1]),
-          tv:hook(?MODULE, add_update, {X,KD,V1}),
           Tr = tdtree:insert({X,KD,V1}, S0#state.data)
       end,
       S1 = S0#state{data = Tr, ck = S0#state.ck + 1},
