@@ -13,9 +13,12 @@
 %% ------------------------------------------------------------------------------
 eval(Xs, I, E, K, D, W, T) ->
   Lim = length(Xs),
-  Pids = tthread:spawn_n(self(), Lim),
+  %%------------------------------------------------------------------------------
+  %% Note: Passing self() here means W is self()
+  %%------------------------------------------------------------------------------
+  Pids = tthread:spawn_n(W, Lim),
   R = tthread:join(Pids, Xs, I, E, K, D, W, T),
-  tv:hook(?MODULE, eval, {self(), Pids, Lim, Xs, I, E, K, D, W, T, R}),
+  tv:hook(?MODULE, eval, {W, Pids, Lim, Xs, I, E, K, D, W, T, R}),
   R.
 
 %%-------------------------------------------------------------------------------------

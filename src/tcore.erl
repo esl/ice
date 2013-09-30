@@ -21,13 +21,6 @@ eval({char, Str}, _I, _E, _K, _D, _W, T) ->
   {{char, Str}, T};
 
 %%-------------------------------------------------------------------------------------
-%% Constant Dimensions
-%%-------------------------------------------------------------------------------------
-eval({'?', Dim}, _I, _E, K, _D, _W, T) ->
-  tv:hook(?MODULE, eval, {'?',Dim}),
-  {lookup_ordinate(Dim, K), T};
-
-%%-------------------------------------------------------------------------------------
 %% Primop
 %%-------------------------------------------------------------------------------------
 eval({primop, F, Eis}, I, E, K, D, W, T) ->
@@ -48,7 +41,7 @@ eval({primop, F, Eis}, I, E, K, D, W, T) ->
 eval({t, Es}, I, E, K, D, W, T) ->
   tv:hook(?MODULE, eval, {t,Es}),
   XiEis = lists:flatmap(fun({Xi,Ei}) -> [Xi,Ei] end, Es),
-  {Dis, MaxT} = tpar:eval(XiEis, I, E, K, D, W, T),
+  {Dis, MaxT} = tpar:eval(XiEis, I, E, K, D, W, T), %% XXX Does evaluating lhs make sense if dims are not ground values?
   case tset:union_d(Dis) of
     {true, Dims} ->
       {Dims, MaxT};
@@ -102,6 +95,7 @@ eval({'#', E0}, I, E, K, D, W, T) ->
     false ->
       case lists:member(D0, D) of
 	true ->
+          dim = element(1, D0), %% Hardcoded expectation
 	  {lookup_ordinate(D0, K), T0};
 	false ->
 	  {[D0], T0}
@@ -154,43 +148,39 @@ eval({wheredim, E0, XiEis}, I, E, K, D, W, T) ->
       {Dims, MaxT};
     {false, Dis} ->
       Ki1 = tset:perturb(K, lists:zip(Xis, Dis)),
-      %% Check that the same wheredim hadn't already been executed in
-      %% another context. Checking this on the set of known dimensions.
-      %%
-      %% "The evaluation of a wheredim clause in one context cannot
-      %% depend on the evaluation of the same wheredim clause in
-      %% another context. To ensure that this is the case, the
-      %% transitive closure of the dependency graph for the nodes in
-      %% the abstract syntax tree must not contain any loops for
-      %% wheredim clauses."
-      %%
-      %% Ref. "Multidimensional Infinite Data in the Language Lucid",
-      %% Feb 2013
+      %% XXX It is unclear if legal or illegal programs violating the
+      %% following hardcoded expectation exist.
       [] = tset:intersection(D, Xis),
-      %% Wheredim should act "like a context perturbation with a
-      %% unique local dimension" (ref "Multidimensional Infinite Data
-      %% in the Language Lucid", Feb 2013), therefore the "fixed
-      %% dimension" shall be added by the wheredim rule to the set of
-      %% known dimensions (the rule in the paper needs this correction
-      %% re Delta).
+      %% The hidden dimensions shall be added by the wheredim rule to
+      %% the set of known dimensions (the rule in the paper
+      %% "Multidimensional Infinite Data in the Language Lucid", Feb
+      %% 2013, needs this correction re Delta) otherwise the body
+      %% cannot use them.
       Di1 = tset:union(D, Xis),
       eval(E0, I, E, Ki1, Di1, W, MaxT)
   end;
 
 %%-------------------------------------------------------------------------------------
-%% Dimension Identifiers
+%% Dimension Identifiers (public)
 %%-------------------------------------------------------------------------------------
-eval({Pos,_}=Xi, _I, _E, _K, _D, _W, T) when is_list(Pos) ->
-  tv:hook(?MODULE, eval, {id,Xi}),
-  {Xi, T};
+eval({dim,Xi}=Di, _I, _E, _K, _D, _W, T) when is_list(Xi) orelse is_atom(Xi) ->
+  tv:hook(?MODULE, eval, {id,Di}),
+  {Di, T};
+
+%%-------------------------------------------------------------------------------------
+%% Dimension Identifiers (hidden)
+%%-------------------------------------------------------------------------------------
+eval({dim,{_Pos,_Idx},Xi}=Di, _I, _E, _K, _D, _W, T) when is_list(Xi) orelse is_atom(Xi) ->
+  tv:hook(?MODULE, eval, {hidden_dim,Di}),
+  {Di, T};
 
 %%-------------------------------------------------------------------------------------
 %% Variable Identifiers
 %%-------------------------------------------------------------------------------------
 eval(Xi, I, E, K, D, W, T) when is_list(Xi) orelse is_atom(Xi) ->
   tv:hook(?MODULE, eval, {var,Xi, I, E, K, D, W, T}),
-  {{_D0, _T0}, Dims} = eval1(Xi, I, E, K, [], W, T),
-  tcache:find(Xi, K, Dims, W, T).
+  {_D0, _T0} = eval1(Xi, I, E, K, [], W, T),
+  tcache:find(Xi, K, D, W, T).
 
 %%-------------------------------------------------------------------------------------
 %% Finding identifiers in the cache
@@ -202,7 +192,7 @@ eval1(Xi, I, E, K, D, W, T) ->
     true -> 
       eval1(Xi, I, E, K, tset:union(D, D0), W, T);
     false ->
-      {{D0, T0}, D}
+      {D0, T0}
   end.
 
 eval2(Xi, I, E, K, D, W, T) ->

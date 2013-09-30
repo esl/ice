@@ -9,8 +9,8 @@
 
 wherevar_test_() ->
   {foreach,
-   _Setup = fun() -> tcache:start_link(100), ok end,
-   _Cleanup = fun(_) -> tcache:stop() end,
+   _Setup = fun() -> {ok, Pid} = tcache:start_link(100), Pid end,
+   _Cleanup = fun(Pid) -> tcache_stop(Pid) end,
    [
     ?_test(basic()),
     ?_test(var_can_refer_to_var_defined_above_in_same_wherevar()),
@@ -28,8 +28,7 @@ A
 where
   var A = 46
 end"),
-  D = [],
-  ?assertMatch({46, _}, tcore:eval(T, [],[],[], D, [0], 0)).
+  ?assertMatch({46, _}, tea:eval(T)).
 
 var_can_refer_to_var_defined_above_in_same_wherevar() ->
     {ok, T} = tea:string("
@@ -38,8 +37,7 @@ where
   var B = 46
   var A = B
 end"),
-  D = [],
-  ?assertMatch({46, _}, tcore:eval(T, [],[],[], D, [0], 0)).
+  ?assertMatch({46, _}, tea:eval(T)).
 
 var_can_refer_to_var_defined_below_in_same_wherevar() ->
     {ok, T} = tea:string("
@@ -48,8 +46,7 @@ where
   var A = B
   var B = 46
 end"),
-  D = [],
-  ?assertMatch({46, _}, tcore:eval(T, [],[],[], D, [0], 0)).
+  ?assertMatch({46, _}, tea:eval(T)).
 
 var_cannot_be_redefined_in_same_wherevar() ->
   {ok, T} = tea:string("
@@ -58,9 +55,8 @@ where
   var A = 46
   var A = 58
 end"),
-  D = [],
   %% FIXME This should give a compile error "Error, var A already defined."
-  ?assertMatch({58, _}, tcore:eval(T, [],[],[], D, [0], 0)).
+  ?assertMatch({58, _}, tea:eval(T)).
 
 var_redefined_in_nested_wherevar_hangs_cache() ->
   {ok, T} = tea:string("
@@ -73,8 +69,7 @@ where
   end
   var A = B // Outer A
 end"),
-  D = [],
-  ?assertError({badmatch, hang}, tcore:eval(T, [],[],[], D, [0], 0)).
+  ?assertError({badmatch, hang}, tea:eval(T)).
 
 var_redefined_in_nested_wherevar_hangs_cache2() ->
   {ok, T} = tea:string("
@@ -90,8 +85,7 @@ where
   end
   var A = B // Outer A
 end"),
-  D = [],
-  ?assertError({badmatch, hang}, tcore:eval(T, [],[],[], D, [0], 0)).
+  ?assertError({badmatch, hang}, tea:eval(T)).
 
 var_redefined_in_nested_wherevar_hangs_cache3() ->
   {ok, T} = tea:string("
@@ -110,8 +104,7 @@ where
     var A = B // Outer A
   end
 end"),
-  D = [],
-  ?assertError({badmatch, hang}, tcore:eval(T, [],[],[], D, [0], 0)).
+  ?assertError({badmatch, hang}, tea:eval(T)).
 
 var_redefined_in_nested_wherevar_is_shadowed_by_outer_if_outer_already_queried() ->
   {ok, T} = tea:string("
@@ -130,10 +123,17 @@ where
     fi
   var A = C
 end"),
-  ?debugVal(T),
-  D = [],
-  ?assertMatch({46, _}, tcore:eval(T, [],[],[], D, [0], 0)).
+  ?assertMatch({46, _}, tea:eval(T)).
 
 %% Internals
+
+tcache_stop(Pid) ->
+  catch tcache:stop(),
+  case is_process_alive(Pid) of
+    false ->
+      ok;
+    true ->
+      tcache_stop(Pid)
+  end.
 
 %% End of Module.

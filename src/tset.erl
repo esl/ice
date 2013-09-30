@@ -1,6 +1,7 @@
 -module(tset).
 
--export([intersection/2, restrict/2, union/2, restrict_domain/2]).
+-export([intersection/2, difference/2]).
+-export([restrict/2, union/2, restrict_domain/2]).
 -export([subset/2, domain/1, is_d/1, is_k/1]).
 -export([subtract/2]).
 -export([subtract_domain/2, perturb/2, union_d/1]).
@@ -11,6 +12,12 @@
 %%-------------------------------------------------------------------------------------
 intersection(A, B) ->
   sets:to_list(sets:intersection(sets:from_list(A), sets:from_list(B))).
+
+%%------------------------------------------------------------------------------
+%% @doc The difference between set A and set B
+%%------------------------------------------------------------------------------
+difference(A, B) ->
+  sets:to_list(sets:subtract(sets:from_list(A), sets:from_list(B))).
 
 %%-------------------------------------------------------------------------------------
 %% @doc Restrict ( <| ) set A by set B
@@ -94,19 +101,14 @@ identical(A,B) ->
 %%-------------------------------------------------------------------------------------
 %% @doc Check whether A is a set of known dimensions
 %%-------------------------------------------------------------------------------------
-is_d(A) when is_list(A) orelse is_atom(A) ->
+is_d({dim, A}) when is_list(A) orelse is_atom(A) ->
   true;
-is_d({Id, X}) when is_list(Id) andalso (is_list(X) orelse is_atom(X)) ->
+is_d({dim, {_Pos,_Idx}, A}) when is_list(A) orelse is_atom(A) ->
   true;
-is_d({hidden, Id}) when is_list(Id) ->
-  true;
-is_d(X) ->
+is_d(_) ->
   false.
 
 is_k(A) when is_list(A) ->
-  lists:any(fun (X) -> is_d(X) end, A);
-is_k(A) ->
+  lists:any(fun (X) -> is_d(X) end, A); %% XXX Why any and not all?
+is_k(_) ->
   false.
-
-  
-		 

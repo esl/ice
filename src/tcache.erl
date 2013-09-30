@@ -16,7 +16,7 @@
 -record(state, { 
 	  ck    = 0,
 	  age   = 2,
-	  data  = ets:new(tcache, [named_table]),
+	  data  = tdtree:new(),
 	  limit = undefined
 	 }).
 
@@ -30,7 +30,6 @@ init([Limit]) ->
   {ok, #state{ limit = Limit }}.
 
 terminate(_, S) ->
-  true = ets:delete(S#state.data),
   ok.
 
 %%------------------------------------------------------------------------------
@@ -72,58 +71,56 @@ handle_call(collect, _From, S0) ->
 
 handle_call(terminate, _From, S0) ->
   {stop, normal, ok, S0}.
+
 %%------------------------------------------------------------------------------
 %% internal
 %%------------------------------------------------------------------------------
-find_update(X, K, D, W0, _T, S0) ->
-  Ko = lists:keysort(1, K),
-  Do = lists:keysort(1, D),
-  case ets:lookup(S0#state.data, {X,Ko,Do}) of
+find_update(X, K, D, {Id0,_}=W0, _T, S0) ->
+  KD = lists:keysort(1, tset:restrict_domain(K, D)),
+  case tdtree:lookup({X,KD}, S0#state.data) of
     [] ->
-      Ks = [{Key,Ord} || {{_,Key},Ord} <- Ko],
-      Ds = [Key || {_,Key} <- Do],
-      io:format(user, "Adding ~p ~p ~p = ~p~n", [X,Ks,Ds,{calc,W0}]),
-      tv:hook(?MODULE, find_update, {X,Ks,Ds,{calc,W0}}),
-      true = ets:insert_new(S0#state.data, {{X,Ko,Do}, {calc, W0}}),
-      S2 = S0#state{ck = S0#state.ck + 1},
-      {reply, {{calc, W0}, S2#state.ck},  S2};
-    [{_, {calc, W1} = V}] ->
-      case W1 =< W0 of
-	true ->
-	  io:format(user, "Thread ~p is less than or equal to ~p~n", [W1, W0]),
-	  {reply, hang, S0};
-	false ->
-	  {reply, {V, S0#state.ck}, S0}
+      io:format(user, "Inserting {~p,~p} = ~p~n", [X,KD,{calc,W0}]),
+      tv:hook(?MODULE, find_update, {X,KD,{calc,W0}}),
+      Tr = tdtree:insert({X,KD,{calc,W0}}, S0#state.data),
+      S2 = S0#state{data = Tr, ck = S0#state.ck + 1},
+      {reply, {{calc,W0}, S2#state.ck},  S2};
+    {calc, {Id1,_}=W1} = V ->
+      case lists:prefix(Id1, Id0) of
+        true ->
+          %% FIXME
+          %% Threads can be <= to others which is wrong, but it works...
+          %% io:format(user, "Thread ~p is less than or equal to ~p~n", [W1, W0]),
+          {reply, hang, S0};
+        false ->
+          {reply, {V, S0#state.ck}, S0}
       end;
-    [{_, V}] ->
-      {reply, {V, S0#state.ck}, S0};
-    [_,_|_] ->
-      io:format(user, "Multiple objects with the same key~n", []),
-      {reply, hang, S0}
+    V ->
+      {reply, {V, S0#state.ck}, S0}
   end.
 
 add_update(X, K, D, W, _T, V1, S0) ->
-  Ko = lists:keysort(1, K),
-  Do = lists:keysort(1, D),
-  case ets:lookup(S0#state.data, {X,Ko,Do}) of
+  KD = lists:keysort(1, tset:restrict_domain(K, D)),
+  case tdtree:lookup({X,KD}, S0#state.data) of
     [] ->
       {reply, hang, S0};
-    [{_, {calc, W}}] ->
-      Ks = [{Key,Ord} || {{_,Key},Ord} <- Ko],
-      Ds = [Key || {_,Key} <- Do],
-      io:format(user, "Adding ~p ~p ~p = ~p~n", [X,Ks,Ds,V1]),
-      tv:hook(?MODULE, add_update, {X,Ks,Ds,V1}),
-      ets:insert(S0#state.data, {{X,Ko,Do}, V1}),
-      S1 = S0#state{ck = S0#state.ck + 1},
+    {calc, W} ->
+      case V1 of
+        V1 when is_list(V1) ->
+          io:format(user, "Inserting {~p,~p} = {i,~p,[]}~n", [X,KD,V1]),
+          tv:hook(?MODULE, add_update, {X,KD,V1}),
+          Tr = tdtree:insert({X,KD,{i,V1,[]}}, S0#state.data);
+        V1 ->
+          io:format(user, "Inserting {~p,~p} = ~p~n", [X,KD,V1]),
+          tv:hook(?MODULE, add_update, {X,KD,V1}),
+          Tr = tdtree:insert({X,KD,V1}, S0#state.data)
+      end,
+      S1 = S0#state{data = Tr, ck = S0#state.ck + 1},
       {reply, {V1, S1#state.ck}, S1};
-    [{_, {calc, _W1}}] ->
-      {reply, hang, S0};
-    [O1,_O2|_Os] ->
-      io:format(user, "Multiple objects with the same key ~p ~p~n", [W, O1]),
+    {calc, _} = Thr ->
+      io:format("Wrong thread ~p~n", [Thr]),
       {reply, hang, S0};
     Other ->
-      [{{_X1,_K1,_D1},V1}] = Other,
-      io:format(user, "Other = ~p, W = ~p~n", [Other, W]),
+      io:format(user, "Other = ~p, W = ~p~nData1 = ~p~n", [Other, W, S0#state.data]),
       {reply, hang, S0}
   end.
 
