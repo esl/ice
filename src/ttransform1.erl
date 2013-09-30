@@ -334,7 +334,7 @@ wheredim_eval_test_() ->
    _Cleanup = fun(Pid) -> tcache_stop(Pid) end,
    [
     ?_assertMatch({46,_},
-                  tcore:eval(T1, [],[], [], [], [0], 0))
+                  tcore:eval(T1, [],[], [], [], {[],self()}, 0))
    ]}.
 
 where_eval_test_() ->
@@ -364,7 +364,7 @@ where_eval_test_() ->
    _Cleanup = fun(Pid) -> tcache_stop(Pid) end,
    [
     ?_assertMatch({46,_},
-                  tcore:eval(T1, [],[], [], [], [0], 0))
+                  tcore:eval(T1, [],[], [], [], {[],self()}, 0))
    ]}.
 
 tcache_stop(Pid) ->

@@ -24,10 +24,9 @@ context_query_needs_dim() ->
   TimeD = {dim,"t"},
   ?assertEqual({'#',TimeD}, T),
   K = [{TimeD,46}],
-  D = [],
   ?assertMatch(
      {[TimeD],_},
-     tcore:eval(t1(t0(T)), [],[], K, D, [0], 0)).
+     eval(t1(t0(T)), K, _D=[])).
 
 context_perturbation_does_not_need_dim() ->
   {ok, T} = tea:string("#.t @ [t <- 46]"),
@@ -37,27 +36,24 @@ context_perturbation_does_not_need_dim() ->
      {'#',TimeD},
      {t,[{TimeD,46}]}},
   ?assertEqual(ExpectedT, T),
-  D = [],
   ?assertMatch(
      {46, _},
-     tcore:eval(t1(t0(T)), [],[],[], D, [0], 0)).
+     eval(t1(t0(T)), _K=[], _D=[])).
 
 wherevar_does_not_need_dim() ->
   T = {wherevar,"X",
        [{"X",46}]},
-  D = [],
   ?assertMatch(
      {46,_},
-     tcore:eval(t1(T), [],[],[], D, [0], 0)).
+     eval(t1(T), _K=[], _D=[])).
 
 wheredim_does_not_need_dim() ->
   T = {wheredim,
        {'#',{dim,"t"}},
        [{"t",58}]},
-  D = [],
   ?assertMatch(
      {58,_},
-     tcore:eval(t1(T), [],[],[], D, [0], 0)).
+     eval(t1(T), _K=[], _D=[])).
 
 wherevar_inside_wheredim_does_not_need_dim() ->
   {ok, T} = tea:string(
@@ -73,10 +69,9 @@ wherevar_inside_wheredim_does_not_need_dim() ->
      [ {"t", 58} ]},
   T0 = t0(T),
   ?assertEqual(ExpectedT0, T0),
-  D = [],
   ?assertMatch(
      {58,_},
-     tcore:eval(t1(T0), [],[],[], D, [0], 0)).
+     eval(t1(T0), _K=[], _D=[])).
 
 
 %% Internals
@@ -95,5 +90,8 @@ t0(T) ->
 
 t1(T) ->
   ttransform1:transform1(T).
+
+eval(T, K, D) ->
+  tcore:eval(T,[],[],K,D,{[],self()},0).
 
 %% End of Module.

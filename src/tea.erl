@@ -26,7 +26,7 @@ file(Filename) ->
 eval(T) ->
   T0 = ttransform0:transform0(T),
   T1 = ttransform1:transform1(T0),
-  tcore:eval(T1,[],[],[],[],[0],0).
+  tcore:eval(T1,[],[],[],[],{[],self()},0).
 
 -spec i(string()) -> term().
 i(String) ->
