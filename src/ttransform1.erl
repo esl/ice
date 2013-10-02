@@ -84,7 +84,7 @@ transform1({'#', E0}, P, H) ->
 %% %% Base Abstraction
 %% %%------------------------------------------------------------------------------
 %% %% TODO
-%% transform1({b_abs, Is, Params, E, P}, H) ->
+%% transform1({b_abs, Is, Params, E}, H) ->
 %%   Dims = [{dim, Param} || Param <- Params],
 %%   %% Here we expect P to be a runtime assigned constant
 %%   {b_abs, tset:union(H, [transform1(I, H) || I <- Is]),
