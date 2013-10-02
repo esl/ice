@@ -139,10 +139,10 @@ transform1({wheredim, E0, XiEis}, P, H) ->
        transform1(Ei, subexpr_pos(N,P), H) }
      || {{Xi, Ei}, N} <- lists:zip(XiEis, Ns)],
   Dims = [Dim || {Dim, _} <- DimsEis],
-  HWoShadowedDims = %% e.g. nested wheredims with same local dim identifier
-    lists:filter(fun({dim, _, Xi}) -> not lists:keymember(Xi, 3, Dims) end, H),
-  NewE0 = transform1(E0, subexpr_pos(0,P), tset:union(HWoShadowedDims, Dims)),
-  {wheredim, NewE0,
+  {wheredim,
+   transform1(E0, subexpr_pos(0,P),
+              %% Deal with e.g. nested wheredims with same local dim id
+              set_union_w_dim_shadowing(H, Dims)),
    DimsEis};
 
 %%-------------------------------------------------------------------------------------
@@ -161,6 +161,17 @@ transform1({dim, Xi}=Di, _P, H) when is_list(Xi) orelse is_atom(Xi) ->
 %%-------------------------------------------------------------------------------------
 transform1(Xi, _P, _H) when is_list(Xi) orelse is_atom(Xi) ->
   Xi.
+
+
+%%-------------------------------------------------------------------------------------
+%% Internal - Set helpers
+%%-------------------------------------------------------------------------------------
+set_union_w_dim_shadowing(DimSetToBeShadowed, DimSetShadowing) ->
+  tset:union(
+    lists:filter(
+      fun({dim, _, Xi}) -> not lists:keymember(Xi, 3, DimSetShadowing) end,
+      DimSetToBeShadowed),
+    DimSetShadowing).
 
 
 %%-------------------------------------------------------------------------------------
