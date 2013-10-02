@@ -38,7 +38,7 @@ transform0({string, Str}) ->
 %% Primop
 %%------------------------------------------------------------------------------
 transform0({primop, F, Eis}) ->
-  {primop, F, lists:map(fun (Exp) -> transform0(Exp) end, Eis)};
+  {primop, F, lists:map(fun transform0/1, Eis)};
 
 %%------------------------------------------------------------------------------
 %% Tuple Expression
