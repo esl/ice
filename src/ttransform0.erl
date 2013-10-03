@@ -77,8 +77,8 @@ transform0({fn, X, Params, E}) ->
 transform0({b_abs, Is, Params, E}) ->
   {b_abs, lists:map(fun transform0/1, Is), Params, transform0(E)};
 
-transform0({b_apply, E0, E1}) ->
-  {b_apply, transform0(E0), transform0(E1)};
+transform0({b_apply, E0, Eis}) ->
+  {b_apply, transform0(E0), lists:map(fun transform0/1, Eis)};
 
 %%------------------------------------------------------------------------------
 %% Value Abstraction
@@ -86,8 +86,8 @@ transform0({b_apply, E0, E1}) ->
 transform0({v_abs, Is, Params, E}) ->
   {v_abs, lists:map(fun transform0/1, Is), Params, transform0(E)};
 
-transform0({v_apply, E0, E1}) ->
-  {v_apply, transform0(E0), transform0(E1)};
+transform0({v_apply, E0, Eis}) ->
+  {v_apply, transform0(E0), lists:map(fun transform0/1, Eis)};
 
 %%------------------------------------------------------------------------------
 %% Intension Abstraction
