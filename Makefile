@@ -36,5 +36,7 @@ rebar:
 	rm -rf rebar.d/
 
 isee: compile
-	erl -pa ebin -pa deps/*/ebin -s isee -eval 'io:format("Visualisor up at http://localhost:8888\n").'
+	erl -pa ebin -pa deps/*/ebin \
+            -s isee \
+            -eval 'io:format("Visualisor up at http://localhost:8888\n").'
 .PHONY: isee
