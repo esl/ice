@@ -12,8 +12,8 @@ b_test_() ->
    ?_test(basic_b_abs()),
    %% TODO ?_test(b_abs_w_two_formal_params()),
    %% TODO ?_test(nested_b_abs_shadow_formal_params_correctly()),
-   ?_test(b_abs_nested_in_wheredim_does_not_cause_wrong_substitution())
-   %% TODO ?_test(wheredim_nested_in_b_abs_does_not_cause_wrong_substitution()),
+   ?_test(b_abs_nested_in_wheredim_does_not_cause_wrong_substitution()),
+   ?_test(wheredim_nested_in_b_abs_does_not_cause_wrong_substitution())
    %% TODO ?_test(basic_b_apply())
   ].
 
@@ -44,6 +44,21 @@ b_abs_nested_in_wheredim_does_not_cause_wrong_substitution() ->
                     {'#',WheredimT}
                    ]}},
       [{WheredimT,46}]},
+     t1(T0)),
+  %% TODO: eval
+  ok.
+
+wheredim_nested_in_b_abs_does_not_cause_wrong_substitution() ->
+  %% TODO: parser for sequence of abstractions and applications
+  T0 = abs_from_string("fun F.t = (t + #.t) where dim t <- 46 end"),
+  WheredimT = {dim,{[0],1},"t"},
+  BAbsT = {phi,"t"},
+  ?assertMatch(
+     {b_abs, [], [BAbsT],
+      {wheredim,
+       {primop, _, [{'#',BAbsT},
+                    {'#',WheredimT}]},
+       [{WheredimT,46}]}},
      t1(T0)),
   %% TODO: eval
   ok.
