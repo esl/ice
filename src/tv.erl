@@ -14,7 +14,7 @@
 hook (Name, Descr, Data) ->
     Tv = isee,
     case whereis(Tv) of
-        _P when is_pid(_P) ->
+        P when is_pid(P) ->
             Tv:pass(Name, Tv:time(), Descr, Data);
         _ ->
             {error, {unable_to_pass,server_down}}
