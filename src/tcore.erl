@@ -100,11 +100,31 @@ eval({Q, E0}, I, E, K, D, W, T) when Q == '#' orelse Q == '?' ->
 %%------------------------------------------------------------------------------
 %% Base Abstraction
 %%------------------------------------------------------------------------------
-eval({b_abs, _Is, _Params, _E0}, _I, _E, _K, _D, _W, _T) ->
-  not_implemented;
+eval({b_abs, Is, Params, E0}, I, E, K, D, W, T) ->
+  {Dis, MaxT} = tpar:eval(Is, I, E, K, D, W, T),
+  case tset:union_d(Dis) of
+    {true, Dims} ->
+      {Dims, MaxT};
+    {false, Dis1} -> %% XXX Why Dis1 even if equal to Dis?
+      KD = tset:restrict_domain(K, D),
+      FrozenK = tset:restrict_domain(KD, Dis1),
+      {{frozen_b_abs, FrozenK, Params, E0}, MaxT}
+  end;
 
-eval({b_apply, _E0, _Eis}, _I, _E, _K, _D, _W, _T) ->
-  not_implemented;
+eval({b_apply, E0, Eis}, I, E, K, D, W, T) ->
+  {Dis, MaxT} = tpar:eval([E0 | Eis], I, E, K, D, W, T),
+  case tset:union_d(Dis) of
+    {true, Dims} ->
+      {Dims, MaxT};
+    {false, Dis1} -> %% XXX Why Dis1 even if equal to Dis?
+      [D01 | D0is] = Dis1,
+      {frozen_b_abs, AbsK, AbsParams, AbsBody} = D01,
+      AbsParamsK = lists:zip(AbsParams, D0is),
+      eval(AbsBody, I, E,
+           tset:perturb(AbsK, AbsParamsK),
+           tset:union(tset:domain(AbsK), tset:domain(AbsParamsK)),
+           W, MaxT)
+  end;
 
 %%------------------------------------------------------------------------------
 %% Value Abstraction
