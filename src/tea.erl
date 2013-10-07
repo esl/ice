@@ -39,25 +39,25 @@ i(String) ->
 %% Internals
 
 rework_tree (Tree) ->
-    V = fun
+  V = fun
         ({where, _, Exp, DimDecls, VarDecls}) ->
-            TopExpr = Exp,
-            Vars = [{var,Var, E}|| {var_decl,_,Var,E} <- VarDecls],
-            Dims = [{dim,Dim,N} || {dim_decl,_,Dim,N} <- DimDecls],
-            {where, TopExpr, Vars ++ Dims};
+          TopExpr = Exp,
+          Vars = [{var,Var,E} || {var_decl,_,Var,E} <- VarDecls],
+          Dims = [{dim,Dim,N} || {dim_decl,_,Dim,N} <- DimDecls],
+          {where, TopExpr, Vars ++ Dims};
 
         ({'if', _, Ifs, Else}) -> unwrap_elsifs(Ifs, Else);
 
         ({'#.', _, Val}) ->
-            %% On Section 6.4.4 “Querying the context” of the TL-doc-0.3.0
-            %%   it explicitly states that ‘#.’ takes a dimension as input.
-            {'#', {dim,Val}};
+          %% On Section 6.4.4 “Querying the context” of the TL-doc-0.3.0
+          %%   it explicitly states that ‘#.’ takes a dimension as input.
+          {'#', {dim,Val}};
 
         ({tuple, _, Assocs}) -> {t, Assocs};
         ({tuple_element, _, Lhs, Rhs}) ->
-            %% On Section 6.4.5 “Tuples” of the TL-doc-0.3.0, tuples are
-            %%   defined as a ‘set of (dimension, value) pairs’.
-            {{dim,Lhs}, Rhs};
+          %% On Section 6.4.5 “Tuples” of the TL-doc-0.3.0, tuples are
+          %%   defined as a ‘set of (dimension, value) pairs’.
+          {{dim,Lhs}, Rhs};
 
         ({'or'=Op, _, A, B})  -> {primop, fun erlang:Op/2, [A,B]};
         ({'and'=Op, _, A, B}) -> {primop, fun erlang:Op/2, [A,B]};
@@ -70,7 +70,7 @@ rework_tree (Tree) ->
         ({'+'=Op, _, A, B})   -> {primop, fun erlang:Op/2, [A,B]};
         ({'-'=Op, _, A, B})   -> {primop, fun erlang:Op/2, [A,B]};
         ({'*'=Op, _, A, B})   -> {primop, fun erlang:Op/2, [A,B]};
-        % No '/' yet because lack of floats.
+                                                % No '/' yet because lack of floats.
         ({'%', _, A, B})      -> {primop, fun mod/2, [A,B]};
 
         ({bool, _, Boolean}) -> Boolean;
@@ -83,19 +83,22 @@ rework_tree (Tree) ->
         ({int,_,N}) -> N;
         ({float,_,N}) -> N;
         ({id,_,Name}) -> Name
-    end,
-    case tvisitor:visit(V, Tree, bottom_up) of
-        [{expr,_,TheWhereDim}] -> {ok, TheWhereDim}
-        ; Else -> {ok, Else}
-    end.
+      end,
+  case tvisitor:visit(V, Tree, bottom_up) of
+    [{expr,_,TheWhereDim}] ->
+      {ok, TheWhereDim};
+    Else ->
+      {ok, Else}
+  end.
 
 
 unwrap_elsifs ([{if_expr,_,Cond,Then}|Rest], Else) ->
-    {'if', Cond, Then, unwrap_elsifs(Rest,Else)};
-unwrap_elsifs ([], Else) -> Else.
+  {'if', Cond, Then, unwrap_elsifs(Rest,Else)};
+unwrap_elsifs ([], Else) ->
+  Else.
 
 mod (X, Y) ->
-%% http://stackoverflow.com/a/858649/1418165
-    (X rem Y + Y) rem Y.
+  %% http://stackoverflow.com/a/858649/1418165
+  (X rem Y + Y) rem Y.
 
 %% End of Module.
