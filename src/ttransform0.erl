@@ -38,7 +38,7 @@ transform0({string, Str}) ->
 %% Primop
 %%------------------------------------------------------------------------------
 transform0({primop, F, Eis}) ->
-  {primop, F, lists:map(fun (Exp) -> transform0(Exp) end, Eis)};
+  {primop, F, lists:map(fun transform0/1, Eis)};
 
 %%------------------------------------------------------------------------------
 %% Tuple Expression
@@ -74,26 +74,26 @@ transform0({fn, X, Params, E}) ->
 %%------------------------------------------------------------------------------
 %% Base Abstraction
 %%------------------------------------------------------------------------------
-transform0({b_abs, Is, Params, E, P}) ->
-  {b_abs, Is, Params, transform0(E), P};
+transform0({b_abs, Is, Params, E}) ->
+  {b_abs, lists:map(fun transform0/1, Is), Params, transform0(E)};
 
-transform0({b_apply, E0, E1}) ->
-  {b_apply, transform0(E0), transform0(E1)};
+transform0({b_apply, E0, Eis}) ->
+  {b_apply, transform0(E0), lists:map(fun transform0/1, Eis)};
 
 %%------------------------------------------------------------------------------
 %% Value Abstraction
 %%------------------------------------------------------------------------------
 transform0({v_abs, Is, Params, E}) ->
-  {v_abs, Is, Params, transform0(E)};
+  {v_abs, lists:map(fun transform0/1, Is), Params, transform0(E)};
 
-transform0({v_apply, E0, E1}) ->
-  {v_apply, transform0(E0), transform0(E1)};
+transform0({v_apply, E0, Eis}) ->
+  {v_apply, transform0(E0), lists:map(fun transform0/1, Eis)};
 
 %%------------------------------------------------------------------------------
 %% Intension Abstraction
 %%------------------------------------------------------------------------------
 transform0({i_abs, Is, E}) ->
-  {i_abs, Is, transform0(E)};
+  {i_abs, lists:map(fun transform0/1, Is), transform0(E)};
 
 transform0({i_apply, E}) ->
   {i_apply, transform0(E)};
@@ -126,7 +126,7 @@ transform0(Xi) when is_list(Xi) orelse is_atom(Xi) ->
 transform0_prime([], E) ->
   E;
 transform0_prime([{b_param, Param}|Ps], E) ->
-  transform0_prime(Ps, {b_abs, [], [Param], E, undef});
+  transform0_prime(Ps, {b_abs, [], [Param], E});
 transform0_prime([{v_param, Param}|Ps], E) ->
   transform0_prime(Ps, {v_abs, [], [Param], E});
 transform0_prime([{n_param, Param}|Ps], E) ->
