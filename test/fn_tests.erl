@@ -33,14 +33,7 @@ basic_b_abs() ->
 
 b_abs_nested_in_wheredim_does_not_cause_wrong_substitution() ->
   %% TODO: parser for sequence of abstractions and applications
-  {ok, [FnT]} = tea:string("fun F.t = t + #.t"),
-  ?assertMatch({fn, "F", [{b_param,"t"}],
-                {primop, _, ["t",
-                             {'#',{dim,"t"}}
-                            ]}},
-               FnT),
-  {wherevar, "F", [{"F", BAbsT0}]} = t0(FnT), %% XXX This wherevar in transform1 smells badly
-  %% Test actually starts here
+  BAbsT0 = abs_from_string("fun F.t = t + #.t"),
   T0 = {wheredim, BAbsT0, [{"t",46}]},
   WheredimT = {dim,{[],1},"t"},
   BAbsT = {phi,"t"},
@@ -63,5 +56,10 @@ t0(T) ->
 
 t1(T) ->
   ttransform1:transform1(T).
+
+abs_from_string(String) ->
+  {ok, [FnT]} = tea:string(String),
+  {wherevar, FnName, [{FnName, AbsT0}]} = t0(FnT), %% XXX This wherevar in transform1 smells badly
+  AbsT0.
 
 %% End of Module.
