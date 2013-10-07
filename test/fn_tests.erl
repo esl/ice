@@ -18,28 +18,16 @@ b_test_() ->
   ].
 
 basic_b_abs() ->
-  %% TODO: parser
-  T =
-    {fn, "F",
-     [{b_param,"argAsVarId"}],
-     "argAsVarId"},
-  ExpectedT0 =
-    {wherevar, "F",
-     [{"F",
-       {b_abs, [],
-        ["argAsVarId"],
-        "argAsVarId"}}]},
-  T0 = t0(T),
-  ?assertEqual(ExpectedT0, T0),
+  %% TODO: parser for sequence of abstractions and applications
+  {ok, [FnT]} = tea:string("fun F.argAsVarId = argAsVarId"),
+  ?assertEqual({fn, "F", [{b_param,"argAsVarId"}], "argAsVarId"},
+               FnT),
+  {wherevar, "F", [{"F", BAbsT0}]} = t0(FnT), %% XXX This wherevar in transform1 smells badly
+  ?assertEqual({b_abs, [], ["argAsVarId"], "argAsVarId"},
+               BAbsT0),
   ArgAsPhiDim = {phi,"argAsVarId"},
-  ExpectedT1 =
-    {wherevar, "F",
-     [{"F",
-       {b_abs, [],
-        [ArgAsPhiDim],
-        {'#',ArgAsPhiDim}}}]},
-  T1 = t1(T0),
-  ?assertEqual(ExpectedT1, T1),
+  ?assertEqual({b_abs, [], [ArgAsPhiDim], {'#',ArgAsPhiDim}},
+               t1(BAbsT0)),
   %% TODO: eval
   ok.
 
