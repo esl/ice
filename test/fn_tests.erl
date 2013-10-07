@@ -9,10 +9,10 @@
 
 b_test_() ->
   [
-   ?_test(basic_b_abs())
+   ?_test(basic_b_abs()),
    %% TODO ?_test(b_abs_w_two_formal_params()),
    %% TODO ?_test(nested_b_abs_shadow_formal_params_correctly()),
-   %% TODO ?_test(b_abs_nested_in_wheredim_does_not_cause_wrong_substitution()),
+   ?_test(b_abs_nested_in_wheredim_does_not_cause_wrong_substitution())
    %% TODO ?_test(wheredim_nested_in_b_abs_does_not_cause_wrong_substitution()),
    %% TODO ?_test(basic_b_apply())
   ].
@@ -26,10 +26,35 @@ basic_b_abs() ->
   ?assertEqual({b_abs, [], ["argAsVarId"], "argAsVarId"},
                BAbsT0),
   ArgAsPhiDim = {phi,"argAsVarId"},
-  ?assertEqual({b_abs, [], [ArgAsPhiDim], {'#',ArgAsPhiDim}},
-               t1(BAbsT0)),
+  ExpectedBAbsT1 = {b_abs, [], [ArgAsPhiDim], {'#',ArgAsPhiDim}},
+  ?assertEqual(ExpectedBAbsT1, t1(BAbsT0)),
   %% TODO: eval
   ok.
+
+b_abs_nested_in_wheredim_does_not_cause_wrong_substitution() ->
+  %% TODO: parser for sequence of abstractions and applications
+  {ok, [FnT]} = tea:string("fun F.t = t + #.t"),
+  ?assertMatch({fn, "F", [{b_param,"t"}],
+                {primop, _, ["t",
+                             {'#',{dim,"t"}}
+                            ]}},
+               FnT),
+  {wherevar, "F", [{"F", BAbsT0}]} = t0(FnT), %% XXX This wherevar in transform1 smells badly
+  %% Test actually starts here
+  T0 = {wheredim, BAbsT0, [{"t",46}]},
+  WheredimT = {dim,{[],1},"t"},
+  BAbsT = {phi,"t"},
+  ?assertMatch(
+     {wheredim,
+      {b_abs, [WheredimT], [BAbsT],
+       {primop, _, [{'#',BAbsT},
+                    {'#',WheredimT}
+                   ]}},
+      [{WheredimT,46}]},
+     t1(T0)),
+  %% TODO: eval
+  ok.
+
 
 %% Internals
 
