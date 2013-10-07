@@ -38,14 +38,13 @@ transform1(E) ->
   transform1(E, root_expr_pos(), [], []).
 
 
--spec transform1(
-        AstIn :: term(),
-        P :: pos(),
-        HiddenDimsReplacingLocalDims, %% i.e. local dimensions in wheredim
-        HiddenDimsReplacingLocalVars %% i.e. formal parameters in abstraction
-       ) -> AstOut :: term() when
-    HiddenDimsReplacingLocalDims :: [{dim, hidden_dim(), VarId}],
-    HiddenDimsReplacingLocalVars :: [{phi, VarId}],
+-spec transform1(AstIn :: term(), P :: pos(), HD, HV) -> AstOut :: term() when
+    %% HD is the list of hidden dimensions allocated for replacing
+    %% local dimensions in wheredim clauses
+    HD :: [{dim, hidden_dim(), VarId}],
+    %% HV is the list of hidden dimensions allocated for replacing
+    %% formal parameters in abstractions
+    HV :: [{phi, VarId}],
     VarId :: nonempty_string() | atom().
 
 %%------------------------------------------------------------------------------
@@ -185,8 +184,10 @@ transform1({wheredim, E0, XiEis}, P, HD, HV) ->
 %%-------------------------------------------------------------------------------------
 transform1({dim, Xi}=Di, _P, HD, _HV) when is_list(Xi) orelse is_atom(Xi) ->
   case lists:keyfind(Xi, 3, HD) of
-    {dim, _, Xi} = HiddenDimReplacingLocalDim ->
-      HiddenDimReplacingLocalDim;
+    {dim, _, Xi} = HDim ->
+      %% Replace local dimension of wheredim clause with previously
+      %% allocated hidden dimension
+      HDim;
     false ->
       Di
   end;
@@ -196,9 +197,11 @@ transform1({dim, Xi}=Di, _P, HD, _HV) when is_list(Xi) orelse is_atom(Xi) ->
 %%-------------------------------------------------------------------------------------
 transform1(Xi, _P, _HD, HV) when is_list(Xi) orelse is_atom(Xi) ->
   case lists:keyfind(Xi, 2, HV) of
-    {phi, Xi} = DimReplacingLocalVar ->
+    {phi, Xi} = HDim ->
+      %% Replace formal parameter of abstraction with context query of
+      %% previously allocated hidden dimension
       %% XXX Re-introduce internal '?' (constant dimension query) in tcore?
-      {'#', DimReplacingLocalVar};
+      {'#', HDim};
     false ->
       Xi
   end.
