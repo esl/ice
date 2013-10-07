@@ -31,7 +31,7 @@ basic_b_abs() ->
   ?assertEqual({b_abs, [], ["argAsVarId"], "argAsVarId"},
                BAbsT0),
   ArgAsPhiDim = {phi,"argAsVarId"},
-  ExpectedBAbsT1 = {b_abs, [], [ArgAsPhiDim], {'#',ArgAsPhiDim}},
+  ExpectedBAbsT1 = {b_abs, [], [ArgAsPhiDim], {'?',ArgAsPhiDim}},
   ?assertEqual(ExpectedBAbsT1, t1(BAbsT0)),
   %% TODO: eval
   ok.
@@ -46,7 +46,7 @@ b_abs_nested_in_wheredim_does_not_cause_wrong_substitution() ->
   ?assertMatch(
      {wheredim,
       {b_abs, [WheredimT], [BAbsT],
-       {primop, _, [{'#',BAbsT},
+       {primop, _, [{'?',BAbsT},
                     {'#',WheredimT}
                    ]}},
       [{WheredimT,46}]},
@@ -62,7 +62,7 @@ wheredim_nested_in_b_abs_does_not_cause_wrong_substitution() ->
   ?assertMatch(
      {b_abs, [], [BAbsT],
       {wheredim,
-       {primop, _, [{'#',BAbsT},
+       {primop, _, [{'?',BAbsT},
                     {'#',WheredimT}]},
        [{WheredimT,46}]}},
      t1(T0)),

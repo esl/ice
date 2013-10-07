@@ -77,7 +77,7 @@ eval({'if', E0, E1, E2}, I, E, K, D, W, T) ->
 %%-------------------------------------------------------------------------------------
 %% Dimensional Query
 %%-------------------------------------------------------------------------------------
-eval({'#', E0}, I, E, K, D, W, T) ->
+eval({Q, E0}, I, E, K, D, W, T) when Q == '#' orelse Q == '?' ->
   {D0, T0} = eval(E0, I, E, K, D, W, T),
   case tset:is_k(D0) of
     true ->
@@ -85,7 +85,12 @@ eval({'#', E0}, I, E, K, D, W, T) ->
     false ->
       case lists:member(D0, D) of
 	true ->
-          dim = element(1, D0), %% Hardcoded expectation
+          DimType =
+            case Q of
+              '#' -> dim;
+              '?' -> phi
+            end,
+          DimType = element(1, D0), %% Hardcoded expectation
 	  {lookup_ordinate(D0, K), T0};
 	false ->
 	  {[D0], T0}
@@ -155,9 +160,15 @@ eval({dim,Xi}=Di, _I, _E, _K, _D, _W, T) when is_list(Xi) orelse is_atom(Xi) ->
   {Di, T};
 
 %%-------------------------------------------------------------------------------------
-%% Dimension Identifiers (hidden)
+%% Dimension Identifiers (hidden) replacing local dimensions in wheredim clauses
 %%-------------------------------------------------------------------------------------
 eval({dim,{_Pos,_Idx},Xi}=Di, _I, _E, _K, _D, _W, T) when is_list(Xi) orelse is_atom(Xi) ->
+  {Di, T};
+
+%%-------------------------------------------------------------------------------------
+%% Dimension Identifiers replacing formal parameters in abstractions
+%%-------------------------------------------------------------------------------------
+eval({phi,Xi}=Di, _I, _E, _K, _D, _W, T) when is_list(Xi) orelse is_atom(Xi) ->
   {Di, T};
 
 %%-------------------------------------------------------------------------------------

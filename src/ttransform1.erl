@@ -200,8 +200,7 @@ transform1(Xi, _P, _HD, HV) when is_list(Xi) orelse is_atom(Xi) ->
     {phi, Xi} = HDim ->
       %% Replace formal parameter of abstraction with context query of
       %% previously allocated hidden dimension
-      %% XXX Re-introduce internal '?' (constant dimension query) in tcore?
-      {'#', HDim};
+      {'?', HDim};
     false ->
       Xi
   end.
