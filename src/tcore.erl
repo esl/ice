@@ -202,14 +202,14 @@ eval2(Xi, I, E, K, D, W, T) ->
     {calc, W} ->
       case lists:keyfind(Xi, 1, E) of
         {_, E0} ->
-          tv:hook(?MODULE, eval2, {will_now_eval, E0, I, E, K, D, W, T0}),
+          tv:hook(?MODULE, will_now_eval2, {E0, I, E, K, D, W, T0}),
           {D1, T1} = eval(E0, I, E, K, D, W, T0),
           tcache:add(Xi, K, D, W, T1, D1);
         false ->
           {error, undefined_identifier, Xi}
       end;
     {calc, _W1} ->
-      tv:hook(?MODULE, eval2, {thread_waiting, _W1}),
+      tv:hook(?MODULE, eval2_thread_waiting, _W1),
       eval2(Xi, I, E, K, D, W, T0 + 1);
     _ ->
       {D0, T0}
