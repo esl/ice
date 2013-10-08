@@ -12,9 +12,9 @@ b_test_() ->
    basic_b_abs(),
    basic_b_apply(),
    b_abs_w_two_formal_params(),
-   %% TODO ?_test(nested_b_abs_shadow_formal_params_correctly()),
    b_abs_nested_in_wheredim_does_not_cause_wrong_substitution(),
-   wheredim_nested_in_b_abs_does_not_cause_wrong_substitution()
+   wheredim_nested_in_b_abs_does_not_cause_wrong_substitution(),
+   b_abs_can_return_b_abs_and_formal_params_are_not_confused()
   ].
 
 %% TODO: integration with parser for sequence of function declarations and calls
@@ -134,6 +134,26 @@ wheredim_nested_in_b_abs_does_not_cause_wrong_substitution() ->
    _Cleanup = fun(Pid) -> tcache_stop(Pid) end,
    [
     ?_assertMatch({47,_}, tcore_eval(T1))
+   ]}.
+
+b_abs_can_return_b_abs_and_formal_params_are_not_confused() ->
+  %% HACK: Get the b_abs node without the wherevar
+  BAbsFT0 = abs_from_string("fun F.x.y = x - y"),
+  BAbsGT0 = abs_from_string("fun G.x = F"),
+  T0 =
+    {wherevar,
+     {b_apply,
+      {b_apply, "G", [1]},
+      [46,3]},
+     [{"F",BAbsFT0},
+      {"G",BAbsGT0}]},
+  T1 = t1(T0),
+  %% Eval
+  {setup,
+   _Setup = fun() -> {ok, Pid} = tcache:start_link(100), Pid end,
+   _Cleanup = fun(Pid) -> tcache_stop(Pid) end,
+   [
+    ?_assertMatch({43,_}, tcore_eval(T1))
    ]}.
 
 
