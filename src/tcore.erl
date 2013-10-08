@@ -112,18 +112,16 @@ eval({b_abs, Is, Params, E0}, I, E, K, D, W, T) ->
   end;
 
 eval({b_apply, E0, Eis}, I, E, K, D, W, T) ->
-  {Dis, MaxT} = tpar:eval([E0 | Eis], I, E, K, D, W, T),
-  case tset:union_d(Dis) of
-    {true, Dims} ->
-      {Dims, MaxT};
-    {false, Dis1} -> %% XXX Why Dis1 even if equal to Dis?
-      [D01 | D0is] = Dis1,
-      {frozen_b_abs, AbsK, AbsParams, AbsBody} = D01,
-      AbsParamsK = lists:zip(AbsParams, D0is),
-      eval(AbsBody, I, E,
-           tset:perturb(AbsK, AbsParamsK),
-           tset:union(tset:domain(AbsK), tset:domain(AbsParamsK)),
-           W, MaxT)
+  %% The evaluation of abs is serialized from the evaluation of actual
+  %% parameters for re-using the context perturbation '@' expression
+  {D0, T0} = eval(E0, I, E, K, D, W, T),
+  case tset:is_k(D0) of
+    true ->
+      {D0, T0};
+    false ->
+      {frozen_b_abs, AbsK, AbsParams, AbsBody} = D0,
+      eval({'@', AbsBody, {t, lists:zip(AbsParams, Eis)}},
+           I, E, AbsK, tset:domain(AbsK), W, T0)
   end;
 
 %%------------------------------------------------------------------------------
