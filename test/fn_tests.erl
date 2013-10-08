@@ -57,8 +57,8 @@ basic_b_apply() ->
    ]}.
 
 b_abs_w_two_formal_params() ->
-  BAbsT0 = {b_abs, [], ["x", "y"],
-            tprimop:minus("x", "y")}, %% Minus is not commutative
+  BAbsT0 = abs_from_string("fun F.x .y = x - y"), %% Minus is not commutative
+  ?assertMatch({b_abs, [], ["x", "y"], {primop, _, ["x", "y"]}}, BAbsT0),
   T0 = b_apply("F", BAbsT0, [46, 1]),
   T1 = t1(T0),
   %% Eval
