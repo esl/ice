@@ -85,7 +85,7 @@ t1(T) ->
 %% generated AST, without being distracted by the wherevar.
 abs_from_string(String) ->
   {ok, [FnT]} = tea:string(String),
-  {wherevar, FnName, [{FnName, AbsT0}]} = t0(FnT), %% XXX This wherevar in transform1 smells badly
+  {wherevar, FnName, [{FnName, AbsT0}]} = t0(FnT), %% XXX This wherevar in transform 0 smells badly
   AbsT0.
 
 %% End of Module.
