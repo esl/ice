@@ -16,6 +16,7 @@ b_test_() ->
    wheredim_nested_in_b_abs_does_not_cause_wrong_substitution(),
    b_abs_can_return_b_abs_and_formal_params_are_not_confused(),
    b_abs_can_use_argument_for_querying_creation_context(),
+   b_abs_can_use_argument_for_querying_creation_context2(),
    creation_of_b_abs_in_multiple_contexts_plays_nicely_w_cache()
   ].
 
@@ -176,6 +177,34 @@ b_abs_can_use_argument_for_querying_creation_context() ->
       %% XXX Passing dimensions as base parameters is not possible in
       %% the parser ATM. It should be possible only having ground
       %% values as dimensions.
+      [DimT]},
+     [{"F",BAbsT0}]},
+  T1 = t1(T0),
+  {foreach,
+   _Setup = fun() -> {ok, Pid} = tcache:start_link(100), Pid end,
+   _Cleanup = fun(Pid) -> tcache_stop(Pid) end,
+   [
+    ?_assertMatch({46,_}, tcore_eval(T1, [], [])),
+    ?_assertMatch({46,_}, tcore_eval(T1, [{DimT,58}], [DimT]))
+   ]}.
+
+b_abs_can_use_argument_for_querying_creation_context2() ->
+  %% Same as test
+  %% b_abs_can_use_argument_for_querying_creation_context, simply
+  %% writing body of b_abs differently in order to ensure that rules
+  %% play together
+  DimT = {dim,"t"},
+  BAbsT0 =
+    {b_abs, [DimT], ["x"],
+     %% Specify a more complex body, that should be equivalent to {'#',"x"}
+     t0({where,
+         {'#',
+          %% XXX Nesting "#.(#.y)" cannot be expressed with current parser
+          {'#',{dim,"y"}}},
+         [{dim,"y","x"}]})},
+  T0 =
+    {wherevar,
+     {b_apply, {'@', "F", {t, [{DimT,46}]}},
       [DimT]},
      [{"F",BAbsT0}]},
   T1 = t1(T0),
