@@ -106,9 +106,14 @@ eval({b_abs, Is, Params, E0}, I, E, K, D, W, T) ->
     {true, Dims} ->
       {Dims, MaxT};
     {false, Dis1} -> %% XXX Why Dis1 even if equal to Dis?
-      KD = tset:restrict_domain(K, D),
-      FrozenK = tset:restrict_domain(KD, Dis1),
-      {{frozen_b_abs, FrozenK, Params, E0}, MaxT}
+      case tset:difference(Dis1, D) of
+        [] ->
+          KD = tset:restrict_domain(K, D),
+          FrozenK = tset:restrict_domain(KD, Dis1),
+          {{frozen_b_abs, FrozenK, Params, E0}, MaxT};
+        Dims2 ->
+          {Dims2, MaxT}
+      end
   end;
 
 eval({b_apply, E0, Eis}, I, E, K, D, W, T) ->
