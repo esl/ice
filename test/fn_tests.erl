@@ -15,6 +15,7 @@ b_test_() ->
    b_abs_nested_in_wheredim_does_not_cause_wrong_substitution(),
    wheredim_nested_in_b_abs_does_not_cause_wrong_substitution(),
    b_abs_can_return_b_abs_and_formal_params_are_not_confused(),
+   b_abs_cannot_access_dims_not_in_creation_context(), %% E.g. formal params of outer b_abs
    b_abs_can_use_argument_for_querying_creation_context(),
    b_abs_can_use_argument_for_querying_creation_context2(),
    creation_of_b_abs_in_multiple_contexts_plays_nicely_w_cache()
@@ -162,6 +163,27 @@ b_abs_can_return_b_abs_and_formal_params_are_not_confused() ->
    _Cleanup = fun(Pid) -> tcache_stop(Pid) end,
    [
     ?_assertMatch({43,_}, tcore_eval(T1))
+   ]}.
+
+b_abs_cannot_access_dims_not_in_creation_context() ->
+  {wherevar, "G", [{"G", BAbsG}]} =
+    t0(s("G
+         where
+           fun G.y = F
+           where
+             fun F.x = x - y
+           end
+         end")),
+  NestedT0 = {b_apply, BAbsG, [1]},
+  T0 = {b_apply, NestedT0, [46]},
+  %% Eval
+  {foreach,
+   _Setup = fun() -> {ok, Pid} = tcache:start_link(100), Pid end,
+   _Cleanup = fun(Pid) -> tcache_stop(Pid) end,
+   [
+    ?_assertMatch({{frozen_b_abs,[],[{phi,"x"}],{primop,_,_}},_},
+                  tcore_eval(t1(NestedT0))),
+    ?_assertMatch({[{phi,"y"}],_}, tcore_eval(t1(T0)))
    ]}.
 
 b_abs_can_use_argument_for_querying_creation_context() ->
