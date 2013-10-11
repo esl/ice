@@ -110,47 +110,37 @@ transform1({'#', E0}, P, HD, HV) ->
 %% Base Abstraction
 %%------------------------------------------------------------------------------
 transform1({b_abs, Is, Params, E}, P, HD, HV) ->
-  Ns = lists:seq(1, length(Is)), %% 1,2,...
-  NewIs = tset:union(HD,
-                     [transform1(I, subexpr_pos(N,P), HD, HV)
-                      || {I, N} <- lists:zip(Is, Ns)]),
   ParamsAsDims = lists:map(fun(Param) -> {phi, Param} end, Params),
-  {b_abs, NewIs,
+  {b_abs, transform1_frozen_dims(Is, P, HD, HV),
    ParamsAsDims,
    transform1(E, subexpr_pos(0,P), HD, tset:union(HV, ParamsAsDims))};
 
 transform1({b_apply, E0, Eis}, P, HD, HV) ->
-  Ns = lists:seq(1, length(Eis)), %% 1,2,...
-  NewEis =
-    lists:map(
-      fun({Ei, N}) ->
-          transform1(Ei, subexpr_pos(N,P), HD, HV) %% Pos 1,2,...
-      end,
-      lists:zip(Eis, Ns)),
-  {b_apply, transform1(E0, subexpr_pos(0,P), HD, HV), NewEis};
+  {b_apply, transform1(E0, subexpr_pos(0,P), HD, HV),
+   transform1_actual_params(Eis, P, HD, HV)};
 
-%% %%------------------------------------------------------------------------------
-%% %% Value Abstraction
-%% %%------------------------------------------------------------------------------
-%% %% TODO
-%% transform1({v_abs, Is, Params, E}, H) ->
-%%   Dims = [{dim, Param} || Param <- Params],
-%%   {v_abs, tset:union(H, [transform1(I, H) || I <- Is]),
-%%    Dims,
-%%    transform1(E, tset:union(H, Dims))};
+%%------------------------------------------------------------------------------
+%% Value Abstraction
+%%------------------------------------------------------------------------------
+transform1({v_abs, Is, Params, E}, P, HD, HV) ->
+  ParamsAsDims = lists:map(fun(Param) -> {phi, Param} end, Params),
+  {v_abs, transform1_frozen_dims(Is, P, HD, HV),
+   ParamsAsDims,
+   transform1(E, subexpr_pos(0,P), HD, tset:union(HV, ParamsAsDims))};
 
-%% transform1({v_apply, E0, E1}, H) ->
-%%   {v_apply, transform1(E0, H), transform1(E1, H)};
+transform1({v_apply, E0, Eis}, P, HD, HV) ->
+  {v_apply, transform1(E0, subexpr_pos(0,P), HD, HV),
+   transform1_actual_params(Eis, P, HD, HV)};
 
-%% %%------------------------------------------------------------------------------
-%% %% Intension Abstraction
-%% %%------------------------------------------------------------------------------
-%% transform1({i_abs, Is, E}, H) ->
-%%   {i_abs, tset:union(H, [transform1(I, H) || I <- Is]),
-%%    transform1(E, H)};
+%%------------------------------------------------------------------------------
+%% Intension Abstraction
+%%------------------------------------------------------------------------------
+transform1({i_abs, Is, E}, P, HD, HV) ->
+  {i_abs, transform1_frozen_dims(Is, P, HD, HV),
+   transform1(E, subexpr_pos(0,P), HD, HV)};
 
-%% transform1({i_apply, E}, H) ->
-%%   {i_apply, transform1(E, H)};
+transform1({i_apply, E}, P, HD, HV) ->
+  {i_apply, transform1(E, subexpr_pos(0,P), HD, HV)}; %% XXX Need for subexpression???
 
 %%------------------------------------------------------------------------------
 %% Wherevar
@@ -204,6 +194,24 @@ transform1(Xi, _P, _HD, HV) when is_list(Xi) orelse is_atom(Xi) ->
     false ->
       Xi
   end.
+
+
+%%-------------------------------------------------------------------------------------
+%% Internal - Helpers for transforming abstractions and applications
+%%-------------------------------------------------------------------------------------
+transform1_frozen_dims(Is, P, HD, HV) ->
+  Ns = lists:seq(1, length(Is)), %% 1,2,...
+  tset:union(
+    tset:union(HD, HV),
+    [transform1(I, subexpr_pos(N,P), HD, HV) || {I, N} <- lists:zip(Is, Ns)]).
+
+transform1_actual_params(Eis, P, HD, HV) ->
+  Ns = lists:seq(1, length(Eis)), %% 1,2,...
+  lists:map(
+    fun({Ei, N}) ->
+        transform1(Ei, subexpr_pos(N,P), HD, HV) %% Pos 1,2,...
+    end,
+    lists:zip(Eis, Ns)).
 
 
 %%-------------------------------------------------------------------------------------
