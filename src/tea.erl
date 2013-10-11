@@ -40,6 +40,9 @@ i(String) ->
 
 rework_tree (Tree) ->
   V = fun
+        ({call, _, FunExpr, Params}) ->
+          {fn_call, FunExpr, lists:map(fun rework_fun_param/1, Params)};
+
         ({where, _, Exp, DimDecls, VarDecls}) ->
           TopExpr = Exp,
           Vars = [{var,Var,E} || {var_decl,_,Var,E} <- VarDecls],

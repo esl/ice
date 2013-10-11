@@ -20,6 +20,7 @@
 %%
 %% Function AST should look like this:
 %% {fn, X, [{b_param, BArg} | {v_param, VArg} | {n_param, NArg}], E}
+%% {fn_call, E, [{b_param, BArg} | {v_param, VArg} | {n_param, NArg}]}
 %%
 %% Where AST should look like this:
 %% {where, E0, [{dim, DName, DVal}, {var, VName, VVal}]}
