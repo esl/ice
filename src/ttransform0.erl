@@ -65,13 +65,6 @@ transform0({'#', E0}) ->
   {'#', transform0(E0)};
 
 %%------------------------------------------------------------------------------
-%% Function Transformation
-%%------------------------------------------------------------------------------
-transform0({fn, X, Params, E}) ->
-  {wherevar, X,
-   [{X, transform0_prime(lists:reverse(Params), transform0(E))}]};
-
-%%------------------------------------------------------------------------------
 %% Base Abstraction
 %%------------------------------------------------------------------------------
 transform0({b_abs, Is, Params, E}) ->
@@ -103,7 +96,10 @@ transform0({i_apply, E}) ->
 %%------------------------------------------------------------------------------
 transform0({where, E0, VDisEis}) ->
   %% We should probably signal an error when the body contains other elements..
-  Vars = [{Xi,transform0(Ei)} || {var,Xi,Ei} <- VDisEis],
+  Vars =
+    [{Xi,transform0(Ei)} || {var,Xi,Ei} <- VDisEis] ++
+    [{Fi,transform0_prime(Params,transform0(E))} %% Function transformation
+     || {fn,Fi,Params,E} <- VDisEis],
   Dims = [{Xi,transform0(Ei)} || {dim,Xi,Ei} <- VDisEis],
   transform0_where(Vars, Dims, E0);
 
@@ -122,18 +118,29 @@ transform0(Xi) when is_list(Xi) orelse is_atom(Xi) ->
 %%------------------------------------------------------------------------------
 %% Transform0 prime is responsible for transforming a list of function parameters
 %% into base, value and named abstractions, given a body E.
+%%
+%% Base functions [...] take as arguments a tuple, and cannot be curried.
+%% Ref: 4.5.2 "Base functions" in paper "Higher-order Multidimensional Programming", Aug 2012
 %%------------------------------------------------------------------------------
-transform0_prime([], E) ->
+transform0_prime(Params, E) ->
+  {BParams, VNParams} =
+    lists:partition(fun({Type, _}) -> Type == b_param end, Params),
+  transform0_prime_vn(lists:reverse(VNParams), transform0_prime_b(BParams, E)).
+
+transform0_prime_b([], E) ->
   E;
-transform0_prime([{b_param, Param}|Ps], E) ->
-  transform0_prime(Ps, {b_abs, [], [Param], E});
-transform0_prime([{v_param, Param}|Ps], E) ->
-  transform0_prime(Ps, {v_abs, [], [Param], E});
-transform0_prime([{n_param, Param}|Ps], E) ->
+transform0_prime_b(Params, E) ->
+  {b_abs, [], lists:map(fun({b_param, Param}) -> Param end, Params), E}.
+
+transform0_prime_vn([], E) ->
+  E;
+transform0_prime_vn([{v_param, Param}|Ps], E) ->
+  transform0_prime_vn(Ps, {v_abs, [], [Param], E});
+transform0_prime_vn([{n_param, Param}|Ps], E) ->
   %%------------------------------------------------------------------------------
   %% FIXME -- Here we need to replace Param in E with an intension application
   %%------------------------------------------------------------------------------
-  transform0_prime(Ps, {v_abs, [], [Param], E}).
+  transform0_prime_vn(Ps, {v_abs, [], [Param], E}).
 
 %%------------------------------------------------------------------------------
 %% Transform0 where transforms a where clause into wherevar / wheredims.
