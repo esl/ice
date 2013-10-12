@@ -18,7 +18,8 @@ b_test_() ->
    b_abs_cannot_access_dims_not_in_creation_context(), %% E.g. formal params of outer b_abs
    b_abs_can_use_argument_for_querying_creation_context(),
    b_abs_can_use_argument_for_querying_creation_context2(),
-   creation_of_b_abs_in_multiple_contexts_plays_nicely_w_cache()
+   creation_of_b_abs_in_multiple_contexts_plays_nicely_w_cache(),
+   toplevel_fun_test()
   ].
 
 %% TODO: integration with parser for sequence of function declarations and calls
@@ -287,6 +288,13 @@ phi_is_recognized_as_a_dim_test_() ->
                   tcore_eval({'if',{'?',BAbsX},46,58}, [], []))
    ]}.
 
+%% This should work ??
+toplevel_fun_test() ->
+  E = t1(t0(s("square.3 where fun square.x = x * x end"))),
+  {setup,
+   _S = fun ()  -> {ok, P} = tcache:start_link(100), P end,
+   _C = fun (P) -> tcache_stop(P) end,
+   [ ?_assertMatch({6,_}, tcore_eval(E, [], [])) ]}.
 
 %% Internals
 
