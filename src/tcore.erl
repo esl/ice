@@ -77,7 +77,7 @@ eval({'if', E0, E1, E2}, I, E, K, D, W, T) ->
 %%-------------------------------------------------------------------------------------
 %% Dimensional Query
 %%-------------------------------------------------------------------------------------
-eval({'#', E0}, I, E, K, D, W, T) ->
+eval({Q, E0}, I, E, K, D, W, T) when Q == '#' orelse Q == '?' ->
   {D0, T0} = eval(E0, I, E, K, D, W, T),
   case tset:is_k(D0) of
     true ->
@@ -85,7 +85,12 @@ eval({'#', E0}, I, E, K, D, W, T) ->
     false ->
       case lists:member(D0, D) of
 	true ->
-          dim = element(1, D0), %% Hardcoded expectation
+          DimType =
+            case Q of
+              '#' -> dim;
+              '?' -> phi
+            end,
+          DimType = element(1, D0), %% Hardcoded expectation
 	  {lookup_ordinate(D0, K), T0};
 	false ->
 	  {[D0], T0}
@@ -95,11 +100,34 @@ eval({'#', E0}, I, E, K, D, W, T) ->
 %%------------------------------------------------------------------------------
 %% Base Abstraction
 %%------------------------------------------------------------------------------
-eval({b_abs, _Is, _Params, _E0}, _I, _E, _K, _D, _W, _T) ->
-  not_implemented;
+eval({b_abs, Is, Params, E0}, I, E, K, D, W, T) ->
+  {Dis, MaxT} = tpar:eval(Is, I, E, K, D, W, T),
+  case tset:union_d(Dis) of
+    {true, Dims} ->
+      {Dims, MaxT};
+    {false, Dis1} -> %% XXX Why Dis1 even if equal to Dis?
+      case tset:difference(Dis1, D) of
+        [] ->
+          KD = tset:restrict_domain(K, D),
+          FrozenK = tset:restrict_domain(KD, Dis1),
+          {{frozen_b_abs, FrozenK, Params, E0}, MaxT};
+        Dims2 ->
+          {Dims2, MaxT}
+      end
+  end;
 
-eval({b_apply, _E0, _Eis}, _I, _E, _K, _D, _W, _T) ->
-  not_implemented;
+eval({b_apply, E0, Eis}, I, E, K, D, W, T) ->
+  %% The evaluation of abs is serialized from the evaluation of actual
+  %% parameters for re-using the context perturbation '@' expression
+  {D0, T0} = eval(E0, I, E, K, D, W, T),
+  case tset:is_k(D0) of
+    true ->
+      {D0, T0};
+    false ->
+      {frozen_b_abs, AbsK, AbsParams, AbsBody} = D0,
+      eval({'@', AbsBody, {t, lists:zip(AbsParams, Eis)}},
+           I, E, AbsK, tset:domain(AbsK), W, T0)
+  end;
 
 %%------------------------------------------------------------------------------
 %% Value Abstraction
@@ -155,9 +183,15 @@ eval({dim,Xi}=Di, _I, _E, _K, _D, _W, T) when is_list(Xi) orelse is_atom(Xi) ->
   {Di, T};
 
 %%-------------------------------------------------------------------------------------
-%% Dimension Identifiers (hidden)
+%% Dimension Identifiers (hidden) replacing local dimensions in wheredim clauses
 %%-------------------------------------------------------------------------------------
 eval({dim,{_Pos,_Idx},Xi}=Di, _I, _E, _K, _D, _W, T) when is_list(Xi) orelse is_atom(Xi) ->
+  {Di, T};
+
+%%-------------------------------------------------------------------------------------
+%% Dimension Identifiers replacing formal parameters in abstractions
+%%-------------------------------------------------------------------------------------
+eval({phi,Xi}=Di, _I, _E, _K, _D, _W, T) when is_list(Xi) orelse is_atom(Xi) ->
   {Di, T};
 
 %%-------------------------------------------------------------------------------------

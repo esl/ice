@@ -40,14 +40,15 @@ i(String) ->
 
 rework_tree (Tree) ->
   V = fun
-        ({declaration, _, {fun_decl, _, Name, Params, Exp}}) ->
-          {fn, Name, lists:map(fun rework_fun_param/1, Params), Exp};
-
         ({where, _, Exp, DimDecls, VarDecls}) ->
           TopExpr = Exp,
           Vars = [{var,Var,E} || {var_decl,_,Var,E} <- VarDecls],
           Dims = [{dim,Dim,N} || {dim_decl,_,Dim,N} <- DimDecls],
-          {where, TopExpr, Vars ++ Dims};
+          Funs = [{fn, Name,
+                   lists:map(fun rework_fun_param/1, Params),
+                   Body}
+                  || {fun_decl,_,Name,Params,Body} <- VarDecls],
+          {where, TopExpr, Vars ++ Dims ++ Funs};
 
         ({'if', _, Ifs, Else}) -> unwrap_elsifs(Ifs, Else);
 
