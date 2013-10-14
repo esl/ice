@@ -119,8 +119,10 @@ transform0(Xi) when is_list(Xi) orelse is_atom(Xi) ->
 %% Transform0 prime is responsible for transforming a list of function parameters
 %% into base, value and named abstractions, given a body E.
 %%
-%% Base functions [...] take as arguments a tuple, and cannot be curried.
-%% Ref: 4.5.2 "Base functions" in paper "Higher-order Multidimensional Programming", Aug 2012
+%% "Base functions [...] take as arguments a tuple, and cannot be
+%% curried."
+%% Ref: 4.5.2 "Base functions" in paper "Higher-order Multidimensional
+%% Programming", Aug 2012
 %%------------------------------------------------------------------------------
 transform0_prime(Params, E) ->
   {BParams, VNParams} =
