@@ -37,12 +37,12 @@ terminate(_, S) ->
 %%------------------------------------------------------------------------------
 find(X, K, D, W, T) ->
   R = gen_server:call(?MODULE, {find, X, K, D, W, T}),
-  tv:hook(?MODULE, find, {{X, K, D, W, T}, R}),
+  tv:hook(?MODULE, self(), find, {{X, K, D, W, T}, R}),
   R.
 
 add(X, K, D, W, T, V) ->
   R = gen_server:call(?MODULE, {add, X, K, D, W, T, V}),
-  tv:hook(?MODULE, add, {{X, K, D, W, T, V}, R}),
+  tv:hook(?MODULE, self(), add, {{X, K, D, W, T, V}, R}),
   R.
 
 collect() ->

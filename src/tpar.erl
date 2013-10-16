@@ -18,7 +18,7 @@ eval(Xs, I, E, K, D, W, T) ->
   %%------------------------------------------------------------------------------
   Pids = tthread:spawn_n(W, Lim),
   R = tthread:join(Pids, Xs, I, E, K, D, W, T),
-  tv:hook(?MODULE, eval, {W, Pids, Lim, Xs, I, E, K, D, W, T, R}),
+  tv:hook(?MODULE, self(), eval, {W, Pids, Lim, Xs, I, E, K, D, W, T, R}),
   R.
 
 %%-------------------------------------------------------------------------------------
@@ -30,7 +30,7 @@ eval_seq(Xs, I, E, K, D, W, T) ->
 eval_seq([], I, E, K, D, W, T, Acc) ->
   {lists:reverse(Acc), T};
 eval_seq([X|Xs], I, E, K, D, W, T, Acc) ->
-  tv:hook(?MODULE, seq, {X, I, E, K, D, W, T, Acc}),
+  tv:hook(?MODULE, self(), seq, {X, I, E, K, D, W, T, Acc}),
   {D0, T1} = tcore:eval(X, I, E, K, D, W, T),
   case T1 > T of
     true ->

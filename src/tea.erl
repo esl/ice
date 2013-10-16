@@ -30,11 +30,11 @@ eval(T) ->
 
 -spec i(string()) -> term().
 i(String) ->
-  tv:hook(?MODULE, i, {self(), String}),
+  tv:hook(?MODULE, self(), i, {self(), String}),
   {ok, Tree} = string(String),
   tcache:start_link(100),
   Res = eval(Tree),
-  tv:hook(?MODULE, result, Res),
+  tv:hook(?MODULE, self(), result, Res),
   tcache:stop(),
   Res.
 

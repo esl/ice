@@ -15,7 +15,7 @@
 %%-------------------------------------------------------------------------------------
 spawn_n({P, Su} = W, Lim) ->
   Pids = spawn_n(W, 0, Lim, []),
-  tv:hook(?MODULE, creating_n_threads, {Su,Lim,Pids}),
+  tv:hook(?MODULE, self(), creating_n_threads, {Su,Lim,Pids}),
   Pids.
 
 spawn_n(_W, N, Lim, Pids) when N >= Lim->
@@ -34,7 +34,7 @@ join([], [], I, E, K, D, W, T, Lim) ->
   sync(Lim);
 join([{_,Pid}=W1|Pids], [X|Xs], I, E, K, D, W0, T, Lim) ->
   Pid ! {W1, X, I, E, K, D, W0, T},
-  tv:hook(?MODULE, joining_thread, Pid),
+  tv:hook(?MODULE, self(), joining_thread, Pid),
   join(Pids, Xs, I, E, K, D, W0, T, Lim).
 
 %%-------------------------------------------------------------------------------------
@@ -63,6 +63,6 @@ evaluator(Su) ->
 				    
 evaluator(Su, X, I, E, K, D, Wi, T) ->
   {D0, T0} = tcore:eval(X, I, E, K, D, Wi, T),
-  tv:hook(?MODULE, thread_evaluated, {Su, {X, I, {e,E}, K, D, Wi, T}, {D0,T0}}),
+  tv:hook(?MODULE, self(), thread_evaluated, {Su, {X, I, {e,E}, K, D, Wi, T}, {D0,T0}}),
   Su ! {Wi, {D0, T0}}.
 
