@@ -12,9 +12,16 @@ i_test_() ->
    _Setup = fun() -> {ok, Pid} = tcache:start_link(100), Pid end,
    _Cleanup = fun(Pid) -> tcache_stop(Pid) end,
    [
+    ?_assertMatch(
+       {[{dim,"t"}],_},
+       tcore_eval(t1(t0(missing_frozen_dim())),
+                  _K=[{{dim,"t"},0}], _D=[])),
     ?_assertMatch({46,_}, eval(temperatureAtInuvik()))
    ]}.
 
+
+missing_frozen_dim() ->
+  {i_abs, [{dim,"t"}], 46}.
 
 temperatureAtInuvik() ->
   InuvikS = s("`Inuvik`"),
