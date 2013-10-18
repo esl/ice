@@ -8,34 +8,33 @@
 %% API tests.
 
 i_test_() ->
-  [
-   temperatureAtInuvik()
-  ].
+  {foreach,
+   _Setup = fun() -> {ok, Pid} = tcache:start_link(100), Pid end,
+   _Cleanup = fun(Pid) -> tcache_stop(Pid) end,
+   [
+    ?_assertMatch({46,_}, eval(temperatureAtInuvik()))
+   ]}.
 
 
 temperatureAtInuvik() ->
   InuvikS = s("`Inuvik`"),
   ParisS = s("`Paris`"),
   DimLocation = {dim,"location"},
-  T0 =
-    {wherevar,
-     {'@', {i_apply, "tempInuvik"}, {t, [{DimLocation,ParisS}]}},
-     [{"temperature",
-       t0(s("if #.location == `Inuvik` then
-              46
-            elsif #.location == `Paris` then
-              58
-            else
-              1
-            fi"))},
-      {"tempAtLocation",
-       {i_abs, [DimLocation], "temperature"}},
-      {"tempInuvik",
-       {'@', "tempAtLocation", {t, [{DimLocation,InuvikS}]}}}]},
-  {setup,
-   _Setup = fun() -> {ok, Pid} = tcache:start_link(100), Pid end,
-   _Cleanup = fun(Pid) -> tcache_stop(Pid) end,
-   [ ?_assertMatch({46,_}, tcore_eval(t1(T0))) ]}.
+  {where,
+   {'@', {i_apply, "tempInuvik"}, {t, [{DimLocation,ParisS}]}},
+   [{var, "temperature",
+     s("if #.location == `Inuvik` then
+         46
+       elsif #.location == `Paris` then
+         58
+       else
+         1
+       fi")},
+    {var, "tempAtLocation",
+     {i_abs, [DimLocation], "temperature"}},
+    {var, "tempInuvik",
+     {'@', "tempAtLocation", {t, [{DimLocation,InuvikS}]}}}
+   ]}.
 
 
 %% Internals
@@ -65,8 +64,10 @@ tcore_eval(T) ->
 tcore_eval(T, K, D) ->
   tcore:eval(T,[],[],K,D,{[],self()},0).
 
-eval(S) ->
+eval(S) when is_list(S) ->
   {ok, T} = tea:string(S),
+  tea:eval(T);
+eval(T) ->
   tea:eval(T).
 
 %% End of Module.
