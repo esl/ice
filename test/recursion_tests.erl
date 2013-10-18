@@ -24,6 +24,18 @@ recursion_test_() ->
        eval(base_funs_mutually_recursing_on_params()))
    ]}.
 
+environment_closure_test_() ->
+  {foreach,
+   _Setup = fun() -> {ok, Pid} = tcache:start_link(100), Pid end,
+   _Cleanup = fun(Pid) -> tcache_stop(Pid) end,
+   [
+    ?_assertMatch(
+       {[{phi,"y"}],_}, %% XXX Result is wrong, it should be 46. TODO Fix semantics (specifically env closure, as {phi,"y"} ends up in frozen dims of F as defined in closure of G ATM)
+       eval("A where var A = G.46;; fun G.y = F.y;; fun F.x = x end"))
+    %% Vars with the same name in nested wherevar clauses are not
+    %% supported ATM - there will be namespaces for avoiding this.
+   ]}.
+
 
 var_recursing_on_dim() ->
   "X
