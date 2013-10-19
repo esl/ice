@@ -40,6 +40,11 @@ i(String) ->
 
 rework_tree (Tree) ->
   V = fun
+        ({expr, _, E}) ->
+          E;
+        ({call, _, FunExpr, Params}) ->
+          {fn_call, FunExpr, lists:map(fun rework_fun_param/1, Params)};
+
         ({where, _, Exp, DimDecls, VarDecls}) ->
           TopExpr = Exp,
           Vars = [{var,Var,E} || {var_decl,_,Var,E} <- VarDecls],
@@ -89,10 +94,10 @@ rework_tree (Tree) ->
         ({id,_,Name}) -> Name
       end,
   case tvisitor:visit(V, Tree, bottom_up) of
-    [{expr,_,TheWhereDim}] ->
-      {ok, TheWhereDim};
-    Else ->
-      {ok, Else}
+    [X] ->
+      {ok, X};
+    Y ->
+      {ok, Y}
   end.
 
 
