@@ -9,6 +9,10 @@ clean: rebar
 	./rebar clean
 .PHONY: clean
 
+debug: compile
+	erl -pa ebin -pa deps/tparser/ebin
+.PHONY: debug
+
 test: compile
 	./rebar skip_deps=true eunit
 .PHONY: test
