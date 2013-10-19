@@ -104,53 +104,61 @@ transform1({'if', E0, E1, E2}, P, HD, HV) ->
 %% Dimensional Query
 %%------------------------------------------------------------------------------
 transform1({'#', E0}, P, HD, HV) ->
+  %% Changing the position in the evaluation tree is not needed as:
+  %% * There is only one subexpression
+  %% * No hidden dimensions are created in the current expression
   {'#', transform1(E0, P, HD, HV)};
 
 %%------------------------------------------------------------------------------
 %% Base Abstraction
 %%------------------------------------------------------------------------------
 transform1({b_abs, Is, Params, E}, P, HD, HV) ->
-  Ns = lists:seq(1, length(Is)), %% 1,2,...
-  NewIs = tset:union(HD,
-                     [transform1(I, subexpr_pos(N,P), HD, HV)
-                      || {I, N} <- lists:zip(Is, Ns)]),
+  Ps = lists:map(fun(N) -> subexpr_pos(N,P) end, %% Pos 1,2,...
+                 lists:seq(1, length(Is))),
   ParamsAsDims = lists:map(fun(Param) -> {phi, Param} end, Params),
-  {b_abs, NewIs,
+  {b_abs, transform1_frozen_dims(Is, Ps, HD, HV),
    ParamsAsDims,
    transform1(E, subexpr_pos(0,P), HD, tset:union(HV, ParamsAsDims))};
 
 transform1({b_apply, E0, Eis}, P, HD, HV) ->
-  Ns = lists:seq(1, length(Eis)), %% 1,2,...
-  NewEis =
-    lists:map(
-      fun({Ei, N}) ->
-          transform1(Ei, subexpr_pos(N,P), HD, HV) %% Pos 1,2,...
-      end,
-      lists:zip(Eis, Ns)),
-  {b_apply, transform1(E0, subexpr_pos(0,P), HD, HV), NewEis};
+  Ps = lists:map(fun(N) -> subexpr_pos(N,P) end, %% Pos 1,2,...
+                 lists:seq(1, length(Eis))),
+  {b_apply, transform1(E0, subexpr_pos(0,P), HD, HV),
+   transform1_actual_params(Eis, Ps, HD, HV)};
 
-%% %%------------------------------------------------------------------------------
-%% %% Value Abstraction
-%% %%------------------------------------------------------------------------------
-%% %% TODO
-%% transform1({v_abs, Is, Params, E}, H) ->
-%%   Dims = [{dim, Param} || Param <- Params],
-%%   {v_abs, tset:union(H, [transform1(I, H) || I <- Is]),
-%%    Dims,
-%%    transform1(E, tset:union(H, Dims))};
+%%------------------------------------------------------------------------------
+%% Value Abstraction
+%%------------------------------------------------------------------------------
+transform1({v_abs, Is, Params, E}, P, HD, HV) ->
+  Ps = lists:map(fun(N) -> subexpr_pos(N,P) end, %% Pos 1,2,...
+                 lists:seq(1, length(Is))),
+  ParamsAsDims = lists:map(fun(Param) -> {phi, Param} end, Params),
+  {v_abs, transform1_frozen_dims(Is, Ps, HD, HV),
+   ParamsAsDims,
+   %% XXX Pos 0?
+   transform1(E, subexpr_pos(0,P), HD, tset:union(HV, ParamsAsDims))};
 
-%% transform1({v_apply, E0, E1}, H) ->
-%%   {v_apply, transform1(E0, H), transform1(E1, H)};
+transform1({v_apply, E0, Eis}, P, HD, HV) ->
+  Ps = lists:map(fun(N) -> subexpr_pos(N,P) end, %% Pos 1,2,...
+                 lists:seq(1, length(Eis))),
+  {v_apply, transform1(E0, subexpr_pos(0,P), HD, HV),
+   %% XXX Shouldn't another context application be here somewhere?
+   transform1_actual_params(Eis, Ps, HD, HV)};
 
-%% %%------------------------------------------------------------------------------
-%% %% Intension Abstraction
-%% %%------------------------------------------------------------------------------
-%% transform1({i_abs, Is, E}, H) ->
-%%   {i_abs, tset:union(H, [transform1(I, H) || I <- Is]),
-%%    transform1(E, H)};
+%%------------------------------------------------------------------------------
+%% Intension Abstraction
+%%------------------------------------------------------------------------------
+transform1({i_abs, Is, E}, P, HD, HV) ->
+  Ps = lists:map(fun(N) -> subexpr_pos(N,P) end, %% Pos 1,2,...
+                 lists:seq(1, length(Is))),
+  {i_abs, transform1_frozen_dims(Is, Ps, HD, HV),
+   %% XXX Pos 0?
+   transform1(E, subexpr_pos(0,P), HD, HV)};
 
-%% transform1({i_apply, E}, H) ->
-%%   {i_apply, transform1(E, H)};
+transform1({i_apply, E}, P, HD, HV) ->
+  %% XXX Is subexpression with position really needed? And BTW -
+  %% shouldn't another context application be here somewhere?
+  {i_apply, transform1(E, subexpr_pos(0,P), HD, HV)};
 
 %%------------------------------------------------------------------------------
 %% Wherevar
@@ -160,6 +168,8 @@ transform1({wherevar, E0, XiEis}, P, HD, HV) ->
   NewXiEis =
     [{Xi, transform1(Ei, subexpr_pos(N,P), HD, HV)} %% Pos 1,2,...
      || {{Xi, Ei}, N} <- lists:zip(XiEis, Ns)],
+  %% XXX The way position is assigned here is completely different
+  %% from literature.
   {wherevar, transform1(E0, subexpr_pos(0,P), HD, HV),
    NewXiEis};
 
@@ -204,6 +214,18 @@ transform1(Xi, _P, _HD, HV) when is_list(Xi) orelse is_atom(Xi) ->
     false ->
       Xi
   end.
+
+
+%%-------------------------------------------------------------------------------------
+%% Internal - Helpers for transforming abstractions and applications
+%%-------------------------------------------------------------------------------------
+transform1_frozen_dims(Is, Ps, HD, HV) ->
+  tset:union(
+    tset:union(HD, HV),
+    [transform1(I, P, HD, HV) || {I, P} <- lists:zip(Is, Ps)]).
+
+transform1_actual_params(Eis, Ps, HD, HV) ->
+  lists:map(fun({Ei, P}) -> transform1(Ei, P, HD, HV) end, lists:zip(Eis, Ps)).
 
 
 %%-------------------------------------------------------------------------------------

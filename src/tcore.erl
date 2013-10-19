@@ -100,21 +100,8 @@ eval({Q, E0}, I, E, K, D, W, T) when Q == '#' orelse Q == '?' ->
 %%------------------------------------------------------------------------------
 %% Base Abstraction
 %%------------------------------------------------------------------------------
-eval({b_abs, Is, Params, E0}, I, E, K, D, W, T) ->
-  {Dis, MaxT} = tpar:eval(Is, I, E, K, D, W, T),
-  case tset:union_d(Dis) of
-    {true, Dims} ->
-      {Dims, MaxT};
-    {false, Dis1} -> %% XXX Why Dis1 even if equal to Dis?
-      case tset:difference(Dis1, D) of
-        [] ->
-          KD = tset:restrict_domain(K, D),
-          FrozenK = tset:restrict_domain(KD, Dis1),
-          {{frozen_b_abs, FrozenK, Params, E0}, MaxT};
-        Dims2 ->
-          {Dims2, MaxT}
-      end
-  end;
+eval({b_abs, Is, _Params, _E0}=Abs, I, E, K, D, W, T) ->
+  eval_abs(Is, Abs, I, E, K, D, W, T);
 
 eval({b_apply, E0, Eis}, I, E, K, D, W, T) ->
   %% The evaluation of abs is serialized from the evaluation of actual
@@ -124,28 +111,48 @@ eval({b_apply, E0, Eis}, I, E, K, D, W, T) ->
     true ->
       {D0, T0};
     false ->
-      {frozen_b_abs, AbsK, AbsParams, AbsBody} = D0,
+      {frozen_b_abs, AbsI, AbsE, FrozenK, AbsParams, AbsBody} = D0,
       eval({'@', AbsBody, {t, lists:zip(AbsParams, Eis)}},
-           I, E, AbsK, tset:domain(AbsK), W, T0)
+           AbsI, AbsE, FrozenK, tset:domain(FrozenK), W, T0)
   end;
 
 %%------------------------------------------------------------------------------
 %% Value Abstraction
 %%------------------------------------------------------------------------------
-eval({v_abs, _Is, _Params, _E0}, _I, _E, _K, _D, _W, _T) ->
-  not_implemented;
+eval({v_abs, Is, _Params, _E0}=Abs, I, E, K, D, W, T) ->
+  eval_abs(Is, Abs, I, E, K, D, W, T);
 
-eval({v_apply, _E0, _Eis}, _I, _E, _K, _D, _W, _T) ->
-  not_implemented;
+eval({v_apply, E0, Eis}, I, E, K, D, W, T) ->
+  %% The evaluation of abs is serialized from the evaluation of actual
+  %% parameters for re-using the context perturbation '@' expression
+  {D0, T0} = eval(E0, I, E, K, D, W, T),
+  case tset:is_k(D0) of
+    true ->
+      {D0, T0};
+    false ->
+      {frozen_v_abs, AbsI, AbsE, FrozenK, AbsParams, AbsBody} = D0,
+      eval({'@', AbsBody, {t, lists:zip(AbsParams, Eis)}}, AbsI, AbsE,
+           tset:perturb(K, FrozenK), tset:union(D, tset:domain(FrozenK)),
+           W, T0)
+  end;
 
 %%------------------------------------------------------------------------------
 %% Intension Abstraction
 %%------------------------------------------------------------------------------
-eval({i_abs, _Is, _E0}, _I, _E, _K, _D, _W, _T) ->
-  not_implemented;
+eval({i_abs, Is, _E0}=Abs, I, E, K, D, W, T) ->
+  eval_abs(Is, Abs, I, E, K, D, W, T);
 
-eval({i_apply, _E0}, _I, _E, _K, _D, _W, _T) ->
-  not_implemented;
+eval({i_apply, E0}, I, E, K, D, W, T) ->
+  {D0, T0} = eval(E0, I, E, K, D, W, T),
+  case tset:is_k(D0) of
+    true ->
+      {D0, T0};
+    false ->
+      {frozen_i_abs, AbsI, AbsE, FrozenK, AbsBody} = D0,
+      eval(AbsBody, AbsI, AbsE,
+           tset:perturb(K, FrozenK), tset:union(D, tset:domain(FrozenK)),
+           W, T0)
+  end;
 
 %%-------------------------------------------------------------------------------------
 %% Wherevar
@@ -260,3 +267,26 @@ even_elements([X|L], N, Acc) when N rem 2 =/= 0 ->
 even_elements([_|L], N, Acc) ->
   even_elements(L, N+1, Acc).
 
+
+eval_abs(Is, Abs, I, E, K, D, W, T) ->
+  {Dis, MaxT} = tpar:eval(Is, I, E, K, D, W, T),
+  case tset:union_d(Dis) of
+    {true, Dims} ->
+      {Dims, MaxT};
+    {false, Dis1} -> %% XXX Why Dis1 even if equal to Dis?
+      case tset:difference(Dis1, D) of
+        [] ->
+          KD = tset:restrict_domain(K, D),
+          FrozenK = tset:restrict_domain(KD, Dis1),
+          {freeze_abs(I, E, FrozenK, Abs), MaxT};
+        Dims2 -> %% Missing frozen dims
+          {Dims2, MaxT}
+      end
+  end.
+
+freeze_abs(I, E, FrozenK, {i_abs, _Is, E0}) ->
+  {frozen_i_abs, I, E, FrozenK, E0};
+freeze_abs(I, E, FrozenK, {b_abs, _Is, Params, E0}) ->
+  {frozen_b_abs, I, E, FrozenK, Params, E0};
+freeze_abs(I, E, FrozenK, {v_abs, _Is, Params, E0}) ->
+  {frozen_v_abs, I, E, FrozenK, Params, E0}.
