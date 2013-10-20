@@ -13,27 +13,11 @@ recursion_test_() ->
    _Cleanup = fun(Pid) -> tcache_stop(Pid) end,
    [
     ?_assertMatch({6,_}, eval(var_recursing_on_dim())),
-    ?_assertMatch(
-       {[{phi,"n"}],_}, %% XXX Result is wrong, it should be 6. TODO Fix semantics
-       eval(base_fun_recursing_on_param())),
+    ?_assertMatch({6,_}, eval(base_fun_recursing_on_param())),
     ?_assertMatch(
        {1,_}, %% XXX Computation should be fact.3, not fact.0. TODO Fix semantics
        eval(fun_recursing_on_dim())),
-    ?_assertMatch(
-       {[{phi,"n"}],_}, %% XXX Result is wrong, it should be true. TODO Fix semantics
-       eval(base_funs_mutually_recursing_on_params()))
-   ]}.
-
-environment_closure_test_() ->
-  {foreach,
-   _Setup = fun() -> {ok, Pid} = tcache:start_link(100), Pid end,
-   _Cleanup = fun(Pid) -> tcache_stop(Pid) end,
-   [
-    ?_assertMatch(
-       {[{phi,"y"}],_}, %% XXX Result is wrong, it should be 46. TODO Fix semantics (specifically env closure, as {phi,"y"} ends up in frozen dims of F as defined in closure of G ATM)
-       eval("A where var A = G.46;; fun G.y = F.y;; fun F.x = x end"))
-    %% Vars with the same name in nested wherevar clauses are not
-    %% supported ATM - there will be namespaces for avoiding this.
+    ?_assertMatch({true,_}, eval(base_funs_mutually_recursing_on_params()))
    ]}.
 
 

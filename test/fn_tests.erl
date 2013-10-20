@@ -21,9 +21,6 @@ b_test_() ->
    b_abs_cannot_access_dims_in_application_context(),
    b_abs_cannot_access_local_dims_in_application_context(),
    %%
-   %% TODO b_abs_cannot_access_variable_identifiers_in_creation_environment(),
-   %% TODO b_abs_cannot_access_variable_identifiers_in_application_environment(),
-   %%
    b_abs_can_use_argument_for_querying_creation_context(),
    b_abs_can_use_argument_for_querying_creation_context2(),
    %%
@@ -70,7 +67,7 @@ basic_b_abs() ->
    _Cleanup = fun(Pid) -> tcache_stop(Pid) end,
    [
     ?_assertMatch(
-       { {frozen_b_abs, _I, _E, [], [ArgAsPhiDim], {'?',ArgAsPhiDim}}, _},
+       { {frozen_closed_b_abs, _I, _E, [], [ArgAsPhiDim], {'?',ArgAsPhiDim}}, _},
        tcore_eval(T1))
    ]}.
 
