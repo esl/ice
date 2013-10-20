@@ -21,6 +21,10 @@ string_test () ->
     {ok, Tree} = tea:string("\"Test\""),
     ?assertEqual({string,"Test"}, Tree).
 
+char_test () ->
+    {ok, Tree} = tea:string("'.'"),
+    ?assertEqual({char,$.}, Tree).
+
 constant_dim_test () ->
     {ok, Tree} = tea:string("#.t"),
     ?assertEqual(
