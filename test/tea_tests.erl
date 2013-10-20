@@ -31,6 +31,13 @@ string_test_ () ->
         ?assertMatch({S, _}, eval(Tree))
     end.
 
+char_test_ () ->
+    {ok, Tree} = tea:string("'.'"),
+    S = {char,$.},
+    fun () ->
+        ?assertMatch({S, _}, eval(Tree))
+    end.
+
 constant_dim_test_ () ->
     {ok, Tree} = tea:string("#.t"),
     K = [{{dim,"t"}, 100}],
