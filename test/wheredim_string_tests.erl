@@ -7,7 +7,7 @@
 
 %% API tests.
 
-e1_test() ->
+var_can_use_dim_in_same_where_clause_test() ->
   {ok, Tree} = tea:string(
         "X
         where

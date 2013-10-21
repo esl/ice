@@ -20,6 +20,7 @@
 %%
 %% Function AST should look like this:
 %% {fn, X, [{b_param, BArg} | {v_param, VArg} | {n_param, NArg}], E}
+%% {fn_call, E, [{b_param, BArg} | {v_param, VArg} | {n_param, NArg}]}
 %%
 %% Where AST should look like this:
 %% {where, E0, [{dim, DName, DVal}, {var, VName, VVal}]}
@@ -65,13 +66,6 @@ transform0({'#', E0}) ->
   {'#', transform0(E0)};
 
 %%------------------------------------------------------------------------------
-%% Function Transformation
-%%------------------------------------------------------------------------------
-transform0({fn, X, Params, E}) ->
-  {wherevar, X,
-   [{X, transform0_prime(lists:reverse(Params), transform0(E))}]};
-
-%%------------------------------------------------------------------------------
 %% Base Abstraction
 %%------------------------------------------------------------------------------
 transform0({b_abs, Is, Params, E}) ->
@@ -99,11 +93,21 @@ transform0({i_apply, E}) ->
   {i_apply, transform0(E)};
 
 %%------------------------------------------------------------------------------
+%% Function Call
+%%------------------------------------------------------------------------------
+transform0({fn_call, FnE, Params}) ->
+  transform0_fn_call(transform0(FnE),
+                     lists:reverse(lists:keymap(fun transform0/1, 2, Params)));
+
+%%------------------------------------------------------------------------------
 %% Where
 %%------------------------------------------------------------------------------
 transform0({where, E0, VDisEis}) ->
   %% We should probably signal an error when the body contains other elements..
-  Vars = [{Xi,transform0(Ei)} || {var,Xi,Ei} <- VDisEis],
+  Vars =
+    [{Xi,transform0(Ei)} || {var,Xi,Ei} <- VDisEis] ++
+    [{Fi,transform0_prime(Params,transform0(E))} %% Function transformation
+     || {fn,Fi,Params,E} <- VDisEis],
   Dims = [{Xi,transform0(Ei)} || {dim,Xi,Ei} <- VDisEis],
   transform0_where(Vars, Dims, E0);
 
@@ -120,20 +124,48 @@ transform0(Xi) when is_list(Xi) orelse is_atom(Xi) ->
   Xi.
 
 %%------------------------------------------------------------------------------
-%% Transform0 prime is responsible for transforming a list of function parameters
-%% into base, value and named abstractions, given a body E.
+%% Transform0 prime is responsible for transforming the list of formal
+%% parameters in a function declaration into base, value and named
+%% abstractions, given a body E.
+%%
+%% "Base functions [...] take as arguments a tuple, and cannot be
+%% curried."
+%% Ref: 4.5.2 "Base functions" in paper "Higher-order Multidimensional
+%% Programming", Aug 2012
 %%------------------------------------------------------------------------------
 transform0_prime([], E) ->
   E;
-transform0_prime([{b_param, Param}|Ps], E) ->
-  transform0_prime(Ps, {b_abs, [], [Param], E});
+transform0_prime([{b_param,_}|_]=Params, E) ->
+  {BPs, Ps} = lists:splitwith(fun({Type,_}) -> Type == b_param end, Params),
+  {b_abs, [], lists:map(fun({b_param, BP}) -> BP end, BPs),
+   transform0_prime(Ps, E)};
 transform0_prime([{v_param, Param}|Ps], E) ->
-  transform0_prime(Ps, {v_abs, [], [Param], E});
+  {v_abs, [], [Param], transform0_prime(Ps, E)};
 transform0_prime([{n_param, Param}|Ps], E) ->
   %%------------------------------------------------------------------------------
   %% FIXME -- Here we need to replace Param in E with an intension application
   %%------------------------------------------------------------------------------
-  transform0_prime(Ps, {v_abs, [], [Param], E}).
+  {v_abs, [], [Param], transform0_prime(Ps, E)}.
+
+%%------------------------------------------------------------------------------
+%% Transform0 fn_call is responsible for transforming the list of
+%% actual parameters in a function call into base, value and named
+%% applications, given a function FnE.
+%%------------------------------------------------------------------------------
+transform0_fn_call(FnE, []) ->
+  FnE;
+transform0_fn_call(FnE, [{b_param,_}|_]=Params) ->
+  %% Group base params
+  {BPs, Ps} = lists:splitwith(fun({Type,_}) -> Type == b_param end, Params),
+  {b_apply, transform0_fn_call(FnE, Ps),
+   lists:reverse(lists:map(fun({b_param, BP}) -> BP end, BPs))};
+transform0_fn_call(FnE, [{v_param, Param}|Ps]) ->
+  {v_apply, transform0_fn_call(FnE, Ps), [Param]};
+transform0_fn_call(FnE, [{n_param, Param}|Ps]) ->
+  %%------------------------------------------------------------------------------
+  %% FIXME -- Here we need to replace Param with ??? TBD
+  %%------------------------------------------------------------------------------
+  transform0_fn_call(FnE, Ps).
 
 %%------------------------------------------------------------------------------
 %% Transform0 where transforms a where clause into wherevar / wheredims.

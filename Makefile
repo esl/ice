@@ -16,6 +16,10 @@ distclean: clean
 	rm -rf deps ebin .eunit rebar
 .PHONY: distclean
 
+debug: compile
+	erl -pa ebin -pa deps/*/ebin
+.PHONY: debug
+
 test: compile
 	./rebar skip_deps=true eunit
 .PHONY: test

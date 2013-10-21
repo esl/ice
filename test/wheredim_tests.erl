@@ -13,7 +13,8 @@ wheredim_test_() ->
    _Cleanup = fun(Pid) -> tcache_stop(Pid) end,
    [
     ?_assertMatch({58,_},          eval(basic())),
-    ?_assertMatch({0,_},           eval(e1())),
+    ?_assertMatch({0,_},           eval(var_can_use_dim_in_same_where_clause())),
+    %% TODO dim_cannot_use_var_in_same_where_clause
     ?_assertMatch({[{dim,"s"}],_}, eval(e2())),
     ?_assertMatch({5,_},           eval(e3())),
     ?_assertMatch({5,_},           eval(e4())),
@@ -28,12 +29,19 @@ basic() ->
     dim t <- 58
   end".
 
-e1() ->
+var_can_use_dim_in_same_where_clause() ->
   "X
   where
     dim t <- 0
     var X = #.t
   end".
+
+%% dim_cannot_use_var_in_same_where_clause() ->
+%%   "#.t
+%%   where
+%%     var X = 46
+%%     dim t <- X
+%%   end".
 
 e2() ->
   "#.t + #.s

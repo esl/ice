@@ -20,7 +20,7 @@ wherevar_test_() ->
                   eval(var_can_refer_to_var_defined_below_in_same_wherevar())),
     ?_assertMatch({58, _}, %% FIXME This should give a compile error "Error, var A already defined."
                   eval(var_cannot_be_redefined_in_same_wherevar())),
-    ?_assertError({badmatch, hang}, %% Shall therefore wherevar be used at all?
+    ?_assertError({badmatch, hang}, %% Probably same var name in different wherevar clauses shall belong to distinct namespaces, therefore being different variables
                   eval(var_redefined_in_nested_wherevar_hangs_cache())),
     ?_assertError({badmatch, hang}, %% idem as above
                   eval(var_redefined_in_nested_wherevar_hangs_cache2())),
