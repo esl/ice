@@ -18,7 +18,7 @@ eval(Xs, I, E, K, D, W, T) ->
   %%------------------------------------------------------------------------------
   Pids = tthread:spawn_n(W, Lim),
   R = tthread:join(Pids, Xs, I, E, K, D, W, T),
-  tv:hook(?MODULE, self(), eval, {W, Pids, Lim, Xs, I, E, K, D, W, T, R}),
+  % tv:hook(?MODULE, self(), eval, {W, Pids, Lim, Xs, I, E, K, D, W, T, R}),
   R.
 
 %%-------------------------------------------------------------------------------------

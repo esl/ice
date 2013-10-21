@@ -9,7 +9,7 @@
 %% Constant Values
 %%-------------------------------------------------------------------------------------
 eval(Const, _I, _E, _K, _D, _W, T) when is_number(Const) orelse is_boolean(Const) ->
-  tv:hook(?MODULE, self(), eval, {const,Const}),
+  % tv:hook(?MODULE, self(), eval, {const,Const}),
   {Const, T};
 
 eval({string, Str}, _I, _E, _K, _D, _W, T) ->
@@ -24,7 +24,7 @@ eval({char, Str}, _I, _E, _K, _D, _W, T) ->
 %% Primop
 %%-------------------------------------------------------------------------------------
 eval({primop, F, Eis}, I, E, K, D, W, T) ->
-  tv:hook(?MODULE, self(), eval, {primop,F,Eis}),
+  % tv:hook(?MODULE, self(), eval, {primop,F,Eis}),
   {Dis, MaxT} = tpar:eval(Eis, I, E, K, D, W, T),
   case tset:union_d(Dis) of
     {true, Dims} ->
@@ -39,7 +39,7 @@ eval({primop, F, Eis}, I, E, K, D, W, T) ->
 %% Tuple Expressions
 %%-------------------------------------------------------------------------------------
 eval({t, Es}, I, E, K, D, W, T) ->
-  tv:hook(?MODULE, self(), eval, {t,Es}),
+  % tv:hook(?MODULE, self(), eval, {t,Es}),
   XiEis = lists:flatmap(fun({Xi,Ei}) -> [Xi,Ei] end, Es),
   {Dis, MaxT} = tpar:eval(XiEis, I, E, K, D, W, T), %% XXX Does evaluating lhs make sense if dims are not ground values?
   case tset:union_d(Dis) of
@@ -54,7 +54,7 @@ eval({t, Es}, I, E, K, D, W, T) ->
 %% Context Perturbation
 %%-------------------------------------------------------------------------------------
 eval({'@', E0, E1}, I, E, K, D, W, T) ->
-  tv:hook(?MODULE, self(), eval, {'@',E0,E1}),
+  % tv:hook(?MODULE, self(), eval, {'@',E0,E1}),
   {Di, T1} = eval(E1, I, E, K, D, W, T),
   case tset:is_k(Di) of
     true ->
@@ -70,7 +70,7 @@ eval({'@', E0, E1}, I, E, K, D, W, T) ->
 %% Conditional
 %%-------------------------------------------------------------------------------------
 eval({'if', E0, E1, E2}, I, E, K, D, W, T) ->
-  tv:hook(?MODULE, self(), eval, {'if',E0,E1,E2}),
+  % tv:hook(?MODULE, self(), eval, {'if',E0,E1,E2}),
   {D0, T0} = eval(E0, I, E, K, D, W, T),
   case tset:is_k(D0) of
     true ->
@@ -87,7 +87,7 @@ eval({'if', E0, E1, E2}, I, E, K, D, W, T) ->
 %% Dimensional Query
 %%-------------------------------------------------------------------------------------
 eval({Q, E0}, I, E, K, D, W, T) when Q == '#' orelse Q == '?' ->
-  tv:hook(?MODULE, self(), eval, {Q,E0}),
+  % tv:hook(?MODULE, self(), eval, {Q,E0}),
   {D0, T0} = eval(E0, I, E, K, D, W, T),
   case tset:is_k(D0) of
     true ->
@@ -111,9 +111,11 @@ eval({Q, E0}, I, E, K, D, W, T) when Q == '#' orelse Q == '?' ->
 %% Base Abstraction
 %%------------------------------------------------------------------------------
 eval({b_abs, Is, _Params, _E0}=Abs, I, E, K, D, W, T) ->
+  tv:hook(?MODULE, self(), eval, Abs),
   eval_abs(Is, Abs, I, E, K, D, W, T);
 
 eval({b_apply, E0, Eis}, I, E, K, D, W, T) ->
+  tv:hook(?MODULE, self(), eval, {b_apply, E0, Eis}),
   %% The evaluation of abs is serialized from the evaluation of actual
   %% parameters for re-using the context perturbation '@' expression
   {D0, T0} = eval(E0, I, E, K, D, W, T),
@@ -130,9 +132,11 @@ eval({b_apply, E0, Eis}, I, E, K, D, W, T) ->
 %% Value Abstraction
 %%------------------------------------------------------------------------------
 eval({v_abs, Is, _Params, _E0}=Abs, I, E, K, D, W, T) ->
+  tv:hook(?MODULE, self(), eval, Abs),
   eval_abs(Is, Abs, I, E, K, D, W, T);
 
 eval({v_apply, E0, Eis}, I, E, K, D, W, T) ->
+  tv:hook(?MODULE, self(), eval, {v_apply, E0, Eis}),
   %% The evaluation of abs is serialized from the evaluation of actual
   %% parameters for re-using the context perturbation '@' expression
   {D0, T0} = eval(E0, I, E, K, D, W, T),
@@ -150,9 +154,11 @@ eval({v_apply, E0, Eis}, I, E, K, D, W, T) ->
 %% Intension Abstraction
 %%------------------------------------------------------------------------------
 eval({i_abs, Is, _E0}=Abs, I, E, K, D, W, T) ->
+  tv:hook(?MODULE, self(), eval, Abs),
   eval_abs(Is, Abs, I, E, K, D, W, T);
 
 eval({i_apply, E0}, I, E, K, D, W, T) ->
+  tv:hook(?MODULE, self(), eval, {i_apply, E0}),
   {D0, T0} = eval(E0, I, E, K, D, W, T),
   case tset:is_k(D0) of
     true ->
@@ -168,14 +174,14 @@ eval({i_apply, E0}, I, E, K, D, W, T) ->
 %% Wherevar
 %%-------------------------------------------------------------------------------------
 eval({wherevar, E0, XiEis}, I, E, K, D, W, T) ->
-  tv:hook(?MODULE, self(), eval, {wherevar,E0,XiEis}),
+  % tv:hook(?MODULE, self(), eval, {wherevar,E0,XiEis}),
   eval(E0, I, tset:perturb(E, XiEis), K, D, W, T);
 
 %%-------------------------------------------------------------------------------------
 %% Wheredim
 %%-------------------------------------------------------------------------------------
 eval({wheredim, E0, XiEis}, I, E, K, D, W, T) ->
-  tv:hook(?MODULE, self(), eval, {wheredim,E0,XiEis}),
+  % tv:hook(?MODULE, self(), eval, {wheredim,E0,XiEis}),
   {Xis, Eis} = lists:unzip(XiEis),
   {Dis, MaxT} = tpar:eval(Eis, I, E, K, D, W, T),
   case tset:union_d(Dis) of
@@ -206,7 +212,7 @@ eval({dim,Xi}=Di, _I, _E, _K, _D, _W, T) when is_list(Xi) orelse is_atom(Xi) ->
 %% Dimension Identifiers (hidden) replacing local dimensions in wheredim clauses
 %%-------------------------------------------------------------------------------------
 eval({dim,{_Pos,_Idx},Xi}=Di, _I, _E, _K, _D, _W, T) when is_list(Xi) orelse is_atom(Xi) ->
-  tv:hook(?MODULE, self(), eval, {hidden_dim,Di}),
+  % tv:hook(?MODULE, self(), eval, {hidden_dim,Di}),
   {Di, T};
 
 %%-------------------------------------------------------------------------------------
@@ -219,7 +225,7 @@ eval({phi,Xi}=Di, _I, _E, _K, _D, _W, T) when is_list(Xi) orelse is_atom(Xi) ->
 %% Variable Identifiers
 %%-------------------------------------------------------------------------------------
 eval(Xi, I, E, K, D, W, T) when is_list(Xi) orelse is_atom(Xi) ->
-  tv:hook(?MODULE, self(), eval, {var,Xi, I, E, K, D, W, T}),
+  % tv:hook(?MODULE, self(), eval, {var,Xi, I, E, K, D, W, T}),
   {_D0, _T0} = eval1(Xi, I, E, K, [], W, T),
   tcache:find(Xi, K, D, W, T).
 
@@ -227,7 +233,7 @@ eval(Xi, I, E, K, D, W, T) when is_list(Xi) orelse is_atom(Xi) ->
 %% Finding identifiers in the cache
 %%-------------------------------------------------------------------------------------
 eval1(Xi, I, E, K, D, W, T) ->
-  tv:hook(?MODULE, self(), eval1, {Xi, I, E, K, D, W, T}),
+  % tv:hook(?MODULE, self(), eval1, {Xi, I, E, K, D, W, T}),
   {D0, T0} = eval2(Xi, I, E, K, D, W, T),
   case tset:is_k(D0) andalso tset:subset(D0, tset:domain(K)) of
     true -> 
@@ -237,7 +243,7 @@ eval1(Xi, I, E, K, D, W, T) ->
   end.
 
 eval2(Xi, I, E, K, D, W, T) ->
-  tv:hook(?MODULE, self(), eval2, {Xi, I, E, K, D, W, T}),
+  % tv:hook(?MODULE, self(), eval2, {Xi, I, E, K, D, W, T}),
   {D0, T0} = tcache:find(Xi, K, D, W, T),
   case D0 of
     {calc, W} ->
