@@ -4,4 +4,6 @@ ebin
 .eunit
 deps
 .dialyzer_plt
+
 /isee
+.gitmodules
