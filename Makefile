@@ -39,8 +39,15 @@ rebar:
 	mv rebar.d/rebar $@
 	rm -rf rebar.d
 
-isee: compile
+isee: deps/isee compile
+	cd deps/isee && ../../rebar get-deps compile
 	erl -pa ebin/ -pa deps/*/ebin/ \
             -s isee \
             -eval 'io:format("Visualisor up at http://localhost:8888\n").'
 .PHONY: isee
+
+deps/isee: rebar
+	git submodule init
+	git submodule update
+	mkdir -p deps/
+	mv isee/ deps/isee/
