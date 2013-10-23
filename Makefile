@@ -41,13 +41,12 @@ rebar:
 
 isee: deps/isee compile
 	cd deps/isee && ../../rebar get-deps compile
-	erl -pa ebin/ -pa deps/*/ebin/ \
+	erl -pa ebin/ -pa deps/*/ebin/ -pa deps/*/deps/*/ebin \
             -s isee \
             -eval 'io:format("Visualisor up at http://localhost:8888\n").'
 .PHONY: isee
 
 deps/isee: rebar
-	git submodule init
-	git submodule update
+	git submodule add --force -b master 'git@github.com:esl/isee.git' isee/
 	mkdir -p deps/
 	mv isee/ deps/isee/
