@@ -1,4 +1,0 @@
-[submodule "isee"]
-	path = isee
-	url = git@github.com:esl/isee.git
-	branch = master
