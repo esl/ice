@@ -37,7 +37,7 @@ rebar:
 	git clone git://github.com/rebar/rebar.git rebar.d
 	cd rebar.d && ./bootstrap
 	mv rebar.d/rebar $@
-	rm -rf rebar.d/
+	rm -rf rebar.d
 
 isee: compile
 	erl -pa ebin/ -pa deps/*/ebin/ \
