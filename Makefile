@@ -13,7 +13,7 @@ clean: rebar
 .PHONY: clean
 
 distclean: clean
-	rm -rf deps ebin .eunit rebar
+	rm -rf deps ebin .eunit rebar .gitmodules
 .PHONY: distclean
 
 debug: compile
@@ -39,12 +39,17 @@ rebar:
 	mv rebar.d/rebar $@
 	rm -rf rebar.d
 
-isee: deps/isee compile
-	cd deps/isee && ../../rebar get-deps compile
+isee: deps/isee/ebin compile
 	erl -pa ebin/ -pa deps/*/ebin/ -pa deps/*/deps/*/ebin \
             -s isee \
             -eval 'io:format("Visualisor up at http://localhost:8888\n").'
 .PHONY: isee
+
+deps/isee/ebin: deps/isee/deps
+	cd deps/isee && ../../rebar update-deps compile
+
+deps/isee/deps: deps/isee
+	cd deps/isee && ../../rebar get-deps compile
 
 deps/isee: rebar
 	git submodule add --force -b master 'git@github.com:esl/isee.git' isee/
