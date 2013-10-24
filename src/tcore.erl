@@ -26,7 +26,9 @@ eval({primop, F, Eis}, I, E, K, D, W, T) ->
     {true, Dims} ->
       {Dims, MaxT};
     {false, Dis1} ->
-      {apply(F, Dis1), MaxT}
+      R = apply(F, Dis1),
+      tv:hook(?MODULE, self(), primop_apply, {{primop,F,Dis1},R}),
+      {R, MaxT}
   end;
       
 %%-------------------------------------------------------------------------------------
@@ -101,9 +103,11 @@ eval({Q, E0}, I, E, K, D, W, T) when Q == '#' orelse Q == '?' ->
 %% Base Abstraction
 %%------------------------------------------------------------------------------
 eval({b_abs, Is, _Params, _E0}=Abs, I, E, K, D, W, T) ->
+  tv:hook(?MODULE, self(), eval, Abs),
   eval_abs(Is, Abs, I, E, K, D, W, T);
 
 eval({b_apply, E0, Eis}, I, E, K, D, W, T) ->
+  tv:hook(?MODULE, self(), eval, {b_apply, E0, Eis}),
   %% The evaluation of abs is serialized from the evaluation of actual
   %% parameters for re-using the context perturbation '@' expression
   {D0, T0} = eval(E0, I, E, K, D, W, T),
@@ -120,9 +124,11 @@ eval({b_apply, E0, Eis}, I, E, K, D, W, T) ->
 %% Value Abstraction
 %%------------------------------------------------------------------------------
 eval({v_abs, Is, _Params, _E0}=Abs, I, E, K, D, W, T) ->
+  tv:hook(?MODULE, self(), eval, Abs),
   eval_abs(Is, Abs, I, E, K, D, W, T);
 
 eval({v_apply, E0, Eis}, I, E, K, D, W, T) ->
+  tv:hook(?MODULE, self(), eval, {v_apply, E0, Eis}),
   %% The evaluation of abs is serialized from the evaluation of actual
   %% parameters for re-using the context perturbation '@' expression
   {D0, T0} = eval(E0, I, E, K, D, W, T),
@@ -140,9 +146,11 @@ eval({v_apply, E0, Eis}, I, E, K, D, W, T) ->
 %% Intension Abstraction
 %%------------------------------------------------------------------------------
 eval({i_abs, Is, _E0}=Abs, I, E, K, D, W, T) ->
+  tv:hook(?MODULE, self(), eval, Abs),
   eval_abs(Is, Abs, I, E, K, D, W, T);
 
 eval({i_apply, E0}, I, E, K, D, W, T) ->
+  tv:hook(?MODULE, self(), eval, {i_apply, E0}),
   {D0, T0} = eval(E0, I, E, K, D, W, T),
   case tset:is_k(D0) of
     true ->
@@ -225,13 +233,15 @@ eval2(Xi, I, E, K, D, W, T) ->
   case D0 of
     {calc, W} ->
       case lists:keyfind(Xi, 1, E) of
-	{_, E0} ->
-	  {D1, T1} = eval(E0, I, E, K, D, W, T0),
-	  tcache:add(Xi, K, D, W, T1, D1);
-	false ->
-	  {error, undefined_identifier, Xi}
+        {_, E0} ->
+          tv:hook(?MODULE, self(), will_now_eval2, {E0, I, E, K, D, W, T0}),
+          {D1, T1} = eval(E0, I, E, K, D, W, T0),
+          tcache:add(Xi, K, D, W, T1, D1);
+        false ->
+          {error, undefined_identifier, Xi}
       end;
     {calc, _W1} ->
+      tv:hook(?MODULE, self(), eval2_thread_waiting, _W1),
       eval2(Xi, I, E, K, D, W, T0 + 1);
     _ ->
       {D0, T0}

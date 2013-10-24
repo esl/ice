@@ -14,7 +14,9 @@
 %% The processes must be ordered for the cache to work. 
 %%-------------------------------------------------------------------------------------
 spawn_n({P, Su} = W, Lim) ->
-  spawn_n(W, 0, Lim, []).
+  Pids = spawn_n(W, 0, Lim, []),
+  tv:hook(?MODULE, self(), creating_n_threads, {Su,Lim,Pids}),
+  Pids.
 
 spawn_n(_W, N, Lim, Pids) when N >= Lim->
   lists:reverse(Pids);

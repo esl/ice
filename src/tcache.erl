@@ -36,10 +36,14 @@ terminate(_, S) ->
 %% tcache API
 %%------------------------------------------------------------------------------
 find(X, K, D, W, T) ->
-  gen_server:call(?MODULE, {find, X, K, D, W, T}).
+  R = gen_server:call(?MODULE, {find, X, K, D, W, T}),
+  tv:hook(?MODULE, self(), find, {{X, K, D, W, T}, R}),
+  R.
 
 add(X, K, D, W, T, V) ->
-  gen_server:call(?MODULE, {add, X, K, D, W, T, V}).
+  R = gen_server:call(?MODULE, {add, X, K, D, W, T, V}),
+  tv:hook(?MODULE, self(), add, {{X, K, D, W, T, V}, R}),
+  R.
 
 collect() ->
   gen_server:call(?MODULE, collect).
@@ -81,13 +85,13 @@ find_update(X, K, D, {Id0,_}=W0, _T, S0) ->
       {reply, {{calc,W0}, S2#state.ck},  S2};
     {calc, {Id1,_}=W1} = V ->
       case lists:prefix(Id1, Id0) of
-	true ->
-	  %% FIXME
-	  %% Threads can be <= to others which is wrong, but it works...
-	  %% io:format("Thread ~p is less than or equal to ~p~n", [W1, W0]),
-	  {reply, hang, S0};
-	false ->
-	  {reply, {V, S0#state.ck}, S0}
+        true ->
+          %% FIXME
+          %% Threads can be <= to others which is wrong, but it works...
+          %% io:format(user, "Thread ~p is less than or equal to ~p~n", [W1, W0]),
+          {reply, hang, S0};
+        false ->
+          {reply, {V, S0#state.ck}, S0}
       end;
     V ->
       {reply, {V, S0#state.ck}, S0}
@@ -100,12 +104,12 @@ add_update(X, K, D, W, _T, V1, S0) ->
       {reply, hang, S0};
     {calc, W} ->
       case V1 of
-	V1 when is_list(V1) ->
-	  io:format("Inserting {~p,~p} = {i,~p,[]}~n", [X,KD,V1]),
-	  Tr = tdtree:insert({X,KD,{i,V1,[]}}, S0#state.data);
-	V1 ->
-	  io:format("Inserting {~p,~p} = ~p~n", [X,KD,V1]),
-	  Tr = tdtree:insert({X,KD,V1}, S0#state.data)
+        V1 when is_list(V1) ->
+          io:format(user, "Inserting {~p,~p} = {i,~p,[]}~n", [X,KD,V1]),
+          Tr = tdtree:insert({X,KD,{i,V1,[]}}, S0#state.data);
+        V1 ->
+          io:format(user, "Inserting {~p,~p} = ~p~n", [X,KD,V1]),
+          Tr = tdtree:insert({X,KD,V1}, S0#state.data)
       end,
       S1 = S0#state{data = Tr, ck = S0#state.ck + 1},
       {reply, {V1, S1#state.ck}, S1};
