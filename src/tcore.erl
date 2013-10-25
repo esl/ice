@@ -216,8 +216,7 @@ eval({phi,Xi}=Di, _I, _E, _K, _D, _W, T) when is_list(Xi) orelse is_atom(Xi) ->
 %% Variable Identifiers
 %%-------------------------------------------------------------------------------------
 eval(Xi, I, E, K, D, W, T) when is_list(Xi) orelse is_atom(Xi) ->
-  {_D0, _T0} = eval1(Xi, I, E, K, [], W, T),
-  tcache:find(Xi, K, D, W, T).
+  {_D0, _T0} = eval1(Xi, I, E, tset:restrict_domain(K, D), [], W, T).
 
 %%-------------------------------------------------------------------------------------
 %% Finding identifiers in the cache
