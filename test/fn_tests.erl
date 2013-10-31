@@ -20,11 +20,9 @@ b_test_() ->
    b_abs_can_access_formal_params_of_outer_b_abs(),
    b_abs_can_access_local_dims_of_outer_wheredim(), %% ... differently from upstream TL
    b_abs_can_access_formal_params_of_outer_b_abs_and_local_dims_of_outer_wheredim(),
-   b_abs_cannot_access_dims_in_application_context(),
-   b_abs_cannot_access_local_dims_in_application_context(),
-   %%
    b_abs_can_use_argument_for_querying_creation_context(),
    b_abs_can_use_argument_for_querying_creation_context2(),
+   b_abs_cannot_access_dims_in_application_context(),
    %%
    creation_of_b_abs_in_multiple_contexts_plays_nicely_w_cache()
   ].
@@ -33,8 +31,7 @@ v_test_() ->
   [
    v_fun_w_two_formal_params_is_represented_as_nested_v_abs_and_v_apply(),
    %%
-   v_abs_can_access_dims_in_application_context(),
-   v_abs_cannot_access_local_dims_in_application_context()
+   v_abs_can_access_dims_in_application_context()
   ].
 
 fn_test_() ->
@@ -44,6 +41,57 @@ fn_test_() ->
                                where
                                  fun F.b1!v1.b2!v2 = b1 - v1 + b2 - v2
                                end"))
+   ]}.
+
+dims_frozen_in_abs_by_transform1_test_() ->
+  {foreach, fun setup/0, fun cleanup/1,
+   [
+    ?_assertMatch(
+       {45,_}, %% BTW upstream TL returns spundef.
+       %% Value is 45 as the t dim (of the outer wheredim) ends up in
+       %% the frozen dims of F, and that t has value 1 in the context
+       %% where F is evaluated.
+       eval("X where var X = (F where fun F.x = x - #.t              end).46 @ [t <- 1];; dim t <- 0 end")),
+    ?_assertMatch(
+       {45,_},
+       eval("X where var X = (F where fun F!x = x - #.t              end)!46 @ [t <- 1];; dim t <- 0 end")),
+    %%
+    ?_assertMatch(
+       {43,_}, %% Return value should be 45. BTW upstream TL returns spundef. TODO: Add level of indirection in local dims in wheredim (static).
+       eval("X where var X = (F where fun F.x = x - #.t;; dim t <- 3 end).46 @ [t <- 1];; dim t <- 0 end")),
+    ?_assertMatch(
+       {43,_}, %% Return value should be 45. BTW upstream TL returns spundef. TODO: Add level of indirection in local dims in wheredim (static).
+       eval("X where var X = (F where fun F!x = x - #.t;; dim t <- 3 end)!46 @ [t <- 1];; dim t <- 0 end")),
+    %%
+    %%
+    ?_assertMatch(
+       {45,_}, %% BTW upstream TL returns spundef.
+       eval("X where var X = (F.46 where fun F.x = x - #.t              end) @ [t <- 1];; dim t <- 0 end")),
+    ?_assertMatch(
+       {45,_},
+       eval("X where var X = (F!46 where fun F!x = x - #.t              end) @ [t <- 1];; dim t <- 0 end")),
+    %%
+    ?_assertMatch(
+       {43,_}, %% BTW upstream TL returns spundef.
+       eval("X where var X = (F.46 where fun F.x = x - #.t;; dim t <- 3 end) @ [t <- 1];; dim t <- 0 end")),
+    ?_assertMatch(
+       {43,_},
+       eval("X where var X = (F!46 where fun F!x = x - #.t;; dim t <- 3 end) @ [t <- 1];; dim t <- 0 end")),
+    %%
+    %%
+    ?_assertMatch(
+       {45,_}, %% BTW upstream TL returns spundef.
+       eval("X where var X = (F.46 @ [t <- 1] where fun F.x = x - #.t              end);; dim t <- 0 end")),
+    ?_assertMatch(
+       {45,_},
+       eval("X where var X = (F!46 @ [t <- 1] where fun F!x = x - #.t              end);; dim t <- 0 end")),
+    %%
+    ?_assertMatch(
+       {45,_}, %% BTW upstream TL returns spundef.
+       eval("X where var X = (F.46 @ [t <- 1] where fun F.x = x - #.t;; dim t <- 3 end);; dim t <- 0 end")),
+    ?_assertMatch(
+       {45,_},
+       eval("X where var X = (F!46 @ [t <- 1] where fun F!x = x - #.t;; dim t <- 3 end);; dim t <- 0 end"))
    ]}.
 
 %% TODO: integration with parser for sequence of function declarations and calls
@@ -174,23 +222,6 @@ b_abs_can_access_formal_params_of_outer_b_abs_and_local_dims_of_outer_wheredim()
   {foreach, fun setup/0, fun cleanup/1,
    [ ?_assertMatch({48,_}, eval(S)) ]}.
 
-b_abs_cannot_access_dims_in_application_context() ->
-  {where, "F", [FnF]} = s("F where fun F.x = x - #.t end"),
-  T = {where, {'@', s("F.46"), s("[t <- 1]")}, [FnF]},
-  %% "F.46 @ [t <- 1] where fun F.x = x - #.t end end"
-  {foreach, fun setup/0, fun cleanup/1,
-   [ ?_assertMatch({[{dim,"t"}],_}, eval(T)) ]}.
-
-b_abs_cannot_access_local_dims_in_application_context() ->
-  S =
-    "(F.46 where dim t <- 1 end)
-    where
-      fun F.x = x - #.t
-    end",
-  {where, {where, {fn_call, "F", [{b_param, 46}]}, _}, _} = s(S),
-  {foreach, fun setup/0, fun cleanup/1,
-   [ ?_assertMatch({[{dim,"t"}],_}, eval(S)) ]}.
-
 b_abs_can_use_argument_for_querying_creation_context() ->
   DimT = {dim,"t"},
   %% XXX How to create from the parser a base abstraction with frozen dims?
@@ -249,6 +280,15 @@ b_abs_can_use_argument_for_querying_creation_context2() ->
     ?_assertMatch({46,_}, tcore_eval(T1, _K=[{DimT,58}], _D=[DimT]))
    ]}.
 
+b_abs_cannot_access_dims_in_application_context() ->
+  %% TODO: Improve semantics re dim ids. Then rewrite test passing dim
+  %% to abs, query dim in abs body, expect failure.
+  {where, "F", [FnF]} = s("F where fun F.x = x - #.t end"),
+  T = {where, {'@', s("F.46"), s("[t <- 1]")}, [FnF]},
+  %% "F.46 @ [t <- 1] where fun F.x = x - #.t end end" %% HACK This is a hackish program that is not compatible with upstream TL and will break in future versions of ICE.
+  {foreach, fun setup/0, fun cleanup/1,
+   [ ?_assertMatch({[{dim,"t"}],_}, eval(T)) ]}.
+
 creation_of_b_abs_in_multiple_contexts_plays_nicely_w_cache() ->
   %% Test similar to
   %% b_abs_can_use_argument_for_querying_creation_context but with
@@ -283,26 +323,13 @@ v_fun_w_two_formal_params_is_represented_as_nested_v_abs_and_v_apply() ->
    [ ?_assertMatch({45,_}, eval(S)) ]}.
 
 v_abs_can_access_dims_in_application_context() ->
+  %% TODO: Improve semantics re dim ids. Then rewrite test passing dim
+  %% to abs, query dim in abs body, expect success.
   {where, "F", [FnF]} = s("F where fun F!x = x - #.t end"),
   T = {where, {'@', s("F!46"), s("[t <- 1]")}, [FnF]},
-  %% "F!46 @ [t <- 1] where fun F!x = x - #.t end"
+  %% "F!46 @ [t <- 1] where fun F!x = x - #.t end" %% HACK This is a hackish program that is not compatible with upstream TL and will break in future versions of ICE.
   {foreach, fun setup/0, fun cleanup/1,
    [ ?_assertMatch({45,_}, eval(T)) ]}.
-
-v_abs_cannot_access_local_dims_in_application_context() ->
-  S =
-    "(F!46 where dim t <- 1 end)
-    where
-      fun F!x = x - #.t
-    end",
-  {where, {where, {fn_call, "F", [{v_param, 46}]}, _}, _} = s(S),
-  {foreach, fun setup/0, fun cleanup/1,
-   %% XXX Is this test valid? Shall v_abs be able to access local
-   %% dimensions with the same name of dimensions references in the
-   %% body of the abs? Local dimensions of wheredim are replaced with
-   %% hidden dims by transformation 1, and function body cannot know
-   %% about that.
-   [ ?_assertMatch({[{dim,"t"}],_}, eval(S)) ]}.
 
 
 phi_is_recognized_as_a_dim_test_() ->
