@@ -17,6 +17,8 @@ b_test_() ->
    b_abs_nested_in_wheredim_does_not_cause_wrong_substitution(),
    wheredim_nested_in_b_abs_does_not_cause_wrong_substitution(),
    b_abs_can_return_b_abs_and_formal_params_w_same_name_are_not_confused(),
+   b_abs_can_access_formal_params_of_outer_b_abs(),
+   b_abs_can_access_local_dims_of_outer_wheredim(), %% ... differently from upstream TL
    b_abs_can_access_formal_params_of_outer_b_abs_and_local_dims_of_outer_wheredim(),
    b_abs_cannot_access_dims_in_application_context(),
    b_abs_cannot_access_local_dims_in_application_context(),
@@ -136,6 +138,28 @@ b_abs_can_return_b_abs_and_formal_params_w_same_name_are_not_confused() ->
     end",
   {setup, fun setup/0, fun cleanup/1,
    [ ?_assertMatch({43,_}, eval(S)) ]}.
+
+b_abs_can_access_formal_params_of_outer_b_abs() ->
+  S =
+    "(G.1).46
+    where
+      fun G.y = F
+      where
+        fun F.x = x - y
+      end
+    end",
+  {setup, fun setup/0, fun cleanup/1,
+   [ ?_assertMatch({45,_}, eval(S)) ]}.
+
+b_abs_can_access_local_dims_of_outer_wheredim() ->
+  S =
+    "F.46
+    where
+      dim t <- 3
+      fun F.x = x + #.t
+    end",
+  {setup, fun setup/0, fun cleanup/1,
+   [ ?_assertMatch({49,_}, eval(S)) ]}.
 
 b_abs_can_access_formal_params_of_outer_b_abs_and_local_dims_of_outer_wheredim() ->
   S =
