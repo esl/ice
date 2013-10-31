@@ -53,22 +53,20 @@ basic_b_abs() ->
   ?assertEqual({where, "F",
                 [{fn, "F", [{b_param,"argAsVarId"}], "argAsVarId"}]},
                T),
-  T0 = t0(T),
   ?assertEqual({wherevar, "F",
                 [{"F", {b_abs, [], ["argAsVarId"], "argAsVarId"}}]},
-               T0),
-  T1 = t1(T0),
+               t0(T)),
   ArgAsPhiDim = {phi,"argAsVarId"},
   ?assertEqual({wherevar, "F",
                 [{"F", {b_abs, [], [ArgAsPhiDim], {'?',ArgAsPhiDim}}}]},
-               T1),
+               t1(t0(T))),
   {setup,
    _Setup = fun() -> {ok, Pid} = tcache:start_link(100), Pid end,
    _Cleanup = fun(Pid) -> tcache_stop(Pid) end,
    [
     ?_assertMatch(
        { {frozen_closed_b_abs, _I, _E, [], [ArgAsPhiDim], {'?',ArgAsPhiDim}}, _},
-       tcore_eval(T1))
+       eval(T))
    ]}.
 
 toplevel_base_fun() ->
@@ -125,7 +123,6 @@ wheredim_nested_in_b_abs_does_not_cause_wrong_substitution() ->
   S = "F.1 where fun F.x = (x + #.x) where dim x <- 46 end end",
   WheredimX = {dim,{[0,1],1},"x"},
   BAbsX = {phi,"x"},
-  T1 = t1(t0(s(S))),
   ?assertMatch(
      {wherevar,
       {b_apply, "F", [1]},
@@ -136,11 +133,11 @@ wheredim_nested_in_b_abs_does_not_cause_wrong_substitution() ->
                        {'#',WheredimX}]},
           [{WheredimX,46}]}}
        }]},
-     T1),
+     t1(t0(s(S)))),
   {setup,
    _Setup = fun() -> {ok, Pid} = tcache:start_link(100), Pid end,
    _Cleanup = fun(Pid) -> tcache_stop(Pid) end,
-   [ ?_assertMatch({47,_}, tcore_eval(T1)) ]}.
+   [ ?_assertMatch({47,_}, eval(S)) ]}.
 
 b_abs_can_return_b_abs_and_formal_params_w_same_name_are_not_confused() ->
   S =
@@ -175,7 +172,7 @@ b_abs_cannot_access_dims_in_application_context() ->
   {setup,
    _Setup = fun() -> {ok, Pid} = tcache:start_link(100), Pid end,
    _Cleanup = fun(Pid) -> tcache_stop(Pid) end,
-   [ ?_assertMatch({[{dim,"t"}],_}, tcore_eval(t1(t0(T)))) ]}.
+   [ ?_assertMatch({[{dim,"t"}],_}, eval(T)) ]}.
 
 b_abs_cannot_access_local_dims_in_application_context() ->
   S =
@@ -293,7 +290,7 @@ v_abs_can_access_dims_in_application_context() ->
   {setup,
    _Setup = fun() -> {ok, Pid} = tcache:start_link(100), Pid end,
    _Cleanup = fun(Pid) -> tcache_stop(Pid) end,
-   [ ?_assertMatch({45,_}, tcore_eval(t1(t0(T)))) ]}.
+   [ ?_assertMatch({45,_}, eval(T)) ]}.
 
 v_abs_cannot_access_local_dims_in_application_context() ->
   S =
@@ -320,8 +317,8 @@ phi_is_recognized_as_a_dim_test_() ->
   ?assertMatch({wherevar, _,
                 [{_, {b_abs, _, [BAbsX], _}}]},
                t1(t0(s(BAbsS)))),
-  %% ... then check that such dimensions are treated as all other
-  %% dimensions as far as missing dimensions are concerned.
+  %% ... then check that such dimensions are treated in evaluator as
+  %% all other dimensions as far as missing dimensions are concerned.
   {setup,
    _Setup = fun() -> {ok, Pid} = tcache:start_link(100), Pid end,
    _Cleanup = fun(Pid) -> tcache_stop(Pid) end,
@@ -355,8 +352,10 @@ tcore_eval(T) ->
 tcore_eval(T, K, D) ->
   tcore:eval(T,[],[],K,D,{[],self()},0).
 
-eval(S) ->
+eval(S) when is_list(S) ->
   {ok, T} = tea:string(S),
+  tea:eval(T);
+eval(T) ->
   tea:eval(T).
 
 %% End of Module.

@@ -65,9 +65,6 @@ t0(T) ->
 t1(T) ->
   ttransform1:transform1(T).
 
-tcore_eval(T) ->
-  tcore_eval(T, [], []).
-
 tcore_eval(T, K, D) ->
   tcore:eval(T,[],[],K,D,{[],self()},0).
 
