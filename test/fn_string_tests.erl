@@ -34,12 +34,21 @@ v_abs_test_() ->
                                   {v_param,"v2"}], 46}]},
                  s("58 where fun value!v1 !v2 = 46 end"))].
 
-misc_abs_test() ->
-  ?assertMatch({where, _,
-                [{fn, "f", [{b_param,"b"},
-                            {n_param,"N"},
-                            {v_param,"v"}], 46}]},
-               s("58 where fun f .b N !v = 46 end")).
+misc_abs_test_() ->
+  [
+   ?_assertMatch({where, _,
+                  [{fn, "f", [{n_param,"N"},
+                              {b_param,"b"},
+                              {v_param,"v"}], 46}]},
+                 s("58 where fun f N .b !v = 46 end")),
+   ?_assertMatch({where, _,
+                  [{fn, "f", [{n_param,"N"},
+                              {v_param,"v"},
+                              {b_param,"b"}], 46}]},
+                 s("58 where fun f N !v .b = 46 end"))
+   %% XXX Named parameters are only supported as first elements ATM in
+   %% the parser.
+  ].
 
 %% Internals
 
