@@ -49,22 +49,22 @@ fn_test_() ->
 %% TODO: integration with parser for sequence of function declarations and calls
 
 basic_b_abs() ->
-  T = s("F where fun F.argAsVarId = argAsVarId end"),
+  S = "F where fun F.argAsVarId = argAsVarId end",
   ?assertEqual({where, "F",
                 [{fn, "F", [{b_param,"argAsVarId"}], "argAsVarId"}]},
-               T),
+               s(S)),
   ?assertEqual({wherevar, "F",
                 [{"F", {b_abs, [], ["argAsVarId"], "argAsVarId"}}]},
-               t0(T)),
+               t0(s(S))),
   ArgAsPhiDim = {phi,"argAsVarId"},
   ?assertEqual({wherevar, "F",
                 [{"F", {b_abs, [], [ArgAsPhiDim], {'?',ArgAsPhiDim}}}]},
-               t1(t0(T))),
+               t1(t0(s(S)))),
   {foreach, fun setup/0, fun cleanup/1,
    [
     ?_assertMatch(
        { {frozen_closed_b_abs, _I, _E, [], [ArgAsPhiDim], {'?',ArgAsPhiDim}}, _},
-       eval(T))
+       eval(S))
    ]}.
 
 toplevel_base_fun() ->
