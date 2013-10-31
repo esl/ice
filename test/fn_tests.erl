@@ -60,7 +60,7 @@ basic_b_abs() ->
   ?assertEqual({wherevar, "F",
                 [{"F", {b_abs, [], [ArgAsPhiDim], {'?',ArgAsPhiDim}}}]},
                t1(t0(T))),
-  {setup, fun setup/0, fun cleanup/1,
+  {foreach, fun setup/0, fun cleanup/1,
    [
     ?_assertMatch(
        { {frozen_closed_b_abs, _I, _E, [], [ArgAsPhiDim], {'?',ArgAsPhiDim}}, _},
@@ -69,7 +69,7 @@ basic_b_abs() ->
 
 toplevel_base_fun() ->
   S = "square.3 where fun square.x = x * x end",
-  {setup, fun setup/0, fun cleanup/1,
+  {foreach, fun setup/0, fun cleanup/1,
    [ ?_assertMatch({9,_}, eval(S)) ]}.
 
 b_fun_w_two_formal_params_is_represented_as_one_b_abs_and_b_apply() ->
@@ -78,7 +78,7 @@ b_fun_w_two_formal_params_is_represented_as_one_b_abs_and_b_apply() ->
                 [{"F", {b_abs, [], ["x", "y"],
                         {primop, _, ["x", "y"]}}}]},
                _BAbsT0 = t0(s(S))),
-  {setup, fun setup/0, fun cleanup/1,
+  {foreach, fun setup/0, fun cleanup/1,
    [ ?_assertMatch({45,_}, eval(S)) ]}.
 
 b_abs_nested_in_wheredim_does_not_cause_wrong_substitution() ->
@@ -108,7 +108,7 @@ b_abs_nested_in_wheredim_does_not_cause_wrong_substitution() ->
           }}]},
        [{WheredimX,46}]},
      t1(t0(s(S)))),
-  {setup, fun setup/0, fun cleanup/1,
+  {foreach, fun setup/0, fun cleanup/1,
    [ ?_assertMatch({47,_}, eval(S)) ]}.
 
 wheredim_nested_in_b_abs_does_not_cause_wrong_substitution() ->
@@ -126,7 +126,7 @@ wheredim_nested_in_b_abs_does_not_cause_wrong_substitution() ->
           [{WheredimX,46}]}}
        }]},
      t1(t0(s(S)))),
-  {setup, fun setup/0, fun cleanup/1,
+  {foreach, fun setup/0, fun cleanup/1,
    [ ?_assertMatch({47,_}, eval(S)) ]}.
 
 b_abs_can_return_b_abs_and_formal_params_w_same_name_are_not_confused() ->
@@ -136,7 +136,7 @@ b_abs_can_return_b_abs_and_formal_params_w_same_name_are_not_confused() ->
       fun F.x.y = x - y
       fun G.x = F
     end",
-  {setup, fun setup/0, fun cleanup/1,
+  {foreach, fun setup/0, fun cleanup/1,
    [ ?_assertMatch({43,_}, eval(S)) ]}.
 
 b_abs_can_access_formal_params_of_outer_b_abs() ->
@@ -148,7 +148,7 @@ b_abs_can_access_formal_params_of_outer_b_abs() ->
         fun F.x = x - y
       end
     end",
-  {setup, fun setup/0, fun cleanup/1,
+  {foreach, fun setup/0, fun cleanup/1,
    [ ?_assertMatch({45,_}, eval(S)) ]}.
 
 b_abs_can_access_local_dims_of_outer_wheredim() ->
@@ -158,7 +158,7 @@ b_abs_can_access_local_dims_of_outer_wheredim() ->
       dim t <- 3
       fun F.x = x + #.t
     end",
-  {setup, fun setup/0, fun cleanup/1,
+  {foreach, fun setup/0, fun cleanup/1,
    [ ?_assertMatch({49,_}, eval(S)) ]}.
 
 b_abs_can_access_formal_params_of_outer_b_abs_and_local_dims_of_outer_wheredim() ->
@@ -171,14 +171,14 @@ b_abs_can_access_formal_params_of_outer_b_abs_and_local_dims_of_outer_wheredim()
         fun F.x = x - y + #.t
       end
     end",
-  {setup, fun setup/0, fun cleanup/1,
+  {foreach, fun setup/0, fun cleanup/1,
    [ ?_assertMatch({48,_}, eval(S)) ]}.
 
 b_abs_cannot_access_dims_in_application_context() ->
   {where, "F", [FnF]} = s("F where fun F.x = x - #.t end"),
   T = {where, {'@', s("F.46"), s("[t <- 1]")}, [FnF]},
   %% "F.46 @ [t <- 1] where fun F.x = x - #.t end end"
-  {setup, fun setup/0, fun cleanup/1,
+  {foreach, fun setup/0, fun cleanup/1,
    [ ?_assertMatch({[{dim,"t"}],_}, eval(T)) ]}.
 
 b_abs_cannot_access_local_dims_in_application_context() ->
@@ -188,7 +188,7 @@ b_abs_cannot_access_local_dims_in_application_context() ->
       fun F.x = x - #.t
     end",
   {where, {where, {fn_call, "F", [{b_param, 46}]}, _}, _} = s(S),
-  {setup, fun setup/0, fun cleanup/1,
+  {foreach, fun setup/0, fun cleanup/1,
    [ ?_assertMatch({[{dim,"t"}],_}, eval(S)) ]}.
 
 b_abs_can_use_argument_for_querying_creation_context() ->
@@ -286,7 +286,7 @@ v_abs_can_access_dims_in_application_context() ->
   {where, "F", [FnF]} = s("F where fun F!x = x - #.t end"),
   T = {where, {'@', s("F!46"), s("[t <- 1]")}, [FnF]},
   %% "F!46 @ [t <- 1] where fun F!x = x - #.t end"
-  {setup, fun setup/0, fun cleanup/1,
+  {foreach, fun setup/0, fun cleanup/1,
    [ ?_assertMatch({45,_}, eval(T)) ]}.
 
 v_abs_cannot_access_local_dims_in_application_context() ->
@@ -296,7 +296,7 @@ v_abs_cannot_access_local_dims_in_application_context() ->
       fun F!x = x - #.t
     end",
   {where, {where, {fn_call, "F", [{v_param, 46}]}, _}, _} = s(S),
-  {setup, fun setup/0, fun cleanup/1,
+  {foreach, fun setup/0, fun cleanup/1,
    %% XXX Is this test valid? Shall v_abs be able to access local
    %% dimensions with the same name of dimensions references in the
    %% body of the abs? Local dimensions of wheredim are replaced with
@@ -315,7 +315,7 @@ phi_is_recognized_as_a_dim_test_() ->
                t1(t0(s(BAbsS)))),
   %% ... then check that such dimensions are treated in evaluator as
   %% all other dimensions as far as missing dimensions are concerned.
-  {setup, fun setup/0, fun cleanup/1,
+  {foreach, fun setup/0, fun cleanup/1,
    [ ?_assertMatch({[BAbsX],_}, tcore_eval({'if',{'?',BAbsX},46,58})) ]}.
 
 
