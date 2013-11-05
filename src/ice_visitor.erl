@@ -25,20 +25,25 @@ top_down (Acceptor, Tree) ->
 %% Internals
 
 t () ->
-    E = {'@', "Y", {t, [{d, tprimop:times({'#', d}, 2)}]}},
+    E = {'@', "Y", {t, [{d, {'#', d}}]}},
     ice_visitor:top_down(
         fun ({'@', Lhs, Rhs}) ->
+            io:format("Got ~p\n", [{'@', Lhs, Rhs}]),
             Lhs ++" @ "++ Rhs
           ; ({t, Pairs}) ->
+            io:format("Got ~p\n", [{t, Pairs}]),
             [{L,R}|_] = Pairs,
             "[ "++ L ++" <-> "++ R ++" ]"
           ; ({primop, F, Args}) ->
+            io:format("Got ~p\n", [{primop, F, Args}]),
             F ++"("++ Args ++")"
           ; ({'#', Dim}) ->
+            io:format("Got ~p\n", [{'#', Dim}]),
             "#."++ Dim
-          ; (Rest) when is_atom(Rest); is_function(Rest); is_number(Rest) ->
-            [Thing] = io_lib:format("~p",[Rest]),
-            Thing
+          % ; (Rest) when is_atom(Rest); is_function(Rest); is_number(Rest) ->
+          %   io:format("Got ~p\n", [Rest]),
+          %   [Thing] = io_lib:format("~p",[Rest]),
+          %   Thing
         end, E).
 
 visit (Acceptor, Tree, Way) ->
@@ -77,14 +82,14 @@ v (V,W, {primop, Fun, Eis}) -> {primop, W(V,Fun), W(V,Eis)};
 v (V,W, {'@', E0, E1}) -> {'@', W(V,E0), W(V,E1)};
 v (V,W, {'#', E0}) ->     {'#', W(V,E0)};
 
-%%v (V,W, Const) when is_number(Const); is_boolean(Const) ->             Const;
+%v (V,W, Const) when is_number(Const); is_boolean(Const) ->             Const;
 v (V,W, {string, Str}) ->                                 {string, W(V,Str)};
 
 v (V,W, {dim,         Xi}) when is_list(Xi); is_atom(Xi) -> {dim,                W(V,Xi)};
 v (V,W, {dim, Hidden, Xi}) when is_list(Xi); is_atom(Xi) -> {dim, W(V,Hidden), W(V,Xi)};
 v (V,W, {phi,         Xi}) when is_list(Xi); is_atom(Xi) -> {dim,                W(V,Xi)};
 
-%%v (V,W,       Xi ) when              is_atom(Xi) ->           Xi;
+%v (V,W,       Xi ) when              is_atom(Xi) ->           Xi;
 v (V,W, {'?', Xi}) when is_list(Xi); is_atom(Xi) -> {phi, W(V,Xi)};
 
 v (V,W, [H|T]) -> [W(V,H) | W(V,T)];
