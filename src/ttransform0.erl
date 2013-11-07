@@ -115,6 +115,14 @@ transform0({where, E0, VDisEis}) ->
   transform0_where(Vars, Dims, E0);
 
 %%-------------------------------------------------------------------------------------
+%% Extensional expression
+%%-------------------------------------------------------------------------------------
+transform0({ext_expr, _E0, _InOutSpec, _Gr}=Expr) ->
+  %% Extensional variable is not supposed to contain elements affected
+  %% by transformation.
+  Expr;
+
+%%-------------------------------------------------------------------------------------
 %% Dimension Identifiers
 %%-------------------------------------------------------------------------------------
 transform0({dim, Xi}=Di) when is_list(Xi) orelse is_atom(Xi) ->

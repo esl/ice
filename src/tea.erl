@@ -48,9 +48,13 @@ rework_tree (Tree) ->
           TopExpr = Exp,
           Dims = [{dim,Dim,N} || {dim_decl,_,Dim,N} <- DimDecls],
           Vars = [{var,Var,E} || {var_decl,_,Var,E} <- VarDecls],
-          Funs = [{fn,Fn,Params,Body}
-                  || {fun_decl,_,Fn,Params,Body} <- VarDecls],
-          {where, TopExpr, Vars ++ Dims ++ Funs};
+          Funs =
+            [{fn,Fn,Params,Body} || {fun_decl,_,Fn,Params,Body} <- VarDecls],
+          Exts =  %% Extensional variables
+            [{var,Var,
+              {ext_expr,Body,rework_ext_inout_spec(DimTypesIn,TypeOut),Gr}}
+             || {ext_decl,_,Var,DimTypesIn,TypeOut,Body,Gr} <- VarDecls],
+          {where, TopExpr, Vars ++ Dims ++ Funs ++ Exts};
 
         ({base_param,  _, P}) -> {b_param, P};
         ({named_param, _, P}) -> {n_param, P};
@@ -101,6 +105,14 @@ rework_tree (Tree) ->
       {ok, Y}
   end.
 
+
+rework_ext_inout_spec(DimTypesIn, {cl_scalar,_,TypeOut}) ->
+  {lists:map(
+     fun({ext_ty,_,DimIn,{cl_scalar,_,TypeIn}}) ->
+         {{dim,DimIn},TypeIn}
+     end,
+     DimTypesIn),
+   TypeOut}.
 
 unwrap_elsifs ([{if_expr,_,Cond,Then}|Rest], Else) ->
   {'if', Cond, Then, unwrap_elsifs(Rest,Else)};
