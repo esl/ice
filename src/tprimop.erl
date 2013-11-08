@@ -15,9 +15,9 @@ lte(A, B) ->
 gte(A, B) ->
   {primop, fun erlang:'>='/2, [A, B]}.
 plus(A, B) ->
-  {primop, fun (X, Y) -> X + Y end, [A,B]}.
+  {primop, fun erlang:'+'/2, [A,B]}.
 times(A, B) ->
-  {primop, fun (X, Y) -> X * Y end, [A, B]}.
+  {primop, fun erlang:'*'/2, [A, B]}.
 minus(A, B) ->
   {primop, fun erlang:'-'/2, [A, B]}.
 product(A,B) ->
