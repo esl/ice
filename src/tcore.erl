@@ -20,12 +20,23 @@ eval({char, Str}, _I, _E, _K, _D, _W, T) ->
 %%-------------------------------------------------------------------------------------
 %% Primop
 %%-------------------------------------------------------------------------------------
-eval({primop, F, Eis}, I, E, K, D, W, T) ->
+eval({primop, Primop, Eis}, I, E, K, D, W, T) ->
   {Dis, MaxT} = tpar:eval(Eis, I, E, K, D, W, T),
   case tset:union_d(Dis) of
     {true, Dims} ->
       {Dims, MaxT};
     {false, Dis1} ->
+      F = case Primop of
+        '%' ->
+          fun %% http://stackoverflow.com/a/858649/1418165
+            (X, Y) -> (X rem Y + Y) rem Y
+          end;
+        'ilogn' ->
+          fun (0) -> 0;
+              (X) -> round(math:log(X) / math:log(2))
+          end;
+        Op -> fun erlang:Op/2
+      end,
       {apply(F, Dis1), MaxT}
   end;
 

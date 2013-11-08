@@ -10,44 +10,36 @@
 
 %%----------------------------------------------------------------------------
 eq (A, B) ->
-  {primop, fun erlang:'=='/2, [A,B]}.
+  {primop, '==', [A,B]}.
 neq (A, B) ->
-  {primop, fun erlang:'/='/2, [A,B]}.
+  {primop, '/=', [A,B]}.
 
 tand (A, B) ->
-  {primop, fun erlang:'and'/2, [A,B]}.
+  {primop, 'and', [A,B]}.
 tor (A, B) ->
-  {primop, fun erlang:'or'/2, [A,B]}.
+  {primop, 'or', [A,B]}.
 
 lt (A, B) ->
-  {primop, fun erlang:'<'/2, [A,B]}.
+  {primop, '<', [A,B]}.
 gt (A, B) ->
-  {primop, fun erlang:'>'/2, [A,B]}.
+  {primop, '>', [A,B]}.
 
 lte (A, B) ->
-  {primop, fun erlang:'=<'/2, [A,B]}.
+  {primop, '=<', [A,B]}.
 gte (A, B) ->
-  {primop, fun erlang:'>='/2, [A,B]}.
+  {primop, '>=', [A,B]}.
 
 plus (A, B) ->
-  {primop, fun erlang:'+'/2, [A,B]}.
+  {primop, '+', [A,B]}.
 minus (A, B) ->
-  {primop, fun erlang:'-'/2, [A,B]}.
+  {primop, '-', [A,B]}.
 times (A, B) ->
-  {primop, fun erlang:'*'/2, [A,B]}.
+  {primop, '*', [A,B]}.
 product (A, B) ->
-  {primop, fun erlang:'/'/2, [A,B]}.
+  {primop, '/', [A,B]}.
 
 mod (A, B) ->
-  %% http://stackoverflow.com/a/858649/1418165
-  {primop,
-    fun
-      (X, Y) -> (X rem Y + Y) rem Y
-    end, [A,B]}.
+  {primop, '%', [A,B]}.
 
 ilogn (N) ->
-  {primop,
-    fun
-      (0) -> 0;
-      (X) -> round(math:log(X) / math:log(2))
-    end, [N]}.
+  {primop, 'ilogn', [N]}.
