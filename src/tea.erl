@@ -68,19 +68,19 @@ rework_tree (Tree) ->
           %%   defined as a ‘set of (dimension, value) pairs’.
           {{dim,Lhs}, Rhs};
 
-        ({'or'=Op, _, A, B})  -> {primop, fun erlang:Op/2, [A,B]};
-        ({'and'=Op, _, A, B}) -> {primop, fun erlang:Op/2, [A,B]};
-        ({'<'=Op, _, A, B})   -> {primop, fun erlang:Op/2, [A,B]};
-        ({'<=', _, A, B})     -> {primop, fun erlang:'=<'/2, [A,B]};
-        ({'=='=Op, _, A, B})  -> {primop, fun erlang:Op/2, [A,B]};
-        ({'>='=Op, _, A, B})  -> {primop, fun erlang:Op/2, [A,B]};
-        ({'>'=Op, _, A, B})   -> {primop, fun erlang:Op/2, [A,B]};
-        ({'!=', _, A, B})     -> {primop, fun erlang:'=/='/2, [A,B]};
-        ({'+'=Op, _, A, B})   -> {primop, fun erlang:Op/2, [A,B]};
-        ({'-'=Op, _, A, B})   -> {primop, fun erlang:Op/2, [A,B]};
-        ({'*'=Op, _, A, B})   -> {primop, fun erlang:Op/2, [A,B]};
-                                                % No '/' yet because lack of floats.
-        ({'%', _, A, B})      -> {primop, fun mod/2, [A,B]};
+        ({'or',  _, A, B}) -> tprimop:tor(A, B);
+        ({'and', _, A, B}) -> tprimop:tand(A, B);
+        ({'<',   _, A, B}) -> tprimop:lt(A, B);
+        ({'<=',  _, A, B}) -> tprimop:lte(A, B);
+        ({'==',  _, A, B}) -> tprimop:eq(A, B);
+        ({'>=',  _, A, B}) -> tprimop:gte(A, B);
+        ({'>',   _, A, B}) -> tprimop:gt(A, B);
+        ({'!=',  _, A, B}) -> tprimop:neq(A, B);
+        ({'+',   _, A, B}) -> tprimop:plus(A, B);
+        ({'-',   _, A, B}) -> tprimop:minus(A, B);
+        ({'*',   _, A, B}) -> tprimop:times(A, B);
+        ({'/',   _, A, B}) -> tprimop:product(A, B);
+        ({'%',   _, A, B}) -> tprimop:mod(A, B);
 
         ({bool, _, Boolean}) -> Boolean;
         ({raw_string, _, S})    -> {string, S};
@@ -109,9 +109,5 @@ unwrap_elsifs ([{if_expr,_,Cond,Then}|Rest], Else) ->
   {'if', Cond, Then, unwrap_elsifs(Rest,Else)};
 unwrap_elsifs ([], Else) ->
   Else.
-
-mod (X, Y) ->
-  %% http://stackoverflow.com/a/858649/1418165
-  (X rem Y + Y) rem Y.
 
 %% End of Module.
