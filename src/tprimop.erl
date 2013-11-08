@@ -23,6 +23,7 @@ minus(A, B) ->
 product(A,B) ->
   {primop, fun erlang:'/'/2, [A, B]}.
 ilogn(N) ->
-  {primop, fun (0) -> 0;
-	       (X) -> round(math:log(X) / math:log(2))
-	   end, [N]}.
+  {primop, fun
+    (0) -> 0;
+    (X) -> round(math:log(X) / math:log(2))
+  end, [N]}.
