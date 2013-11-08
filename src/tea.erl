@@ -42,6 +42,12 @@ rework_tree (Tree) ->
   V = fun
         ({expr, _, E}) ->
           E;
+
+        ({intension_creation, _, FrozenDims, Body}) ->
+          {i_abs, [{dim,Dim} || Dim <- FrozenDims], Body};
+        ({intension_evaluation, _, IAbsExpr}) ->
+          {i_apply, IAbsExpr};
+
         ({call, _, FunExpr, Params}) ->
           {fn_call, FunExpr, lists:map(fun rework_fun_param/1, Params)};
 
