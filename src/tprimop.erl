@@ -12,7 +12,7 @@
 eq (A, B) ->
   {primop, fun erlang:'=='/2, [A,B]}.
 neq (A, B) ->
-  {primop, fun erlang:'=/='/2, [A,B]}.
+  {primop, fun erlang:'/='/2, [A,B]}.
 
 tand (A, B) ->
   {primop, fun erlang:'and'/2, [A,B]}.
