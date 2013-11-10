@@ -39,8 +39,10 @@ abs_cannot_access_variable_ids_in_application_env() ->
     end,
     lists:append(
       [
-       "((F.1) where var A = 1 end) where fun F.x = A end",
-       "((F!1) where var A = 1 end) where fun F!x = A end"
+       "((F.1) where var A = 1 end) where fun F.x =   A end",
+       "((F!1) where var A = 1 end) where fun F!x =   A end",
+       %% "((F 1) where var A = 1 end) where fun F x =   A end", TODO: Improve transformation 0
+       "((↓ F) where var A = 1 end) where var F = ↑{} A end"
       ],
       %%
       lists:map(
@@ -68,8 +70,10 @@ abs_cannot_access_variable_ids_in_creation_env() ->
     end,
     lists:append(
       [
-       "((F where var A = 1 end).1) where fun F.x = A end",
-       "((F where var A = 1 end)!1) where fun F!x = A end"
+       "( (F where var A = 1 end).1) where fun F.x =   A end",
+       "( (F where var A = 1 end)!1) where fun F!x =   A end",
+       %% "( (F where var A = 1 end) 1) where fun F x =   A end", TODO: Improve transformation 0
+       "(↓(F where var A = 1 end)  ) where var F = ↑{} A end"
       ],
       %%
       lists:map(

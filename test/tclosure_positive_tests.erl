@@ -16,8 +16,9 @@ regression_test_() ->
    [
     ?_assertMatch({46,_}, eval("B where var A = 46;; var B = A end")),
     %%
-    ?_assertMatch({46,_}, eval("F.1 where var A = 46;; fun F.x = A end")),
-    ?_assertMatch({46,_}, eval("F!1 where var A = 46;; fun F!x = A end"))
+    ?_assertMatch({46,_}, eval(" F.1 where var A = 46;; fun F.x =   A end")),
+    ?_assertMatch({46,_}, eval(" F!1 where var A = 46;; fun F!x =   A end")),
+    ?_assertMatch({46,_}, eval("(↓F) where var A = 46;; var F = ↑{} A end"))
    ]}.
 
 
@@ -77,12 +78,12 @@ shallow_unnamed_abs_in_wherevar1() ->
       {where, s("F"),
        [{var, s("F"), {v_abs, [], [s("x")], s("x + A")}},
         {var, s("A"), s("46")}]},
-      [{v_param, s("1")}]}
+      [{v_param, s("1")}]},
      %% "(F where var F = \ x -> x + A;; var A = 46 end)!1"
      %%
      %% "(F where var F = \\ x -> x + A;; var A = 46 end) 1" TODO: Improve transformation 0
      %%
-     %% "↓ (F where var F = ↑ {} A;; var A = 46 end)" TODO: Add test case with a frozen dim
+     "↓(F where var F = ↑{} 1 + A;; var A = 46 end)"
     ]).
 
 shallow_unnamed_abs_in_wherevar2() ->
@@ -95,15 +96,19 @@ shallow_unnamed_abs_in_wherevar2() ->
         {var, s("F"), {b_abs, [], [s("x")], s("x + A")}},
         {var, s("A"), s("46")}]},
       [{b_param, s("1")}]},
-     %% "(G where var G = \_ y -> F.y;; var F = \_ x -> x + A;; var A = 46 end).1",
+     %% "(G where var G = \_ y -> F.y;; var F = \_ x -> x + A;; var A = 46 end).1"
      %%
      {fn_call,
       {where, s("G"),
        [{var, s("G"), {v_abs, [], [s("y")], s("F!y")}},
         {var, s("F"), {v_abs, [], [s("x")], s("x + A")}},
         {var, s("A"), s("46")}]},
-      [{v_param, s("1")}]}
-     %% "(G where var G = \ y -> F!y;; var F = \ x -> x + A;; var A = 46 end)!1",
+      [{v_param, s("1")}]},
+     %% "(G where var G = \ y -> F!y;; var F = \ x -> x + A;; var A = 46 end)!1"
+     %%
+     %% "(G where var G = \\ y -> F y;; var F = \\ x -> x + A;; var A = 46 end) 1" TODO: Improve transformation 0
+     %%
+     "↓(G where var G = ↑{} (↓F);; var F = ↑{} 1 + A;; var A = 46 end)"
     ]).
 
 nested_wherevar_clauses() ->
