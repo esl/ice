@@ -20,6 +20,19 @@ i_test_() ->
     ?_test(temperatureAtInuvik_wo_string_comparison())
    ]}.
 
+i_abs_body_does_not_need_parentheses_test_() ->
+  %% Parser of upstream TL needs parentheses for identifying the body
+  %% of intension abstractions but they are superfluous in this
+  %% implementation.
+  [
+   ?_assertEqual(
+      s("↓(↑{} (1 + 46));;"),
+      s("↓(↑{}  1 + 46 );;")),
+   ?_assertEqual(
+      s("↓(↑{} (#.t)) where dim t <- 0;; end;;"),
+      s("↓(↑{}  #.t ) where dim t <- 0;; end;;"))
+  ].
+
 
 intension_wo_frozen_dims() ->
   ?assertMatch({46,_}, eval("↓(↑{} 46)")).
