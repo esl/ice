@@ -79,7 +79,7 @@ rework_tree (Tree) ->
         ({'+',   _, A, B}) -> tprimop:plus(A, B);
         ({'-',   _, A, B}) -> tprimop:minus(A, B);
         ({'*',   _, A, B}) -> tprimop:times(A, B);
-        ({'/',   _, A, B}) -> tprimop:product(A, B);
+        ({'/',   _, A, B}) -> tprimop:divide(A, B);
         ({'%',   _, A, B}) -> tprimop:mod(A, B);
 
         ({bool, _, Boolean}) -> Boolean;

@@ -4,7 +4,7 @@
 -export([tand/2, tor/2]).
 -export([lt/2, gt/2]).
 -export([lte/2, gte/2]).
--export([plus/2, minus/2, times/2, product/2]).
+-export([plus/2, minus/2, times/2, divide/2]).
 -export([mod/2]).
 -export([ilogn/1]).
 
@@ -35,7 +35,7 @@ minus (A, B) ->
   {primop, '-', [A,B]}.
 times (A, B) ->
   {primop, '*', [A,B]}.
-product (A, B) ->
+divide (A, B) ->
   {primop, '/', [A,B]}.
 
 mod (A, B) ->
