@@ -69,62 +69,36 @@ fun_recursing_on_dim2() ->
   ?assertMatch({6,_}, eval(S)).
 
 fun_recursing_on_dim3() ->
-  T = {where, s("fact.3"),
-       [{fn, "fact", [{b_param,"n"}],
-         {where, "F",
-          [{dim, "d", "n"},
-           {var, "F",
-            {'if', s("#.d == 0"),
-             s("1"),
-             {'@', tprimop:times(
-                     {fn_call, "index", [{v_param,{dim,"d"}}]},
-                     s("F")),
-              s("[d <- #.d - 1]")}}}]}},
-        {fn, "index", [{v_param,"d"}],
-         tprimop:plus({'#',s("d")}, s("1"))}]},
-  %% "fact.3
-  %% where
-  %%   fun fact.n = F
-  %%   where
-  %%     dim d <- n
-  %%     var F = if #.d == 0 then
-  %%               1
-  %%             else
-  %%               (index!d * F) @ [d <- #.d - 1]
-  %%             fi
-  %%   end
-  %%   fun index!d = #.d + 1
-  %% end"
-  ?assertMatch({6,_}, eval(T)).
+  S = "fact.3
+      where
+        fun fact.n = F
+        where
+          dim d <- n
+          var F = if #.d == 0 then
+                    1
+                  else
+                    (index!d * F) @ [d <- #.d - 1]
+                  fi
+        end
+        fun index!d = #.d + 1
+      end",
+  ?assertMatch({6,_}, eval(S)).
 
 fun_recursing_on_dim4() ->
-  T = {where, s("fact.0"),
-       [{fn, "fact", [{b_param,"n"}],
-         {where, "F",
-          [{dim, "d", "n"},
-           {var, "F",
-            {'if', s("#.d == 0"),
-             s("1"),
-             {'@', tprimop:times(
-                     {fn_call, "index", [{v_param,{dim,"d"}}]},
-                     s("F")),
-              s("[d <- #.d - 1]")}}},
-           {fn, "index", [{v_param,"d"}],
-            tprimop:plus({'#',s("d")}, s("1"))}]}}]},
-  %% "fact.3
-  %% where
-  %%   fun fact.n = F
-  %%   where
-  %%     dim d <- n
-  %%     var F = if #.d == 0 then
-  %%               1
-  %%             else
-  %%               (index!d * F) @ [d <- #.d - 1]
-  %%             fi
-  %%     fun index!d = #.d + 1
-  %%   end
-  %% end"
-  ?assertMatch({1,_}, eval(T)). %% XXX Computation should be fact.3, not fact.0. TODO Fix semantics
+  S = "fact.0
+      where
+        fun fact.n = F
+        where
+          dim d <- n
+          var F = if #.d == 0 then
+                    1
+                  else
+                    (index!d * F) @ [d <- #.d - 1]
+                  fi
+          fun index!d = #.d + 1
+        end
+      end",
+  ?assertMatch({1,_}, eval(S)). %% XXX Computation should be fact.3, not fact.0. TODO Fix semantics
 
 base_funs_mutually_recursing_on_params() ->
   S = "is_even.46
@@ -152,10 +126,6 @@ tcache_stop(Pid) ->
     true ->
       tcache_stop(Pid)
   end.
-
-s(S) ->
-  {ok, T} = tea:string(S),
-  T.
 
 eval(S) when is_list(S) ->
   {ok, T} = tea:string(S),

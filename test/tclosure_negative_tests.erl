@@ -75,7 +75,7 @@ tests_w_b_abs_from_various_expressions(A=_UndefVarIdA, T=_ASTGenF) ->
    ?_assertUndefVarIdMockingTprimop(A, {'primop_identity', fun(X) -> X end},
                                     T({primop, 'primop_identity', [BAbs]})),
    %%
-   ?_assertUndefVarIdMockingTpar(A, T({'@', s("#.t"), {t, [{{dim,"t"}, BAbs}]}})),
+   ?_assertUndefVarIdMockingTpar(A, T({'@', s("#.t"), {t, [{"t", BAbs}]}})),
    %% "#.t @ [t <- \_x -> A]"
    %%
    ?_assertUndefVarIdMockingTpar(
@@ -90,11 +90,7 @@ tests_w_b_abs_from_various_expressions(A=_UndefVarIdA, T=_ASTGenF) ->
               { {'if', tprimop:eq(
                          {b_apply, BAbs, [0]}, %% Force evaluation of BAbs
                          {b_apply, BAbs, [0]}), %% Result should be true...
-                 %% XXX A dimension identifier cannot be written as a
-                 %% program with the current integration with the
-                 %% parser, as dimension identifiers and variable
-                 %% identifiers do not share the same domain ATM
-                 {dim,"t"}, %% 'then' part of if-then-else
+                 "t", %% 'then' part of if-then-else
                  s("false")}, %% 'else' part of if-then-else - dead code
                 0 %% A dumb ordinate
               }

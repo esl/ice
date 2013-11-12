@@ -43,7 +43,7 @@ rework_tree (Tree) ->
         ({expr, _, E}) -> E;
 
         ({intension_creation, _, FrozenDims, Body}) ->
-          {i_abs, [{dim,Dim} || Dim <- FrozenDims], Body};
+          {i_abs, FrozenDims, Body};
         ({intension_evaluation, _, IAbsExpr}) ->
           {i_apply, IAbsExpr};
 
@@ -63,16 +63,10 @@ rework_tree (Tree) ->
 
         ({'if', _, Ifs, Else}) -> unwrap_elsifs(Ifs, Else);
 
-        ({'#.', _, Val}) ->
-          %% On Section 6.4.4 “Querying the context” of the TL-doc-0.3.0
-          %%   it explicitly states that ‘#.’ takes a dimension as input.
-          {'#', {dim,Val}};
+        ({'#.', _, Val}) -> {'#', Val};
 
         ({tuple, _, Assocs}) -> {t, Assocs};
-        ({tuple_element, _, Lhs, Rhs}) ->
-          %% On Section 6.4.5 “Tuples” of the TL-doc-0.3.0, tuples are
-          %%   defined as a ‘set of (dimension, value) pairs’.
-          {{dim,Lhs}, Rhs};
+        ({tuple_element, _, Lhs, Rhs}) -> {Lhs, Rhs};
 
         ({'or',  _, A, B}) -> tprimop:tor(A, B);
         ({'and', _, A, B}) -> tprimop:tand(A, B);

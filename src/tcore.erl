@@ -198,13 +198,7 @@ eval({wheredim, E0, XiEis}, I, E, K, D, W, T) ->
   end;
 
 %%-------------------------------------------------------------------------------------
-%% Dimension Identifiers (public)
-%%-------------------------------------------------------------------------------------
-eval({dim,Xi}=Di, _I, _E, _K, _D, _W, T) when is_list(Xi) orelse is_atom(Xi) ->
-  {Di, T};
-
-%%-------------------------------------------------------------------------------------
-%% Dimension Identifiers (hidden) replacing local dimensions in wheredim clauses
+%% Dimension Identifiers replacing local dimensions in wheredim clauses
 %%-------------------------------------------------------------------------------------
 eval({dim,{_Pos,_Idx},Xi}=Di, _I, _E, _K, _D, _W, T) when is_list(Xi) orelse is_atom(Xi) ->
   {Di, T};
