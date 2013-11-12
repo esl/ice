@@ -152,7 +152,10 @@ transform0_prime([{v_param, Param}|Ps], E) ->
   {v_abs, [], [Param], transform0_prime(Ps, E)};
 transform0_prime([{n_param, Param}|Ps], E) ->
   %%------------------------------------------------------------------------------
-  %% FIXME -- Here we need to replace Param in E with an intension application
+  %% FIXME -- Here we need to replace Param in E with an intension
+  %% application.  Proposition 9 in Aug 2012 semantics paper:
+  %%   [ \\ {Ei} x -> E0 ] == [ \ {Ei} x -> E0[x/↓x] ]
+  %% FIXME -- Do the same in anonymous v_abs
   %%------------------------------------------------------------------------------
   {v_abs, [], [Param], transform0_prime(Ps, E)}.
 
@@ -172,7 +175,10 @@ transform0_fn_call(FnE, [{v_param, Param}|Ps]) ->
   {v_apply, transform0_fn_call(FnE, Ps), [Param]};
 transform0_fn_call(FnE, [{n_param, Param}|Ps]) ->
   %%------------------------------------------------------------------------------
-  %% FIXME -- Here we need to replace Param with ??? TBD
+  %% FIXME -- Here we need to replace the n_param with a v_param that
+  %% is an intension abstraction of Param.  Proposition 8 in Aug 2012
+  %% semantics paper:
+  %%   [ E0 E1 ] == [ E0 ! (↑{} E1) ]
   %%------------------------------------------------------------------------------
   transform0_fn_call(FnE, Ps).
 
