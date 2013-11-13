@@ -11,13 +11,19 @@
 
 abs_environment_closure_negative_test_() ->
   {foreachx,
-   fun
-     ([{mock_tpar,false}]) ->              setup();
-     ([{mock_tpar, true}]) -> mock_tpar(), setup()
+   fun(Options) ->
+       case proplists:get_bool(mock_tpar, Options) of
+         true  -> mock_tpar();
+         false -> nothing
+       end,
+       setup()
    end,
-   fun
-     ([{mock_tpar,false}], Pid) -> cleanup(Pid);
-     ([{mock_tpar, true}], Pid) -> cleanup(Pid), unmock_tpar()
+   fun(Options, Pid) ->
+       cleanup(Pid),
+       case proplists:get_bool(mock_tpar, Options) of
+         true  -> unmock_tpar();
+         false -> nothing
+       end
    end,
    lists:append(
      [
@@ -96,7 +102,7 @@ b_abs_returned_by_various_expressions(UndefVarIdA) ->
    {'@', s("#.t"), {t, [{{dim,"t"}, BAbs}]}},
    %% "#.t @ [t <- \_x -> A]"
    %%
-   {mock_tpar,
+   {[mock_tpar],
     {'@', {b_abs, [], [s("x")], 1}, %% A harmless b_abs, just for returning one
      {t, [
           %% Define a tuple with a dummy dimension idetifier-ordinate
@@ -153,18 +159,18 @@ b_abs_returned_by_various_expressions(UndefVarIdA) ->
 
 %% Internals
 
-compose_tree_and_b_abs(ASTGenFun, {mock_tpar, FAbs}) ->
-  {{mock_tpar, true}, ASTGenFun(FAbs)};
+compose_tree_and_b_abs(ASTGenFun, {Options, FAbs}) when is_list(Options) ->
+  {Options, ASTGenFun(FAbs)};
 compose_tree_and_b_abs(ASTGenFun, FAbs) ->
-  {{mock_tpar,false}, ASTGenFun(FAbs)}.
+  compose_tree_and_b_abs(ASTGenFun, {[], FAbs}).
 
-ensure_option_in_test(TestGenFun, {{mock_tpar,_Bool}=MockTParOpt, SOrT}) ->
+ensure_option_in_test(TestGenFun, {Options, SOrT}) when is_list(Options) ->
   F = fun(_,_) -> %% Fun needed for usage of foreachx
           TestGenFun(SOrT)
       end,
-  {[MockTParOpt], F};
+  {Options, F};
 ensure_option_in_test(TestGenFun, SOrT) ->
-  ensure_option_in_test(TestGenFun, {{mock_tpar,false}, SOrT}).
+  ensure_option_in_test(TestGenFun, {[], SOrT}).
 
 
 mock_tpar() ->
