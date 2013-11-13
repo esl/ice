@@ -2,6 +2,11 @@
 %% -*- coding: utf-8 -*-
 -module(fn_string_tests).
 
+%% Tests for parsing of functions.
+%%
+%% TODO: After functions with named parametees are supported, merge
+%% these tests in other test suites (e.g. fn_tests).
+
 -include_lib("eunit/include/eunit.hrl").
 
 

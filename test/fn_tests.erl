@@ -2,10 +2,25 @@
 %% -*- coding: utf-8 -*-
 -module(fn_tests).
 
+%% Tests for functions not fitting in other test suites.
+
 -include_lib("eunit/include/eunit.hrl").
 
 
 %% API tests.
+
+phi_is_recognized_as_a_dim_test_() ->
+  %% Check that hidden dimensions replacing formal parameters are
+  %% represented as e.g. {phi,"x"}...
+  BAbsS = "F where fun F.x = x end",
+  BAbsX = {phi,"x"},
+  ?assertMatch({wherevar, _,
+                [{_, {b_abs, _, [BAbsX], _}}]},
+               t1(t0(s(BAbsS)))),
+  %% ... then check that such dimensions are treated in evaluator as
+  %% all other dimensions as far as missing dimensions are concerned.
+  {setup, fun setup/0, fun cleanup/1,
+   ?_assertMatch({[BAbsX],_}, tcore_eval({'if',{'?',BAbsX},46,58}))}.
 
 b_test_() ->
   [
@@ -344,20 +359,6 @@ v_abs_can_access_dims_in_application_context() ->
   %% "F!46 @ [t <- 1] where fun F!x = x - #.t end" %% HACK This is a hackish program that is not compatible with upstream TL and will break in future versions of ICE.
   {foreach, fun setup/0, fun cleanup/1,
    [ ?_assertMatch({45,_}, eval(T)) ]}.
-
-
-phi_is_recognized_as_a_dim_test_() ->
-  %% Check that hidden dimensions replacing formal parameters are
-  %% represented as e.g. {phi,"x"}...
-  BAbsS = "F where fun F.x = x end",
-  BAbsX = {phi,"x"},
-  ?assertMatch({wherevar, _,
-                [{_, {b_abs, _, [BAbsX], _}}]},
-               t1(t0(s(BAbsS)))),
-  %% ... then check that such dimensions are treated in evaluator as
-  %% all other dimensions as far as missing dimensions are concerned.
-  {foreach, fun setup/0, fun cleanup/1,
-   [ ?_assertMatch({[BAbsX],_}, tcore_eval({'if',{'?',BAbsX},46,58})) ]}.
 
 
 %% Internals
