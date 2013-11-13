@@ -43,10 +43,10 @@ primop_test () ->
     TimeD = {dim,"t"},
     SpaceD = {dim,"s"},
     ?assertEqual(
-        {ok, {primop, fun erlang:'+'/2, [10,20]}},
+        {ok, tprimop:plus(10,20)},
         tea:string(" 10 + 20 ")),
     ?assertEqual(
-        {ok, {primop, fun erlang:'+'/2, [{'#',TimeD}, {'#',SpaceD}]}},
+        {ok, tprimop:plus({'#',TimeD}, {'#',SpaceD})},
         tea:string(" #.t + #.s ")).
 
 perturb_test () ->
@@ -67,14 +67,14 @@ perturb_test () ->
 
 elsif_test () ->
     ?assertEqual(
-        {ok, {'if', {primop,fun erlang:'=='/2,[1,0]}, 1,
-                {'if', {primop,fun erlang:'=='/2,[1,1]}, 2,
+        {ok, {'if', tprimop:eq(1,0), 1,
+                {'if', tprimop:eq(1,1), 2,
                     3}}},
         tea:string(" if 1 == 0 then 1 elsif 1 == 1 then 2 else 3 fi ")),
     ?assertEqual(
-        {ok, {'if', {primop,fun erlang:'=='/2,[1,0]}, 1,
-                {'if', {primop,fun erlang:'=='/2,[0,1]}, 2,
-                    {'if', {primop,fun erlang:'=='/2,[1,1]}, 3,
+        {ok, {'if', tprimop:eq(1,0), 1,
+                {'if', tprimop:eq(0,1), 2,
+                    {'if', tprimop:eq(1,1), 3,
                         4}}}},
         tea:string(" if 1 == 0 then 1
                   elsif 0 == 1 then 2

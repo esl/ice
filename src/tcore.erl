@@ -20,15 +20,26 @@ eval({char, Char}, _I, _E, _K, _D, _W, T) ->
 %%-------------------------------------------------------------------------------------
 %% Primop
 %%-------------------------------------------------------------------------------------
-eval({primop, F, Eis}, I, E, K, D, W, T) ->
+eval({primop, Primop, Eis}, I, E, K, D, W, T) ->
   {Dis, MaxT} = tpar:eval(Eis, I, E, K, D, W, T),
   case tset:union_d(Dis) of
     {true, Dims} ->
       {Dims, MaxT};
     {false, Dis1} ->
+      F = case Primop of
+        '%' ->
+          fun %% http://stackoverflow.com/a/858649/1418165
+            (X, Y) -> (X rem Y + Y) rem Y
+          end;
+        'ilogn' ->
+          fun (0) -> 0;
+              (X) -> round(math:log(X) / math:log(2))
+          end;
+        Op -> fun erlang:Op/2
+      end,
       {apply(F, Dis1), MaxT}
   end;
-      
+
 %%-------------------------------------------------------------------------------------
 %% Tuple Expressions
 %%-------------------------------------------------------------------------------------
@@ -84,16 +95,16 @@ eval({Q, E0}, I, E, K, D, W, T) when Q == '#' orelse Q == '?' ->
       {D0, T0};
     false ->
       case lists:member(D0, D) of
-	true ->
+        true ->
           DimType =
             case Q of
               '#' -> dim;
               '?' -> phi
             end,
           DimType = element(1, D0), %% Hardcoded expectation
-	  {lookup_ordinate(D0, K), T0};
-	false ->
-	  {[D0], T0}
+          {lookup_ordinate(D0, K), T0};
+        false ->
+          {[D0], T0}
       end
   end;
 
@@ -225,11 +236,11 @@ eval2(Xi, I, E, K, D, W, T) ->
   case D0 of
     {calc, W} ->
       case lists:keyfind(Xi, 1, E) of
-	{_, E0} ->
-	  {D1, T1} = eval(E0, I, E, K, D, W, T0),
-	  tcache:add(Xi, K, D, W, T1, D1);
-	false ->
-	  {error, undefined_identifier, Xi}
+        {_, E0} ->
+          {D1, T1} = eval(E0, I, E, K, D, W, T0),
+          tcache:add(Xi, K, D, W, T1, D1);
+        false ->
+          {error, undefined_identifier, Xi}
       end;
     {calc, _W1} ->
       eval2(Xi, I, E, K, D, W, T0 + 1);
