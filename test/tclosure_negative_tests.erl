@@ -12,18 +12,12 @@
 abs_environment_closure_negative_test_() ->
   {foreachx,
    fun(Options) ->
-       case proplists:get_bool(mock_tpar, Options) of
-         true  -> mock_tpar();
-         false -> nothing
-       end,
+       mock_if_needed(Options),
        setup()
    end,
    fun(Options, Pid) ->
        cleanup(Pid),
-       case proplists:get_bool(mock_tpar, Options) of
-         true  -> unmock_tpar();
-         false -> nothing
-       end
+       unmock_if_needed(Options)
    end,
    lists:append(
      [
@@ -97,7 +91,8 @@ abs_cannot_access_variable_ids_in_creation_env() ->
 b_abs_returned_by_various_expressions(UndefVarIdA) ->
   BAbs = {b_abs, [], [s("x")], s(UndefVarIdA)}, %% \_ x -> A
   [
-   {primop, fun(X) -> X end, [BAbs]},
+   {[{mock_tprimop, {'primop_identity', fun(X) -> X end}}],
+    {primop, 'primop_identity', [BAbs]}},
    %%
    {'@', s("#.t"), {t, [{{dim,"t"}, BAbs}]}},
    %% "#.t @ [t <- \_x -> A]"
@@ -157,7 +152,7 @@ b_abs_returned_by_various_expressions(UndefVarIdA) ->
   ].
 
 
-%% Internals
+%% Internals - Mocking
 
 compose_tree_and_b_abs(ASTGenFun, {Options, FAbs}) when is_list(Options) ->
   {Options, ASTGenFun(FAbs)};
@@ -172,17 +167,57 @@ ensure_option_in_test(TestGenFun, {Options, SOrT}) when is_list(Options) ->
 ensure_option_in_test(TestGenFun, SOrT) ->
   ensure_option_in_test(TestGenFun, {[], SOrT}).
 
+mock_if_needed(Options) ->
+  lists:foreach(
+    fun({Opt, NotFalseCaseFun}) ->
+        if_not_false_do(
+          proplists_get_value(Opt, Options),
+          NotFalseCaseFun)
+    end,
+    [{mock_tprimop, fun mock_tprimop/1},
+     {mock_tpar,    fun mock_tpar/1   }]).
 
-mock_tpar() ->
+unmock_if_needed(Options) ->
+  lists:foreach(
+    fun({Opt, NotFalseCaseFun}) ->
+        if_not_false_do(
+          proplists_get_value(Opt, Options),
+          NotFalseCaseFun)
+    end,
+    [{mock_tpar,    fun(_) -> unmock(tpar)    end},
+     {mock_tprimop, fun(_) -> unmock(tprimop) end}]).
+
+proplists_get_value(mock_tprimop, Options) ->
+  proplists:get_value(mock_tprimop, Options, false);
+proplists_get_value(mock_tpar, Options) ->
+  proplists:get_bool(mock_tpar, Options).
+
+if_not_false_do(false, _) ->
+  ok;
+if_not_false_do(Context, NotFalseCaseFun) ->
+  NotFalseCaseFun(Context).
+
+mock_tprimop({MockedOp, F}) ->
+  ok = meck:new(tprimop, [passthrough]),
+  ExpectationFun = fun
+                     (Op) when Op =:= MockedOp ->
+                       F;
+                     (Op) ->
+                       meck:passthrough([Op])
+                   end,
+  ok = meck:expect(tprimop, f, ExpectationFun).
+
+mock_tpar(_) ->
   ok = meck:new(tpar, [passthrough]),
   ok = meck:expect(tpar, eval,
                    fun(Xs, I, E, K, D, W, T) ->
                        tpar:eval_seq(Xs, I, E, K, D, W, T)
                    end).
 
-unmock_tpar() ->
-  ok = meck:unload(tpar).
+unmock(M) ->
+  ok = meck:unload(M).
 
+%% Internals
 
 setup() ->
   {ok, Pid} = tcache:start_link(100),
