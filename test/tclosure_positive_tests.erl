@@ -10,9 +10,7 @@
 %% API tests.
 
 regression_test_() ->
-  {foreach,
-   fun setup/0,
-   fun cleanup/1,
+  {foreach, fun setup/0, fun cleanup/1,
    [
     ?_assertMatch({46,_}, eval("B where var A = 46;; var B = A end")),
     %%
@@ -23,9 +21,7 @@ regression_test_() ->
 
 
 abs_can_access_variable_ids_in_definition_env_test_() ->
-  {foreach,
-   fun setup/0,
-   fun cleanup/1,
+  {foreach, fun setup/0, fun cleanup/1,
    lists:append(
      [
       shallow_named_abs_in_wherevar1(),
