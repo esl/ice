@@ -15,23 +15,27 @@ const_test_ () ->
     [begin
         N = random:uniform(MaxN),
         {ok, Tree} = tea:string(integer_to_list(N)),
-        ?_assertMatch({N, _},
-            tcore:eval(Tree, fun(X)->X end,[],[], [], {[],self()}, 0))
+        ?_assertMatch({N, _}, eval(Tree))
     end || _ <- lists:seq(1,10)].
 
 bool_test_ () ->
     {ok, Tree} = tea:string(" false "),
     fun () ->
-        ?assertMatch({false, _},
-            tcore:eval(Tree, fun(X)->X end,[],[], [], {[],self()}, 0))
+        ?assertMatch({false, _}, eval(Tree))
     end.
 
 string_test_ () ->
     {ok, Tree} = tea:string("`Test`"),
     S = {string,"Test"},
     fun () ->
-        ?assertMatch({S, _},
-            tcore:eval(Tree, fun(X)->X end,[],[], [], {[],self()}, 0))
+        ?assertMatch({S, _}, eval(Tree))
+    end.
+
+char_test_ () ->
+    {ok, Tree} = tea:string("'.'"),
+    S = {char,$.},
+    fun () ->
+        ?assertMatch({S, _}, eval(Tree))
     end.
 
 constant_dim_test_ () ->
@@ -39,8 +43,7 @@ constant_dim_test_ () ->
     K = [{{dim,"t"}, 100}],
     D = [{dim,"t"}],
     fun () ->
-        ?assertMatch({100, _},
-            tcore:eval(Tree, [],[],K, D, {[],self()}, 0))
+        ?assertMatch({100, _}, eval(Tree, K, D))
     end.
 
 tuple1_test_ () ->
@@ -50,15 +53,13 @@ tuple1_test_ () ->
     K = [{TimeD,100}, {SpaceD,100}],
     D = [TimeD,SpaceD],
     fun () ->
-        ?assertMatch({{te,[{TimeD,1},{SpaceD,2}]}, _},
-            tcore:eval(Tree, [],[],K, D, {[],self()}, 0))
+        ?assertMatch({{te,[{TimeD,1},{SpaceD,2}]}, _}, eval(Tree, K, D))
     end.
 
 primop1_test_ () ->
     {ok, Tree} = tea:string(" 10 + 20 "),
     fun () ->
-        ?assertMatch({30, _},
-            tcore:eval(Tree, fun(X)->X end,[],[], [], {[],self()}, 0))
+        ?assertMatch({30, _}, eval(Tree))
     end.
 
 primop2_test_ () ->
@@ -67,8 +68,7 @@ primop2_test_ () ->
     SpaceD = {dim,"s"},
     K = [{TimeD,100}, {SpaceD,100}],
     fun () ->
-        ?assertMatch({[SpaceD,TimeD], _},
-            tcore:eval(Tree, [],[],K, [], {[],self()}, 0))
+        ?assertMatch({[SpaceD,TimeD], _}, eval(Tree, K, _D=[]))
     end.
 
 primop3_test_ () ->
@@ -78,8 +78,7 @@ primop3_test_ () ->
     K = [{TimeD,100}, {SpaceD,100}],
     D = [SpaceD, TimeD],
     fun () ->
-        ?assertMatch({200, _},
-            tcore:eval(Tree, [],[],K, D, {[],self()}, 0))
+        ?assertMatch({200, _}, eval(Tree, K, D))
     end.
 
 perturb_test_ () ->
@@ -91,14 +90,10 @@ perturb_test_ () ->
     {ok, E3} = tea:string(" #.t @ [s <- 0, t <- 1] "),
     {ok, E4} = tea:string(" #.t @ [t <- 1, s <- 0] "),
     fun () ->
-        ?assertMatch({0, _},
-            tcore:eval(E1, [],[],K, [SpaceD], {[],self()}, 0)),
-        ?assertMatch({[TimeD], _},
-            tcore:eval(E2, [],[],[], [], {[],self()}, 0)),
-        ?assertMatch({1, _},
-            tcore:eval(E3, [],[],K, [TimeD], {[],self()}, 0)),
-        ?assertMatch({1, _},
-            tcore:eval(E4, [],[],K, [TimeD], {[],self()}, 0))
+        ?assertMatch({0, _}, eval(E1, K, [SpaceD])),
+        ?assertMatch({[TimeD], _}, eval(E2)),
+        ?assertMatch({1, _}, eval(E3, K, [TimeD])),
+        ?assertMatch({1, _}, eval(E4, K, [TimeD]))
     end.
 
 
@@ -109,12 +104,22 @@ elsif_test_ () ->
                          elsif 0 == 1 then 2
                          elsif 1 == 1 then 3 else 4 fi "),
     fun () ->
-        ?assertMatch({2,_},
-            tcore:eval(E1, [],[],[], [], {[],self()}, 0)),
-        ?assertMatch({3, _},
-            tcore:eval(E2, [],[],[], [], {[],self()}, 0))
+        ?assertMatch({2,_}, eval(E1)),
+        ?assertMatch({3, _}, eval(E2))
     end.
 
 %% Internals
+
+t0(T) ->
+  ttransform0:transform0(T).
+
+t1(T) ->
+  ttransform1:transform1(T).
+
+eval(T, K, D) ->
+  tcore:eval(t1(t0(T)),[],[],K,D,{[],self()},0).
+
+eval(T) ->
+  tea:eval(T).
 
 %% End of Module.

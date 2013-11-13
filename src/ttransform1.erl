@@ -56,6 +56,9 @@ transform1(Const, _P, _HD, _HV) when is_number(Const) orelse is_boolean(Const) -
 transform1({string, Str}, _P, _HD, _HV) ->
   {string, Str};
 
+transform1({char, Char}, _P, _HD, _HV) ->
+  {char, Char};
+
 %%------------------------------------------------------------------------------
 %% Primop
 %%------------------------------------------------------------------------------
