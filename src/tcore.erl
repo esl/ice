@@ -26,17 +26,7 @@ eval({primop, Primop, Eis}, I, E, K, D, W, T) ->
     {true, Dims} ->
       {Dims, MaxT};
     {false, Dis1} ->
-      F = case Primop of
-        '%' ->
-          fun %% http://stackoverflow.com/a/858649/1418165
-            (X, Y) -> (X rem Y + Y) rem Y
-          end;
-        'ilogn' ->
-          fun (0) -> 0;
-              (X) -> round(math:log(X) / math:log(2))
-          end;
-        Op -> fun erlang:Op/2
-      end,
+      F = tprimop:f(Primop),
       {apply(F, Dis1), MaxT}
   end;
 
