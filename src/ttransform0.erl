@@ -44,6 +44,9 @@ transform0(Const) when is_number(Const) orelse is_boolean(Const) ->
 transform0({string, Str}) ->
   {string, Str};
 
+transform0({char, Char}) ->
+  {char, Char};
+
 %%------------------------------------------------------------------------------
 %% Primop
 %%------------------------------------------------------------------------------
