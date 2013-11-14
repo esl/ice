@@ -40,26 +40,26 @@ i(String) ->
 
 rework_tree (Tree) ->
   V = fun
-        ({expr, _, E}) ->
-          E;
+        ({expr, _, E}) -> E;
 
         ({intension_creation, _, FrozenDims, Body}) ->
           {i_abs, [{dim,Dim} || Dim <- FrozenDims], Body};
         ({intension_evaluation, _, IAbsExpr}) ->
           {i_apply, IAbsExpr};
 
-        ({call, _, FunExpr, Params}) ->
-          {fn_call, FunExpr, lists:map(fun rework_fun_param/1, Params)};
+        ({call, _, FunExpr, Params}) -> {fn_call, FunExpr, Params};
 
         ({where, _, Exp, DimDecls, VarDecls}) ->
           TopExpr = Exp,
           Vars = [{var,Var,E} || {var_decl,_,Var,E} <- VarDecls],
           Dims = [{dim,Dim,N} || {dim_decl,_,Dim,N} <- DimDecls],
-          Funs = [{fn, Name,
-                   lists:map(fun rework_fun_param/1, Params),
-                   Body}
+          Funs = [{fn,Name,Params,Body}
                   || {fun_decl,_,Name,Params,Body} <- VarDecls],
           {where, TopExpr, Vars ++ Dims ++ Funs};
+
+        ({base_param,  _, P}) -> {b_param, P};
+        ({named_param, _, P}) -> {n_param, P};
+        ({value_param, _, P}) -> {v_param, P};
 
         ({'if', _, Ifs, Else}) -> unwrap_elsifs(Ifs, Else);
 
@@ -106,10 +106,6 @@ rework_tree (Tree) ->
       {ok, Y}
   end.
 
-
-rework_fun_param({base_param,  _, P}) -> {b_param, P};
-rework_fun_param({named_param, _, P}) -> {n_param, P};
-rework_fun_param({value_param, _, P}) -> {v_param, P}.
 
 unwrap_elsifs ([{if_expr,_,Cond,Then}|Rest], Else) ->
   {'if', Cond, Then, unwrap_elsifs(Rest,Else)};
