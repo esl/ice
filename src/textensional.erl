@@ -98,3 +98,10 @@ eval_simple({'#', Dim}, K) ->
 lookup_ordinate(Dim, K) ->
   {Dim, Ord} = lists:keyfind(Dim, 1, K),
   Ord.
+
+%%------------------------------------------------------------------------------
+%% @doc Offload evaluation of extensional expression.
+%% @private
+%%------------------------------------------------------------------------------
+eval_ext_cl(DimTypesIn, TypeOut, E0, Ks) ->
+  cl_map:on_the_fly(gpu, ice2cl, DimTypesIn, TypeOut, E0, Ks).
