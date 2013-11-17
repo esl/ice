@@ -37,11 +37,8 @@
     TypeOut :: ext_type().
 eval_ext({ext_expr, E0, {DimTypesIn, TypeOut}, Gr}, Ks) when
     length(Ks) == Gr ->
-    io:format(user, "eval_ext({ext_expr, E0, {DimTypesIn, TypeOut}, Gr}, Ks) when
-    length(Ks) == Gr ->\n", []),
-    io:format(user, "~p\n", [{{ext_expr, E0, {DimTypesIn, TypeOut}, Gr}, Ks}]),
   {Dims,_OrdTys} = lists:unzip(DimTypesIn),
-  KDs = lists:map(fun(K) -> tset:restrict_domain(K, Dims) end, Ks),
+  KDs = [tset:restrict_domain(K, Dims) || K <- Ks],
   eval_ext_cl(DimTypesIn, TypeOut, E0, KDs).
 
 
@@ -82,12 +79,12 @@ eval_ext_tcore(_DimTypesIn, _TypeOut, E0, Ks) ->
 %% @private
 %%------------------------------------------------------------------------------
 eval_ext_seq_simple(_DimTypesIn, _TypeOut, E0, Ks) ->
-  lists:map(fun(K) -> eval_simple(E0, K) end, Ks).
+  [eval_simple(E0, K) || K <- Ks].
 
 eval_simple(Const, _K) when is_number(Const) orelse is_boolean(Const) ->
   Const;
 eval_simple({primop, Primop, Eis}, K) ->
-  Dis = lists:map(fun(Ei) -> eval_simple(Ei, K) end, Eis),
+  Dis = [eval_simple(Ei, K) || Ei <- Eis],
   F = tprimop:f(Primop),
   apply(F, Dis);
 eval_simple({'#', Dim}, K) ->
@@ -105,7 +102,6 @@ eval_ext_cl(DimTypesIn, TypeOut, E0, Ks) ->
   ISpecs = [{uniq(Dim),Ty} || {Dim,Ty} <- DimTypesIn],
   Exp = sanitize(E0),
   Vectors = binarise(DimTypesIn, Ks),
-    io:format(user, "Vectors = ~p\nISpecs = ~p\nTypeOut = ~p\nExp = ~p\n", [Vectors,ISpecs,TypeOut,Exp]),
   cl_map:on_the_fly(gpu, ice2cl, ISpecs, TypeOut, Exp, Vectors).
 
 
@@ -129,13 +125,14 @@ sanitize (Dim = {phi, _Id}) ->
 sanitize (Dim = {dim, _H, _Id}) ->
   uniq(Dim).
 
+-define(binarise(Kind),
+  <<<<V:Kind>> || {Dim,V} <- lists:flatten(Ks), Dim == Id>>).
 binarise (DimTypesIn, Ks) ->
   [begin
-    Vector = lists:foldl(fun
-      ({Dim,Val}, Acc) when Dim =:= Id ->
-        <<Acc/binary, Val>>;
-      (_, Acc) ->
-        Acc
-      end, <<>>, lists:flatten(Ks)),
+    Vector = case Ty of
+      "uint" -> ?binarise(32/native-unsigned-integer);
+      "int"  -> ?binarise(32/native         -integer);
+      "float" -> ?binarise(32/native          -float)
+    end,
     {uniq(Id), Vector}
-   end || {Id,_Ty} <- DimTypesIn].
+   end || {Id,Ty} <- DimTypesIn].
