@@ -54,22 +54,20 @@ eval_ext({ext_expr, E0, {DimTypesIn, TypeOut}, Gr}, Ks) when
 %% @private
 %%------------------------------------------------------------------------------
 eval_ext_tcore(_DimTypesIn, _TypeOut, E0, Ks) ->
-  lists:map(
-    fun(K) ->
-        {V,_} =
-          tcore:eval(
-            E0,
-            [], %% Interpretation iota - Unused
-            %% Environment - No variables allowed in extensional
-            %% expression ATM
-            [],
-            K, _D=tset:domain(K),
-            %% Thread id and clock - Default ones as evaluation of
-            %% expression will not query cache (environment is empty)
-            {[],self()}, 0),
-        V
-    end,
-    Ks).
+  [begin
+     {V,_} =
+       tcore:eval(
+         E0,
+         [], %% Interpretation iota - Unused
+         %% Environment - No variables allowed in extensional
+         %% expression ATM
+         [],
+         K, _D=tset:domain(K),
+         %% Thread id and clock - Default ones as evaluation of
+         %% expression will not query cache (environment is empty)
+         {[],self()}, 0),
+     V
+   end || K <- Ks].
 
 %%------------------------------------------------------------------------------
 %% @doc Evaluate extensional expression in the simplest way.
@@ -84,7 +82,7 @@ eval_ext_seq_simple(_DimTypesIn, _TypeOut, E0, Ks) ->
 eval_simple(Const, _K) when is_number(Const) orelse is_boolean(Const) ->
   Const;
 eval_simple({primop, Primop, Eis}, K) ->
-  Dis = [eval_simple(Ei, K) || Ei <- Eis],
+  Dis = [eval_simple(Ei, K) || Ei <- Eis], %% Order of operands is kept
   F = tprimop:f(Primop),
   apply(F, Dis);
 eval_simple({'#', Dim}, K) ->
@@ -117,7 +115,7 @@ uniq ({dim, {Pos,Ix}, Id}) ->
 sanitize (Const) when is_number(Const); is_boolean(Const) ->
   Const;
 sanitize ({primop, Op, Eis}) ->
-  {primop, Op, [sanitize(Ei) || Ei <- Eis]};
+  {primop, Op, [sanitize(Ei) || Ei <- Eis]}; %% Order of operands is kept
 sanitize ({'#', Dim}) ->
   {'#', sanitize(Dim)};
 sanitize (Dim = {phi, _Id}) ->
@@ -128,11 +126,15 @@ sanitize (Dim = {dim, _H, _Id}) ->
 -define(binarise(Kind),
   <<<<V:Kind>> || {Dim,V} <- lists:flatten(Ks), Dim == Id>>).
 binarise (DimTypesIn, Ks) ->
+  %% The vectors of all dimensions are ordered in the same way, in the
+  %% sense that the i-th element of any vectors refer to the i-th
+  %% context.
   [begin
-    Vector = case Ty of
-      "uint" -> ?binarise(32/native-unsigned-integer);
-      "int"  -> ?binarise(32/native         -integer);
-      "float" -> ?binarise(32/native          -float)
-    end,
-    {uniq(Id), Vector}
+     Vector =
+       case Ty of
+         "uint"  -> ?binarise(32/native-unsigned-integer);
+         "int"   -> ?binarise(32/native         -integer);
+         "float" -> ?binarise(32/native         -float)
+       end,
+     {uniq(Id), Vector}
    end || {Id,Ty} <- DimTypesIn].
