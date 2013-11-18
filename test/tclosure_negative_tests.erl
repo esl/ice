@@ -100,7 +100,7 @@ b_abs_returned_by_various_expressions(UndefVarIdA) ->
    {[mock_tpar],
     {'@', {b_abs, [], [s("x")], 1}, %% A harmless b_abs, just for returning one
      {t, [
-          %% Define a tuple with a dummy dimension idetifier-ordinate
+          %% Define a tuple with a dummy dimension identifier-ordinate
           %% couple. The dim id is an 'if' expression, the ordinate is
           %% a dumb unused '0'. The dim id is an 'if' expression in
           %% order to evaluate BAbs while still returning a valid dim
