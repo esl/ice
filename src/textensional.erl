@@ -37,10 +37,14 @@
     TypeOut :: ext_type().
 eval_ext({ext_expr, E0, {DimTypesIn, TypeOut}, Gr}, Ks) when
     length(Ks) == Gr ->
-  {Dims,_OrdTys} = lists:unzip(DimTypesIn),
+  {Dims,_OrdTypes} = lists:unzip(DimTypesIn),
   KDs = [tset:restrict_domain(K, Dims) || K <- Ks],
   eval_ext_cl(DimTypesIn, TypeOut, E0, KDs).
 
+
+%%------------------------------------------------------------------------------
+%% Internal
+%%------------------------------------------------------------------------------
 
 %%------------------------------------------------------------------------------
 %% @doc Evaluate extensional expression as if it were a normal expression.
@@ -102,30 +106,26 @@ eval_ext_cl(DimTypesIn, TypeOut, E0, Ks) ->
   Vectors = binarise(DimTypesIn, Ks),
   cl_map:on_the_fly(gpu, ice2cl, ISpecs, TypeOut, Exp, Vectors).
 
-
-%%------------------------------------------------------------------------------
-%% Internal
-%%------------------------------------------------------------------------------
-uniq ({phi, Id}) ->
-  "phi"++ Id;
-uniq ({dim, {Pos,Ix}, Id}) ->
+uniq({phi, Id}) ->
+  "phi" ++ Id;
+uniq({dim, {Pos,Ix}, Id}) ->
   Hidden = lists:flatmap(fun integer_to_list/1, [Ix|Pos]),
-  "dim"++ Hidden ++ Id.
+  "dim" ++ Hidden ++ Id.
 
-sanitize (Const) when is_number(Const); is_boolean(Const) ->
+sanitize(Const) when is_number(Const); is_boolean(Const) ->
   Const;
-sanitize ({primop, Op, Eis}) ->
+sanitize({primop, Op, Eis}) ->
   {primop, Op, [sanitize(Ei) || Ei <- Eis]}; %% Order of operands is kept
-sanitize ({'#', Dim}) ->
+sanitize({'#', Dim}) ->
   {'#', sanitize(Dim)};
-sanitize (Dim = {phi, _Id}) ->
+sanitize(Dim = {phi, _Id}) ->
   uniq(Dim);
-sanitize (Dim = {dim, _H, _Id}) ->
+sanitize(Dim = {dim, _H, _Id}) ->
   uniq(Dim).
 
 -define(binarise(Kind),
   <<<<V:Kind>> || {Dim,V} <- lists:flatten(Ks), Dim == Id>>).
-binarise (DimTypesIn, Ks) ->
+binarise(DimTypesIn, Ks) ->
   %% The vectors of all dimensions are ordered in the same way, in the
   %% sense that the i-th element of any vectors refer to the i-th
   %% context.
