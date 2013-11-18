@@ -110,6 +110,9 @@ uniq({phi, Id}) ->
   "phi" ++ Id;
 uniq({dim, {Pos,Ix}, Id}) ->
   Hidden = lists:flatmap(fun integer_to_list/1, [Ix|Pos]),
+  %% TODO Separator must be put between each integer of Pos and Ix, in
+  %% order to distinguish e.g. {dim,{[1,1],11},"t"} from
+  %% {dim,{[1,11],1},"t"} and {dim,{[11,1],1},"t"}
   "dim" ++ Hidden ++ Id.
 
 sanitize(Const) when is_number(Const); is_boolean(Const) ->
