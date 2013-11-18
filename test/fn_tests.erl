@@ -57,10 +57,24 @@ dims_frozen_in_abs_by_transform1_test_() ->
        eval("X where var X = (F where fun F!x = x - #.t              end)!46 @ [t <- 1];; dim t <- 0 end")),
     %%
     ?_assertMatch(
-       {43,_}, %% Return value should be 45. BTW upstream TL returns spundef. TODO: Add level of indirection in local dims in wheredim (static).
+       {43,_},
+       %% Return value is 43 and not 45 as references to local
+       %% dimensions defined in wheredim clauses have lexical scoping
+       %% in the current implementation (similarly to the Feb 2013
+       %% cache semantics paper), not dynamic scoping (as in the Aug
+       %% 2012 semantics paper).
+       %%
+       %% BTW upstream TL returns spundef.
        eval("X where var X = (F where fun F.x = x - #.t;; dim t <- 3 end).46 @ [t <- 1];; dim t <- 0 end")),
     ?_assertMatch(
-       {43,_}, %% Return value should be 45. BTW upstream TL returns spundef. TODO: Add level of indirection in local dims in wheredim (static).
+       {43,_},
+       %% Return value is 43 and not 45 as references to local
+       %% dimensions defined in wheredim clauses have lexical scoping
+       %% in the current implementation (similarly to the Feb 2013
+       %% cache semantics paper), not dynamic scoping (as in the Aug
+       %% 2012 semantics paper).
+       %%
+       %% BTW upstream TL returns spundef.
        eval("X where var X = (F where fun F!x = x - #.t;; dim t <- 3 end)!46 @ [t <- 1];; dim t <- 0 end")),
     %%
     %%
