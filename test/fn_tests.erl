@@ -29,14 +29,15 @@ b_test_() ->
    %%
    b_fun_w_two_formal_params_is_represented_as_one_b_abs_and_b_apply(),
    %%
-   %% TODO reconsider b_abs_nested_in_wheredim_does_not_cause_wrong_substitution(),
-   %% TODO reconsider wheredim_nested_in_b_abs_does_not_cause_wrong_substitution(),
    b_abs_can_return_b_abs_and_formal_params_w_same_name_are_not_confused(),
+   %%
    b_abs_can_access_formal_params_of_outer_b_abs(),
    b_abs_can_access_local_dims_of_outer_wheredim(), %% ... differently from upstream TL
    b_abs_can_access_formal_params_of_outer_b_abs_and_local_dims_of_outer_wheredim(),
+   %%
    b_abs_can_use_argument_for_querying_creation_context(),
    b_abs_can_use_argument_for_querying_creation_context2(),
+   %%
    b_abs_cannot_access_dims_in_application_context(),
    %%
    creation_of_b_abs_in_multiple_contexts_plays_nicely_w_cache()
@@ -156,54 +157,6 @@ b_fun_w_two_formal_params_is_represented_as_one_b_abs_and_b_apply() ->
                _BAbsT0 = t0(s(S))),
   {foreach, fun setup/0, fun cleanup/1,
    [ ?_assertMatch({45,_}, eval(S)) ]}.
-
-b_abs_nested_in_wheredim_does_not_cause_wrong_substitution() ->
-  S = "(F.1 where fun F.x = x + #.x end) where dim x <- 46 end",
-  WheredimX = {dim,{[],1},"x"},
-  BAbsX = {phi,"x"},
-  ?assertMatch(
-      {wheredim,
-       {wherevar,
-        {b_apply, "F", [1]},
-        [{"F",
-          {b_abs,
-           %% "No wheredim clause can return an abstraction that
-           %% varies in a local dimension identifier defined in that
-           %% wheredim clause. To ensure that this is the case, if a
-           %% local dimension identifier appears in the rank of the
-           %% body of an abstraction, then that local dimension
-           %% identifier must appear in the list of frozen dimensions
-           %% for that abstraction."
-           %%
-           %% Ref: 14.1 "Assumptions" in paper "Multidimensional
-           %% Infinite Data in the Language Lucid", Feb 2013
-           [WheredimX],
-           [BAbsX],
-           {primop, _, [{'?',BAbsX},
-                        {'#',WheredimX}]}
-          }}]},
-       [{WheredimX,46}]},
-     t1(t0(s(S)))),
-  {foreach, fun setup/0, fun cleanup/1,
-   [ ?_assertMatch({47,_}, eval(S)) ]}.
-
-wheredim_nested_in_b_abs_does_not_cause_wrong_substitution() ->
-  S = "F.1 where fun F.x = (x + #.x) where dim x <- 46 end end",
-  WheredimX = {dim,{[0,1],1},"x"},
-  BAbsX = {phi,"x"},
-  ?assertMatch(
-     {wherevar,
-      {b_apply, "F", [1]},
-      [{"F",
-        {b_abs, [], [BAbsX],
-         {wheredim,
-          {primop, _, [{'?',BAbsX},
-                       {'#',WheredimX}]},
-          [{WheredimX,46}]}}
-       }]},
-     t1(t0(s(S)))),
-  {foreach, fun setup/0, fun cleanup/1,
-   [ ?_assertMatch({47,_}, eval(S)) ]}.
 
 b_abs_can_return_b_abs_and_formal_params_w_same_name_are_not_confused() ->
   S =
