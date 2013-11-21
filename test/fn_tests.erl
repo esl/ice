@@ -23,41 +23,41 @@ phi_is_recognized_as_a_dim_test_() ->
    ?_assertMatch({[BAbsX],_}, tcore_eval({'if',{'?',BAbsX},46,58}))}.
 
 b_test_() ->
-  [
-   basic_b_abs(),
-   toplevel_base_fun(),
-   %%
-   b_fun_w_two_formal_params_is_represented_as_one_b_abs_and_b_apply(),
-   %%
-   b_abs_can_return_b_abs_and_formal_params_w_same_name_are_not_confused(),
-   %%
-   b_abs_can_access_formal_params_of_outer_b_abs(),
-   b_abs_can_access_local_dims_of_outer_wheredim(), %% ... differently from upstream TL
-   b_abs_can_access_formal_params_of_outer_b_abs_and_local_dims_of_outer_wheredim(),
-   %%
-   b_abs_can_use_argument_for_querying_creation_context(),
-   b_abs_can_use_argument_for_querying_creation_context2(),
-   %%
-   b_abs_cannot_access_dims_in_application_context(),
-   %%
-   creation_of_b_abs_in_multiple_contexts_plays_nicely_w_cache()
-  ].
-
-v_test_() ->
-  [
-   v_fun_w_two_formal_params_is_represented_as_nested_v_abs_and_v_apply(),
-   %%
-   v_abs_can_access_dims_in_application_context()
-  ].
-
-fn_test_() ->
   {foreach, fun setup/0, fun cleanup/1,
    [
-    ?_assertMatch({-5,_}, eval("F.1!2.4!8
-                               where
-                                 fun F.b1!v1.b2!v2 = b1 - v1 + b2 - v2
-                               end"))
+    ?_test(basic_b_abs()),
+    ?_test(toplevel_base_fun()),
+    %%
+    ?_test(b_fun_w_two_formal_params_is_represented_as_one_b_abs_and_b_apply()),
+    %%
+    ?_test(b_abs_can_return_b_abs_and_formal_params_w_same_name_are_not_confused()),
+    %%
+    ?_test(b_abs_can_access_formal_params_of_outer_b_abs()),
+    ?_test(b_abs_can_access_local_dims_of_outer_wheredim()), %% ... differently from upstream TL
+    ?_test(b_abs_can_access_formal_params_of_outer_b_abs_and_local_dims_of_outer_wheredim()),
+    %%
+    ?_test(b_abs_can_use_argument_for_querying_creation_context()),
+    ?_test(b_abs_can_use_argument_for_querying_creation_context2()),
+    %%
+    ?_test(b_abs_cannot_access_dims_in_application_context()),
+    %%
+    ?_test(creation_of_b_abs_in_multiple_contexts_plays_nicely_w_cache())
    ]}.
+
+v_test_() ->
+  {foreach, fun setup/0, fun cleanup/1,
+   [
+    ?_test(v_fun_w_two_formal_params_is_represented_as_nested_v_abs_and_v_apply()),
+    %%
+    ?_test(v_abs_can_access_dims_in_application_context())
+   ]}.
+
+fn_test_() ->
+  {setup, fun setup/0, fun cleanup/1,
+   ?_assertMatch({-5,_}, eval("F.1!2.4!8
+                              where
+                                fun F.b1!v1.b2!v2 = b1 - v1 + b2 - v2
+                              end"))}.
 
 dims_frozen_in_abs_by_transform1_test_() ->
   {foreach, fun setup/0, fun cleanup/1,
@@ -137,17 +137,13 @@ basic_b_abs() ->
   ?assertEqual({wherevar, "F",
                 [{"F", {b_abs, [], [ArgAsPhiDim], {'?',ArgAsPhiDim}}}]},
                t1(t0(s(S)))),
-  {foreach, fun setup/0, fun cleanup/1,
-   [
-    ?_assertMatch(
-       { {frozen_closed_b_abs, _I, _E, [], [ArgAsPhiDim], {'?',ArgAsPhiDim}}, _},
-       eval(S))
-   ]}.
+  ?assertMatch(
+     { {frozen_closed_b_abs, _I, _E, [], [ArgAsPhiDim], {'?',ArgAsPhiDim}}, _},
+     eval(S)).
 
 toplevel_base_fun() ->
   S = "square.3 where fun square.x = x * x end",
-  {foreach, fun setup/0, fun cleanup/1,
-   [ ?_assertMatch({9,_}, eval(S)) ]}.
+  ?assertMatch({9,_}, eval(S)).
 
 b_fun_w_two_formal_params_is_represented_as_one_b_abs_and_b_apply() ->
   S = "F.46.1 where fun F.x.y = x - y end", %% Minus is not commutative
@@ -155,8 +151,7 @@ b_fun_w_two_formal_params_is_represented_as_one_b_abs_and_b_apply() ->
                 [{"F", {b_abs, [], ["x", "y"],
                         {primop, _, ["x", "y"]}}}]},
                _BAbsT0 = t0(s(S))),
-  {foreach, fun setup/0, fun cleanup/1,
-   [ ?_assertMatch({45,_}, eval(S)) ]}.
+  ?assertMatch({45,_}, eval(S)).
 
 b_abs_can_return_b_abs_and_formal_params_w_same_name_are_not_confused() ->
   S =
@@ -165,8 +160,7 @@ b_abs_can_return_b_abs_and_formal_params_w_same_name_are_not_confused() ->
       fun F.x.y = x - y
       fun G.x = F
     end",
-  {foreach, fun setup/0, fun cleanup/1,
-   [ ?_assertMatch({43,_}, eval(S)) ]}.
+  ?assertMatch({43,_}, eval(S)).
 
 b_abs_can_access_formal_params_of_outer_b_abs() ->
   S =
@@ -177,8 +171,7 @@ b_abs_can_access_formal_params_of_outer_b_abs() ->
         fun F.x = x - y
       end
     end",
-  {foreach, fun setup/0, fun cleanup/1,
-   [ ?_assertMatch({45,_}, eval(S)) ]}.
+   ?assertMatch({45,_}, eval(S)).
 
 b_abs_can_access_local_dims_of_outer_wheredim() ->
   S =
@@ -187,8 +180,7 @@ b_abs_can_access_local_dims_of_outer_wheredim() ->
       dim t <- 3
       fun F.x = x + #.t
     end",
-  {foreach, fun setup/0, fun cleanup/1,
-   [ ?_assertMatch({49,_}, eval(S)) ]}.
+  ?assertMatch({49,_}, eval(S)).
 
 b_abs_can_access_formal_params_of_outer_b_abs_and_local_dims_of_outer_wheredim() ->
   S =
@@ -200,8 +192,7 @@ b_abs_can_access_formal_params_of_outer_b_abs_and_local_dims_of_outer_wheredim()
         fun F.x = x - y + #.t
       end
     end",
-  {foreach, fun setup/0, fun cleanup/1,
-   [ ?_assertMatch({48,_}, eval(S)) ]}.
+  ?assertMatch({48,_}, eval(S)).
 
 b_abs_can_use_argument_for_querying_creation_context() ->
   S =
@@ -216,10 +207,7 @@ b_abs_can_use_argument_for_querying_creation_context() ->
     [ {_, {b_abs,[DimT],[_],_}} ]},
    [ {DimT,0} ]} =
     t1(t0(s(S))),
-  {foreach, fun setup/0, fun cleanup/1,
-   [
-    ?_assertMatch({46,_}, eval(S)) %% BTW upstream TL returns spdim
-   ]}.
+  ?assertMatch({46,_}, eval(S)). %% BTW upstream TL returns spdim
 
 b_abs_can_use_argument_for_querying_creation_context2() ->
   %% Same as test
@@ -238,17 +226,11 @@ b_abs_can_use_argument_for_querying_creation_context2() ->
     [ {_, {b_abs,[DimT],[_],{wheredim,_,_}}} ]},
    [ {DimT,0} ]} =
     t1(t0(s(S))),
-  {foreach, fun setup/0, fun cleanup/1,
-   [
-    ?_assertMatch({46,_}, eval(S)) %% BTW upstream TL returns spdim
-   ]}.
+  ?assertMatch({46,_}, eval(S)). %% BTW upstream TL returns spdim
 
 b_abs_cannot_access_dims_in_application_context() ->
   S = "(F.t where dim t <- 0 end) where fun F.x = #.x end",
-  {foreach, fun setup/0, fun cleanup/1,
-   [
-    ?_assertMatch({[{dim,_,"t"}],_}, eval(S)) %% BTW upstream TL returns spdim
-   ]}.
+  ?assertMatch({[{dim,_,"t"}],_}, eval(S)). %% BTW upstream TL returns spdim
 
 creation_of_b_abs_in_multiple_contexts_plays_nicely_w_cache() ->
   %% Test similar to
@@ -260,10 +242,7 @@ creation_of_b_abs_in_multiple_contexts_plays_nicely_w_cache() ->
       fun F.x = #.x
       dim t <- 0
     end",
-  {foreach, fun setup/0, fun cleanup/1,
-   [
-    ?_assertMatch({45,_}, eval(S)) %% BTW upstream TL returns spundef
-   ]}.
+  ?assertMatch({45,_}, eval(S)). %% BTW upstream TL returns spundef
 
 
 v_fun_w_two_formal_params_is_represented_as_nested_v_abs_and_v_apply() ->
@@ -276,15 +255,11 @@ v_fun_w_two_formal_params_is_represented_as_nested_v_abs_and_v_apply() ->
                         {v_abs, [], ["y"],
                          {primop, _, ["x", "y"]}}}}]},
                t0(s(S))),
-  {foreach, fun setup/0, fun cleanup/1,
-   [ ?_assertMatch({45,_}, eval(S)) ]}.
+  ?assertMatch({45,_}, eval(S)).
 
 v_abs_can_access_dims_in_application_context() ->
   S = "(F!t where dim t <- 46 end) where fun F!x = #.x end",
-  {foreach, fun setup/0, fun cleanup/1,
-   [
-    ?_assertMatch({46,_}, eval(S)) %% BTW upstream TL returns 46
-   ]}.
+  ?assertMatch({46,_}, eval(S)). %% BTW upstream TL returns 46
 
 
 %% Internals
