@@ -52,13 +52,6 @@ v_test_() ->
     ?_test(v_abs_can_access_dims_in_application_context())
    ]}.
 
-fn_test_() ->
-  {setup, fun setup/0, fun cleanup/1,
-   ?_assertMatch({-5,_}, eval("F.1!2.4!8
-                              where
-                                fun F.b1!v1.b2!v2 = b1 - v1 + b2 - v2
-                              end"))}.
-
 dims_frozen_in_abs_by_transform1_test_() ->
   {foreach, fun setup/0, fun cleanup/1,
    [
