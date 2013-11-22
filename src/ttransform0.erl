@@ -119,8 +119,8 @@ t0({fn_call, FnE, Params}) ->
 t0({where, E0, VDisEis}) ->
   %% We should probably signal an error when the body contains other elements..
   Vars =
-    [{Xi, t0(Ei)}                || {var,Xi,Ei}       <- VDisEis] ++
-    [{Fi, t0_fn(Params, t0(Ei))} || {fn,Fi,Params,Ei} <- VDisEis],
+    [{Xi, t0(Ei)}            || {var,Xi,Ei}       <- VDisEis] ++
+    [{Fi, t0_fn(Params, Ei)} || {fn,Fi,Params,Ei} <- VDisEis],
   Dims = [{Xi, t0(Ei)} || {dim,Xi,Ei} <- VDisEis],
   t0_where(Vars, Dims, E0);
 
@@ -143,7 +143,7 @@ t0(Xi) when is_list(Xi) orelse is_atom(Xi) ->
 %% @private
 %%------------------------------------------------------------------------------
 t0_fn([], E) ->
-  E;
+  t0(E);
 t0_fn([{b_param,_}|_]=Params, E) ->
   %% Group consecutive initial base params
   {BPs, Ps} = lists:splitwith(fun({Type,_}) -> Type == b_param end, Params),
