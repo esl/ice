@@ -7,9 +7,11 @@
 -export([test/0]).
 
 %%------------------------------------------------------------------------------
-%% This transformation module transforms functions into their corresponding
-%% abstractions (. base / ! value / (space) name) and in transforming where
-%% clauses into wheredim / wherevar clauses.
+%% @doc Transform functions and where clauses.
+%%
+%% Transform functions into their corresponding abstractions (. base /
+%% ! value / (space) name) and where clauses into wheredim / wherevar
+%% clauses.
 %%
 %% We define the transformation pass over the entire parse tree for the sake of
 %% completeness, but clearly some transformations can result in illegal code.
@@ -32,164 +34,168 @@
 %% {i_abs, [FrozenDimName], E}
 %% {i_apply, E}
 %%------------------------------------------------------------------------------
+transform0(E) -> t0(E).
 
 %%------------------------------------------------------------------------------
 %% Constants
 %%------------------------------------------------------------------------------
-transform0(Const) when is_number(Const) orelse is_boolean(Const) ->
+t0(Const) when is_number(Const) orelse is_boolean(Const) ->
   Const;
 
-transform0({string, Str}) ->
+t0({string, Str}) ->
   {string, Str};
 
-transform0({char, Char}) ->
+t0({char, Char}) ->
   {char, Char};
 
 %%------------------------------------------------------------------------------
 %% Primop
 %%------------------------------------------------------------------------------
-transform0({primop, F, Eis}) ->
-  {primop, F, lists:map(fun transform0/1, Eis)};
+t0({primop, F, Eis}) ->
+  {primop, F, lists:map(fun t0/1, Eis)};
 
 %%------------------------------------------------------------------------------
 %% Tuple Expression
 %%------------------------------------------------------------------------------
-transform0({t, E0E1is}) ->
-  {t, lists:map(fun ({E0,E1}) -> {transform0(E0), transform0(E1)} end, E0E1is)};
+t0({t, E0E1is}) ->
+  {t, lists:map(fun({E0,E1}) -> {t0(E0), t0(E1)} end, E0E1is)};
 
 %%------------------------------------------------------------------------------
 %% Context Perturbation
 %%------------------------------------------------------------------------------
-transform0({'@', E0, E1}) ->
-  {'@', transform0(E0), transform0(E1)};
+t0({'@', E0, E1}) ->
+  {'@', t0(E0), t0(E1)};
 
 %%------------------------------------------------------------------------------
 %% Conditional
 %%------------------------------------------------------------------------------
-transform0({'if', E0, E1, E2}) ->
-  {'if', transform0(E0), transform0(E1), transform0(E2)};
+t0({'if', E0, E1, E2}) ->
+  {'if', t0(E0), t0(E1), t0(E2)};
 
 %%------------------------------------------------------------------------------
 %% Dimensional Query
 %%------------------------------------------------------------------------------
-transform0({'#', E0}) ->
-  {'#', transform0(E0)};
+t0({'#', E0}) ->
+  {'#', t0(E0)};
 
 %%------------------------------------------------------------------------------
 %% Base Abstraction
 %%------------------------------------------------------------------------------
-transform0({b_abs, Is, Params, E}) ->
-  {b_abs, lists:map(fun transform0/1, Is), Params, transform0(E)};
+t0({b_abs, Is, Params, E}) ->
+  {b_abs, [t0(I) || I <- Is], Params, t0(E)};
 
-transform0({b_apply, E0, Eis}) ->
-  {b_apply, transform0(E0), lists:map(fun transform0/1, Eis)};
+t0({b_apply, E0, Eis}) ->
+  {b_apply, t0(E0), lists:map(fun t0/1, Eis)};
 
 %%------------------------------------------------------------------------------
 %% Value Abstraction
 %%------------------------------------------------------------------------------
-transform0({v_abs, Is, Params, E}) ->
-  {v_abs, lists:map(fun transform0/1, Is), Params, transform0(E)};
+t0({v_abs, Is, Params, E}) ->
+  {v_abs, [t0(I) || I <- Is], Params, t0(E)};
 
-transform0({v_apply, E0, Eis}) ->
-  {v_apply, transform0(E0), lists:map(fun transform0/1, Eis)};
+t0({v_apply, E0, Eis}) ->
+  {v_apply, t0(E0), lists:map(fun t0/1, Eis)};
 
 %%------------------------------------------------------------------------------
 %% Intension Abstraction
 %%------------------------------------------------------------------------------
-transform0({i_abs, Is, E}) ->
-  {i_abs, lists:map(fun transform0/1, Is), transform0(E)};
+t0({i_abs, Is, E}) ->
+  {i_abs, [t0(I) || I <- Is], t0(E)};
 
-transform0({i_apply, E}) ->
-  {i_apply, transform0(E)};
+t0({i_apply, E}) ->
+  {i_apply, t0(E)};
 
 %%------------------------------------------------------------------------------
 %% Function Call
 %%------------------------------------------------------------------------------
-transform0({fn_call, FnE, Params}) ->
-  transform0_fn_call(transform0(FnE),
-                     lists:reverse(lists:keymap(fun transform0/1, 2, Params)));
+t0({fn_call, FnE, Params}) ->
+  t0_fn_call(
+    t0(FnE),
+    lists:reverse(lists:map(fun({Type,P}) -> {Type,t0(P)} end, Params)));
 
 %%------------------------------------------------------------------------------
 %% Where
 %%------------------------------------------------------------------------------
-transform0({where, E0, VDisEis}) ->
+t0({where, E0, VDisEis}) ->
   %% We should probably signal an error when the body contains other elements..
   Vars =
-    [{Xi,transform0(Ei)} || {var,Xi,Ei} <- VDisEis] ++
-    [{Fi,transform0_prime(Params,transform0(E))} %% Function transformation
-     || {fn,Fi,Params,E} <- VDisEis],
-  Dims = [{Xi,transform0(Ei)} || {dim,Xi,Ei} <- VDisEis],
-  transform0_where(Vars, Dims, E0);
+    [{Xi, t0(Ei)}                || {var,Xi,Ei}       <- VDisEis] ++
+    [{Fi, t0_fn(Params, t0(Ei))} || {fn,Fi,Params,Ei} <- VDisEis],
+  Dims = [{Xi, t0(Ei)} || {dim,Xi,Ei} <- VDisEis],
+  t0_where(Vars, Dims, E0);
 
-%%-------------------------------------------------------------------------------------
+%%------------------------------------------------------------------------------
 %% Identifiers
-%%-------------------------------------------------------------------------------------
-transform0(Xi) when is_list(Xi) orelse is_atom(Xi) ->
+%%------------------------------------------------------------------------------
+t0(Xi) when is_list(Xi) orelse is_atom(Xi) ->
   Xi.
 
 %%------------------------------------------------------------------------------
-%% Transform0 prime is responsible for transforming the list of formal
-%% parameters in a function declaration into base, value and named
-%% abstractions, given a body E.
+%% @doc Transform function declaration.
+%%
+%% Transform the list of formal parameters in a function declaration
+%% into base, value and named abstractions, given a body E.
 %%
 %% "Base functions [...] take as arguments a tuple, and cannot be
 %% curried."
 %% Ref: 4.5.2 "Base functions" in paper "Higher-order Multidimensional
 %% Programming", Aug 2012
+%% @private
 %%------------------------------------------------------------------------------
-transform0_prime([], E) ->
+t0_fn([], E) ->
   E;
-transform0_prime([{b_param,_}|_]=Params, E) ->
+t0_fn([{b_param,_}|_]=Params, E) ->
+  %% Group consecutive initial base params
   {BPs, Ps} = lists:splitwith(fun({Type,_}) -> Type == b_param end, Params),
-  {b_abs, [], lists:map(fun({b_param, BP}) -> BP end, BPs),
-   transform0_prime(Ps, E)};
-transform0_prime([{v_param, Param}|Ps], E) ->
-  {v_abs, [], [Param], transform0_prime(Ps, E)};
-transform0_prime([{n_param, Param}|Ps], E) ->
+  {b_abs, [], lists:map(fun({b_param, BP}) -> BP end, BPs), t0_fn(Ps, E)};
+t0_fn([{v_param, Param}|Ps], E) ->
+  {v_abs, [], [Param], t0_fn(Ps, E)};
+t0_fn([{n_param, Param}|Ps], E) ->
   %%------------------------------------------------------------------------------
   %% FIXME -- Here we need to replace Param in E with an intension
   %% application.  Proposition 9 in Aug 2012 semantics paper:
   %%   [ \\ {Ei} x -> E0 ] == [ \ {Ei} x -> E0[x/↓x] ]
   %% FIXME -- Do the same in anonymous v_abs
   %%------------------------------------------------------------------------------
-  {v_abs, [], [Param], transform0_prime(Ps, E)}.
+  {v_abs, [], [Param], t0_fn(Ps, E)}.
 
 %%------------------------------------------------------------------------------
-%% Transform0 fn_call is responsible for transforming the list of
-%% actual parameters in a function call into base, value and named
-%% applications, given a function FnE.
+%% @doc Transform function call.
+%%
+%% Transform the list of actual parameters in a function call into
+%% base, value and named applications, given a function FnE.
+%% @private
 %%------------------------------------------------------------------------------
-transform0_fn_call(FnE, []) ->
+t0_fn_call(FnE, []) ->
   FnE;
-transform0_fn_call(FnE, [{b_param,_}|_]=Params) ->
-  %% Group base params
+t0_fn_call(FnE, [{b_param,_}|_]=Params) ->
+  %% Group consecutive initial base params
   {BPs, Ps} = lists:splitwith(fun({Type,_}) -> Type == b_param end, Params),
-  {b_apply, transform0_fn_call(FnE, Ps),
+  {b_apply, t0_fn_call(FnE, Ps),
    lists:reverse(lists:map(fun({b_param, BP}) -> BP end, BPs))};
-transform0_fn_call(FnE, [{v_param, Param}|Ps]) ->
-  {v_apply, transform0_fn_call(FnE, Ps), [Param]};
-transform0_fn_call(FnE, [{n_param, Param}|Ps]) ->
+t0_fn_call(FnE, [{v_param, Param}|Ps]) ->
+  {v_apply, t0_fn_call(FnE, Ps), [Param]};
+t0_fn_call(FnE, [{n_param, Param}|Ps]) ->
   %%------------------------------------------------------------------------------
   %% FIXME -- Here we need to replace the n_param with a v_param that
   %% is an intension abstraction of Param.  Proposition 8 in Aug 2012
   %% semantics paper:
   %%   [ E0 E1 ] == [ E0 ! (↑{} E1) ]
   %%------------------------------------------------------------------------------
-  transform0_fn_call(FnE, Ps).
+  t0_fn_call(FnE, Ps).
 
 %%------------------------------------------------------------------------------
-%% Transform0 where transforms a where clause into wherevar / wheredims.
+%% @doc Transform a where clause into wherevar / wheredims.
+%% @private
 %%------------------------------------------------------------------------------
-transform0_where([], [], E0) ->
-  transform0(E0);
-transform0_where([], Dims, E0) ->
-  {wheredim, transform0(E0), Dims};
-transform0_where(Vars, [], E0) ->
-  {wherevar, transform0(E0), Vars};
-transform0_where(Vars, Dims, E0) ->
-  {wheredim,
-   {wherevar, transform0(E0), Vars},
-   Dims}.
+t0_where([], [], E0) ->
+  t0(E0);
+t0_where([], Dims, E0) ->
+  {wheredim, t0(E0), Dims};
+t0_where(Vars, [], E0) ->
+  {wherevar, t0(E0), Vars};
+t0_where(Vars, Dims, E0) ->
+  {wheredim, {wherevar, t0(E0), Vars}, Dims}.
 
 %%------------------------------------------------------------------------------
 %% Instant Tests - Please improve these
