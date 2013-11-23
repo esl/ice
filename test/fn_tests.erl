@@ -52,6 +52,18 @@ v_test_() ->
     ?_test(v_abs_can_access_dims_in_application_context())
    ]}.
 
+n_test_() ->
+  {foreach, fun setup/0, fun cleanup/1,
+   [
+    ?_test(n_fun_is_represented_as_v_fun()),
+    ?_test(n_fun_w_two_formal_params_is_represented_as_v_fun()),
+    %%
+    ?_test(n_fun_is_represented_as_v_fun_complex1()),
+    ?_test(n_fun_is_represented_as_v_fun_complex2()),
+    %%
+    ?_test(n_abs_can_access_dims_in_application_context())
+   ]}.
+
 dims_frozen_in_abs_by_transform1_test_() ->
   {foreach, fun setup/0, fun cleanup/1,
    [
@@ -237,7 +249,6 @@ creation_of_b_abs_in_multiple_contexts_plays_nicely_w_cache() ->
     end",
   ?assertMatch({45,_}, eval(S)). %% BTW upstream TL returns spundef
 
-
 v_fun_w_two_formal_params_is_represented_as_nested_v_abs_and_v_apply() ->
   S = "F!46!1 where fun F!x!y = x - y end", %% Minus is not commutative
   ?assertMatch({wherevar,
@@ -252,6 +263,36 @@ v_fun_w_two_formal_params_is_represented_as_nested_v_abs_and_v_apply() ->
 
 v_abs_can_access_dims_in_application_context() ->
   S = "(F!t where dim t <- 46 end) where fun F!x = #.x end",
+  ?assertMatch({46,_}, eval(S)). %% BTW upstream TL returns 46
+
+n_fun_is_represented_as_v_fun() ->
+  SN = "F      46  where fun F x =  x end",
+  SV = "F!(↑{} 46) where fun F!x = ↓x end",
+  ?assertMatch({wherevar,
+                {v_apply, "F", [{i_abs, [], 46}]},
+                [{"F", {v_abs, [], ["x"],
+                        {i_apply, "x"}}}]},
+               t0(s(SN))),
+  ?assertEqual(t0(s(SN)), t0(s(SV))),
+  ?assertMatch({46,_}, eval(SN)).
+
+n_fun_w_two_formal_params_is_represented_as_v_fun() ->
+  SN = "F     46       1  where fun F x y =  x -  y end",
+  SV = "F!(↑{}46)!(↑{} 1) where fun F!x!y = ↓x - ↓y end",
+  ?assertEqual(t0(s(SN)), t0(s(SV))).
+
+n_fun_is_represented_as_v_fun_complex1() ->
+  SN = "B @ [t <- 2] where var A = #.t;; var B = next.t     A ;; dim t <- 0;; fun next.d X =   X  @ [d <- #.d + 1];; end;;",
+  SV = "B @ [t <- 2] where var A = #.t;; var B = next.t!(↑{}A);; dim t <- 0;; fun next.d!X = (↓X) @ [d <- #.d + 1];; end;;",
+  ?assertEqual(t0(s(SN)), t0(s(SV))).
+
+n_fun_is_represented_as_v_fun_complex2() ->
+  SN = "(B @ [t <- 2] where var A = #.t;; var B = next.t     A ;; dim t <- 0;; end) where fun next.d X =   X  @ [d <- #.d + 1];; end;;",
+  SV = "(B @ [t <- 2] where var A = #.t;; var B = next.t!(↑{}A);; dim t <- 0;; end) where fun next.d!X = (↓X) @ [d <- #.d + 1];; end;;",
+  ?assertEqual(t0(s(SN)), t0(s(SV))).
+
+n_abs_can_access_dims_in_application_context() ->
+  S = "(F t where dim t <- 46 end) where fun F x = #.x end",
   ?assertMatch({46,_}, eval(S)). %% BTW upstream TL returns 46
 
 
