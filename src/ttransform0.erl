@@ -19,7 +19,7 @@
 %% error reporting.
 %%
 %% Function AST should look like this:
-%% {fn, X, [{b_param, BArg} | {v_param, VArg} | {n_param, NArg}], E}
+%% {fn, [{b_param, BArg} | {v_param, VArg} | {n_param, NArg}], E}
 %% {fn_call, E, [{b_param, BArg} | {v_param, VArg} | {n_param, NArg}]}
 %%
 %% Where AST should look like this:
@@ -106,8 +106,11 @@ t0({i_apply, E}) ->
   {i_apply, t0(E)};
 
 %%------------------------------------------------------------------------------
-%% Function Call
+%% Function
 %%------------------------------------------------------------------------------
+t0({fn, Params, E}) ->
+  t0_fn(Params, E);
+
 t0({fn_call, FnE, Params}) ->
   t0_fn_call(
     t0(FnE),
@@ -118,9 +121,7 @@ t0({fn_call, FnE, Params}) ->
 %%------------------------------------------------------------------------------
 t0({where, E0, VDisEis}) ->
   %% We should probably signal an error when the body contains other elements..
-  Vars =
-    [{Xi, t0(Ei)}            || {var,Xi,Ei}       <- VDisEis] ++
-    [{Fi, t0_fn(Params, Ei)} || {fn,Fi,Params,Ei} <- VDisEis],
+  Vars = [{Xi, t0(Ei)} || {var,Xi,Ei} <- VDisEis],
   Dims = [{Xi, t0(Ei)} || {dim,Xi,Ei} <- VDisEis],
   t0_where(Vars, Dims, E0);
 

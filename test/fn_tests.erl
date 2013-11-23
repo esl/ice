@@ -121,7 +121,7 @@ dims_frozen_in_abs_by_transform1_test_() ->
 basic_b_abs() ->
   S = "F where fun F.argAsVarId = argAsVarId end",
   ?assertEqual({where, "F",
-                [{fn, "F", [{b_param,"argAsVarId"}], "argAsVarId"}]},
+                [{var, "F", {fn, [{b_param,"argAsVarId"}], "argAsVarId"}}]},
                s(S)),
   ?assertEqual({wherevar, "F",
                 [{"F", {b_abs, [], ["argAsVarId"], "argAsVarId"}}]},
