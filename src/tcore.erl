@@ -224,8 +224,13 @@ eval(Xi, I, E, K, D, W, T) when is_list(Xi) orelse is_atom(Xi) ->
 eval1(Xi, I, E, K, D, W, T) ->
   {D0, T0} = eval2(Xi, I, E, K, D, W, T),
   case tset:is_k(D0) andalso tset:subset(D0, tset:domain(K)) of
-    true -> 
-      eval1(Xi, I, E, K, tset:union(D, D0), W, T);
+    true ->
+      case tset:difference(D0, D) of
+        [] ->
+          {error, loop_detected, {already_known_dimensions, D0}};
+        _ ->
+          eval1(Xi, I, E, K, tset:union(D, D0), W, T)
+      end;
     false ->
       {D0, T0}
   end.

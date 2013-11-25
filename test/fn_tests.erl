@@ -63,11 +63,10 @@ n_test_() ->
 dims_frozen_in_abs_by_transform1_test_() ->
   {foreach, fun setup/0, fun cleanup/1,
    [
-    ?_assertMatch(
-       {45,_}, %% BTW upstream TL returns spundef.
-       %% Value is 45 as the t dim (of the outer wheredim) ends up in
-       %% the frozen dims of F, and that t has value 1 in the context
-       %% where F is evaluated.
+    ?_assertError(
+       {badmatch,
+        {error, loop_detected,
+         {already_known_dimensions, [{dim,_,"t"}]}}}, %% BTW upstream TL returns spundef.
        eval("X where var X = (F where fun F.x = x - #.t              end).46 @ [t <- 1];; dim t <- 0 end")),
     ?_assertMatch(
        {45,_},
@@ -81,8 +80,10 @@ dims_frozen_in_abs_by_transform1_test_() ->
        eval("X where var X = (F where fun F!x = x - #.t;; dim t <- 3 end)!46 @ [t <- 1];; dim t <- 0 end")),
     %%
     %%
-    ?_assertMatch(
-       {45,_}, %% BTW upstream TL returns spundef.
+    ?_assertError(
+       {badmatch,
+        {error, loop_detected,
+         {already_known_dimensions, [{dim,_,"t"}]}}}, %% BTW upstream TL returns spundef.
        eval("X where var X = (F.46 where fun F.x = x - #.t              end) @ [t <- 1];; dim t <- 0 end")),
     ?_assertMatch(
        {45,_},
@@ -96,8 +97,10 @@ dims_frozen_in_abs_by_transform1_test_() ->
        eval("X where var X = (F!46 where fun F!x = x - #.t;; dim t <- 3 end) @ [t <- 1];; dim t <- 0 end")),
     %%
     %%
-    ?_assertMatch(
-       {45,_}, %% BTW upstream TL returns spundef.
+    ?_assertError(
+       {badmatch,
+        {error, loop_detected,
+         {already_known_dimensions, [{dim,_,"t"}]}}}, %% BTW upstream TL returns spundef.
        eval("X where var X = (F.46 @ [t <- 1] where fun F.x = x - #.t              end);; dim t <- 0 end")),
     ?_assertMatch(
        {45,_},
