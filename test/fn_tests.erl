@@ -63,6 +63,16 @@ v_is_broken_test_() ->
        eval("(B @ [t <- 2] where var A = #.t;; var B = next.t!(↑{}A);; dim t <- 0;; end) where fun next.d!X = (↓X) @ [d <- #.d + 1];; end;;"))
    ]}.
 
+v_is_broken_debug_test_() ->
+  %% S = "(B @ [t <- 0] where var A = #.t;; var B = next.t!(↑{}A);; dim t <- 0;; end) where fun next.d!X = (↓X) @ [d <- #.d + 1];; end;;",
+  S = "((next_t!Int where var next_t = next.t;; var Int = ↑{} (#.t);; end) where dim t <- 0;; end) where fun next.d!X = (↓X) @ [d <- #.d + 1];; end;;",
+  _ =
+    {wherevar, {wheredim, {wherevar, Body, [NextTFun, {"Int",{IAbs,[TDim],IntBody}}]}, [{TDim,0}]}, [NextFun]} = t1(t0(s(S))),
+  T1WoFrozenDimInIAbs =
+    {wherevar, {wheredim, {wherevar, Body, [NextTFun, {"Int",{IAbs,[    ],IntBody}}]}, [{TDim,0}]}, [NextFun]},
+  {setup, fun setup/0, fun cleanup/1,
+   ?_assertMatch({1,_}, tcore:eval(T1WoFrozenDimInIAbs,[],[],[],[],{[],self()},0))}.
+
 n_test_() ->
   {foreach, fun setup/0, fun cleanup/1,
    [
