@@ -93,6 +93,8 @@ close_shallowest_abs({wherevar, E0, XiEis}, I, E) ->
 close_shallowest_abs({wheredim, E0, XiEis}, I, E) ->
   {wheredim, close_shallowest_abs(E0, I, E),
    lists:keymap(fun(Ei) -> close_shallowest_abs(Ei, I, E) end, 2, XiEis)};
+close_shallowest_abs({ext_expr, _E0, _InOutSpec, _Gr}=Expr, _I, _E) ->
+  Expr;
 close_shallowest_abs({dim,{_Pos,_Idx},Xi}=Di, _I, _E) when ?IS_VAR_ID(Xi) ->
   Di;
 close_shallowest_abs({phi,Xi}=Di, _I, _E) when ?IS_VAR_ID(Xi) ->
