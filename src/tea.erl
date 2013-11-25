@@ -54,8 +54,12 @@ rework_tree (Tree) ->
           Dims = [{dim,Dim,N} || {dim_decl,_,Dim,N} <- DimDecls],
           Funs = [{var,Name,{fn,Params,Body}}
                   || {fun_decl,_,Name,Params,Body} <- VarDecls],
-          Vars = [{var,Var,E} || {var_decl,_,Var,E} <- VarDecls] ++ Funs,
-          {where, TopExpr, Dims ++ Vars};
+          Vars = [{var,Var,E} || {var_decl,_,Var,E} <- VarDecls],
+          Exts =  %% Extensional variables
+            [{var,Var,
+              {ext_expr,Body,rework_ext_inout_spec(DimTypesIn,TypeOut),Gr}}
+             || {ext_decl,_,Var,DimTypesIn,TypeOut,Body,Gr} <- VarDecls],
+          {where, TopExpr, Dims ++ Vars ++ Funs ++ Exts};
 
         ({base_param,  _, P}) -> {b_param, P};
         ({named_param, _, P}) -> {n_param, P};
@@ -67,6 +71,8 @@ rework_tree (Tree) ->
 
         ({tuple, _, Assocs}) -> {t, Assocs};
         ({tuple_element, _, Lhs, Rhs}) -> {Lhs, Rhs};
+
+        ({'@', _, A, B}) -> {'@', A, B};
 
         ({'or',  _, A, B}) -> tprimop:tor(A, B);
         ({'and', _, A, B}) -> tprimop:tand(A, B);
@@ -82,15 +88,13 @@ rework_tree (Tree) ->
         ({'/',   _, A, B}) -> tprimop:divide(A, B);
         ({'%',   _, A, B}) -> tprimop:mod(A, B);
 
-        ({bool, _, Boolean}) -> Boolean;
-        ({raw_string, _, S})    -> {string, S};
-        ({cooked_string, _, S}) -> {string, S};
-        ({char, _, Char}) -> {char, Char};
-
-        ({'@', _, A, B}) -> {'@', A, B};
-
         ({int,_,N}) -> N;
         ({float,_,N}) -> N;
+        ({bool, _, Boolean}) -> Boolean;
+        ({char, _, Char}) -> {char, Char};
+        ({raw_string, _, S})    -> {string, S};
+        ({cooked_string, _, S}) -> {string, S};
+
         ({id,_,Name}) -> Name
       end,
   case tvisitor:visit(V, Tree, bottom_up) of
@@ -100,6 +104,14 @@ rework_tree (Tree) ->
       {ok, Y}
   end.
 
+
+rework_ext_inout_spec(DimTypesIn, {cl_scalar,_,TypeOut}) ->
+  {lists:map(
+     fun({ext_ty,_,DimIn,{cl_scalar,_,TypeIn}}) ->
+         {DimIn,TypeIn}
+     end,
+     DimTypesIn),
+   TypeOut}.
 
 unwrap_elsifs ([{if_expr,_,Cond,Then}|Rest], Else) ->
   {'if', Cond, Then, unwrap_elsifs(Rest,Else)};

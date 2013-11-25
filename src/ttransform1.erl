@@ -199,6 +199,17 @@ transform1({wheredim, E0, XiEis}, P, H) ->
   {wheredim, transform1(E0, subexpr_pos(0,P), h_store_dims(Dims, H)), DimsEis};
 
 %%-------------------------------------------------------------------------------------
+%% Extensional expression
+%%-------------------------------------------------------------------------------------
+transform1({ext_expr, E0, {DimTypesIn, TypeOut}, Gr}, P, H) ->
+  In = lists:map(fun({D,T}) -> {transform1(D, P, H), T} end, DimTypesIn),
+  %% XXX Fully transforming the body of the extensional expression is
+  %% overkill. Transformation here shall only handle local dimension
+  %% identifiers defined in outer wheredim clauses. Split
+  %% transformation module in multiple transformation modules?
+  {ext_expr, transform1(E0, P, H), {In, TypeOut}, Gr};
+
+%%-------------------------------------------------------------------------------------
 %% Identifiers
 %%-------------------------------------------------------------------------------------
 transform1(Xi, _P, H) when is_list(Xi) orelse is_atom(Xi) ->

@@ -200,6 +200,21 @@ eval({wheredim, E0, XiEis}, I, E, K, D, W, T) ->
   end;
 
 %%-------------------------------------------------------------------------------------
+%% Extensional expression
+%%-------------------------------------------------------------------------------------
+eval({ext_expr, _E0, {DimTypesIn, _TypeOut}, 1=_Gr}=Expr,
+     _I, _E, K, D, _W, T) ->
+  DimsIn = lists:map(fun({Dim,_OrdType}) -> Dim end, DimTypesIn),
+  case tset:difference(DimsIn, D) of
+    [] ->
+      KD = tset:restrict_domain(K, D),
+      [V] = textensional:eval_ext(Expr, [KD]),
+      {V, T};
+    MissingDimsIn ->
+      {MissingDimsIn, T}
+  end;
+
+%%-------------------------------------------------------------------------------------
 %% Dimension Identifiers replacing local dimensions in wheredim clauses
 %%-------------------------------------------------------------------------------------
 eval({dim,{_Pos,_Idx},Xi}=Di, _I, _E, _K, _D, _W, T) when is_list(Xi) orelse is_atom(Xi) ->
@@ -215,8 +230,7 @@ eval({phi,Xi}=Di, _I, _E, _K, _D, _W, T) when is_list(Xi) orelse is_atom(Xi) ->
 %% Variable Identifiers
 %%-------------------------------------------------------------------------------------
 eval(Xi, I, E, K, D, W, T) when is_list(Xi) orelse is_atom(Xi) ->
-  {_D0, _T0} = eval1(Xi, I, E, K, [], W, T),
-  tcache:find(Xi, K, D, W, T).
+  {_D0, _T0} = eval1(Xi, I, E, tset:restrict_domain(K, D), [], W, T).
 
 %%-------------------------------------------------------------------------------------
 %% Finding identifiers in the cache

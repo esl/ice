@@ -10,7 +10,7 @@ clean: rebar
 .PHONY: clean
 
 debug: compile
-	erl -pa ebin -pa deps/tparser/ebin
+	erl -pa ebin -pa deps/*/ebin
 .PHONY: debug
 
 test: compile
