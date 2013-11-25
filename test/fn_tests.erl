@@ -52,6 +52,17 @@ v_test_() ->
     ?_test(v_abs_can_access_dims_in_application_context())
    ]}.
 
+v_is_broken_test_() ->
+  {foreach, fun setup/0, fun cleanup/1,
+   [
+    ?_assertMatch(
+       {2,_}, %% Upstream TL returns 3 %% TODO Consider fixing as this makes named functions unusable most of the times
+       eval(" B @ [t <- 2] where var A = #.t;; var B = next.t!(↑{}A);; dim t <- 0;;            fun next.d!X = (↓X) @ [d <- #.d + 1];; end;;")),
+    ?_assertMatch(
+       {2,_}, %% Upstream TL returns 3 %% TODO Consider fixing as this makes named functions unusable most of the times
+       eval("(B @ [t <- 2] where var A = #.t;; var B = next.t!(↑{}A);; dim t <- 0;; end) where fun next.d!X = (↓X) @ [d <- #.d + 1];; end;;"))
+   ]}.
+
 n_test_() ->
   {foreach, fun setup/0, fun cleanup/1,
    [
