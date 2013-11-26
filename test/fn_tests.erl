@@ -237,21 +237,21 @@ n_abs_can_access_dims_in_application_context() ->
 next_in_wheredim_test_() ->
   {foreach, fun setup/0, fun cleanup/1,
    [
-    ?_assertMatch({2,_}, eval("B @ [t <- 2] where var A = #.t;; var B = next.t!A;; dim t <- 0;; fun next.d!X = X @ [d <- #.d + 1];; end;;")), %% Upstream TL returns 2
-    ?_assertMatch({3,_}, eval("B @ [t <- 2] where var A = #.t;; var B = next.t!(↑{}A);; dim t <- 0;; fun next.d!X = (↓X) @ [d <- #.d + 1];; end;;")), %% Upstream TL returns 3
-    ?_assertMatch({3,_}, eval("B @ [t <- 2] where var A = #.t;; var B = next.t A;; dim t <- 0;; fun next.d X = X @ [d <- #.d + 1];; end;;")) %% Upstream TL returns 3
-    %% ?_assertMatch({spundef,_}, eval("B @ [t <- 2] where var A = #.t;; var B = next.t.A;; dim t <- 0;; fun next.d.X = X @ [d <- #.d + 1];; end;;")), %% Upstream TL returns spundef
-    %% ?_assertMatch({spundef,_}, eval("B @ [t <- 2] where var A = #.t;; var B = next.t.(↑{}A);; dim t <- 0;; fun next.d.X = (↓X) @ [d <- #.d + 1];; end;;")) %% Upstream TL returns spundef
+    ?_assertMatch({3,_}, eval("(next.t(     #.t)) @ [t <- 2] where dim t <- 0;; fun next.d X =   X  @ [d <- #.d + 1];; end;;")), %% Upstream TL returns 3
+    ?_assertMatch({3,_}, eval("(next.t!(↑{} #.t)) @ [t <- 2] where dim t <- 0;; fun next.d!X = (↓X) @ [d <- #.d + 1];; end;;")), %% Upstream TL returns 3
+    ?_assertMatch({2,_}, eval("(next.t!(    #.t)) @ [t <- 2] where dim t <- 0;; fun next.d!X =   X  @ [d <- #.d + 1];; end;;")) %% Upstream TL returns 2
+    %% ?_assertMatch({spundef,_}, eval("(next.t.(↑{} #.t)) @ [t <- 2] where dim t <- 0;; fun next.d.X = (↓X) @ [d <- #.d + 1];; end;;")) %% Upstream TL returns spundef
+    %% ?_assertMatch({spundef,_}, eval("(next.t.(    #.t)) @ [t <- 2] where dim t <- 0;; fun next.d.X =   X  @ [d <- #.d + 1];; end;;")) %% Upstream TL returns spundef
    ]}.
 
 next_out_of_wheredim_test_() ->
   {foreach, fun setup/0, fun cleanup/1,
    [
-    ?_assertMatch({2,_}, eval("(B @ [t <- 2] where var A = #.t;; var B = next.t!A;; dim t <- 0;; end) where fun next.d!X = X @ [d <- #.d + 1];; end;;")), %% Upstream TL returns 2
-    ?_assertMatch({3,_}, eval("(B @ [t <- 2] where var A = #.t;; var B = next.t!(↑{}A);; dim t <- 0;; end) where fun next.d!X = (↓X) @ [d <- #.d + 1];; end;;")), %% Upstream TL returns 3
-    ?_assertMatch({3,_}, eval("(B @ [t <- 2] where var A = #.t;; var B = next.t A;; dim t <- 0;; end) where fun next.d X = X @ [d <- #.d + 1];; end;;")) %% Upstream TL returns 3
-    %% ?_assertMatch({spundef,_}, eval("(B @ [t <- 2] where var A = #.t;; var B = next.t.A;; dim t <- 0;; end) where fun next.d.X = X @ [d <- #.d + 1];; end;;")), %% Upstream TL returns spundef
-    %% ?_assertMatch({spundef,_}, eval("(B @ [t <- 2] where var A = #.t;; var B = next.t.(↑{}A);; dim t <- 0;; end) where fun next.d.X = (↓X) @ [d <- #.d + 1];; end;;")) %% Upstream TL returns spundef
+    ?_assertMatch({3,_}, eval("((next.t (    #.t)) @ [t <- 2] where dim t <- 0;; end) where fun next.d X =   X  @ [d <- #.d + 1];; end;;")), %% Upstream TL returns 3
+    ?_assertMatch({3,_}, eval("((next.t!(↑{} #.t)) @ [t <- 2] where dim t <- 0;; end) where fun next.d!X = (↓X) @ [d <- #.d + 1];; end;;")), %% Upstream TL returns 3
+    ?_assertMatch({2,_}, eval("((next.t!(    #.t)) @ [t <- 2] where dim t <- 0;; end) where fun next.d!X =   X  @ [d <- #.d + 1];; end;;")) %% Upstream TL returns 2
+    %% ?_assertMatch({spundef,_}, eval("((next.t.(↑{} #.t)) @ [t <- 2] where dim t <- 0;; end) where fun next.d.X = (↓X) @ [d <- #.d + 1];; end;;")) %% Upstream TL returns spundef
+    %% ?_assertMatch({spundef,_}, eval("((next.t.(    #.t)) @ [t <- 2] where dim t <- 0;; end) where fun next.d.X =   X  @ [d <- #.d + 1];; end;;")) %% Upstream TL returns spundef
    ]}.
 
 
