@@ -38,8 +38,8 @@ abs_cannot_access_variable_ids_in_application_env_test_() ->
          UndefVarId, "((F.1) where var A = 1 end) where fun F.x =   A end"),
       ?_assertUndefVarId(
          UndefVarId, "((F!1) where var A = 1 end) where fun F!x =   A end"),
-      %% ?_assertUndefVarId(
-      %%    UndefVarId, "((F 1) where var A = 1 end) where fun F x =   A end"), TODO: Improve transformation 0
+      ?_assertUndefVarId(
+         UndefVarId, "((F 1) where var A = 1 end) where fun F x =   A end"),
       ?_assertUndefVarId(
          UndefVarId, "((↓ F) where var A = 1 end) where var F = ↑{} A end")
      ],
@@ -61,8 +61,8 @@ abs_cannot_access_variable_ids_in_creation_env_test_() ->
          UndefVarId, "( (F where var A = 1 end).1) where fun F.x =   A end"),
       ?_assertUndefVarId(
          UndefVarId, "( (F where var A = 1 end)!1) where fun F!x =   A end"),
-      %% ?_assertUndefVarId(
-      %%    UndefVarId, "( (F where var A = 1 end) 1) where fun F x =   A end"), TODO: Improve transformation 0
+      ?_assertUndefVarId(
+         UndefVarId, "( (F where var A = 1 end) 1) where fun F x =   A end"),
       ?_assertUndefVarId(
          UndefVarId, "(↓(F where var A = 1 end)  ) where var F = ↑{} A end")
       ],

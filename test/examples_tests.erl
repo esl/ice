@@ -25,6 +25,35 @@ intension_examples_test_() ->
     ?_test(temperatureAtInuvik_wo_string_comparison())
    ]}.
 
+laplatian_relaxation_test_() ->
+  SFormat =
+    "S @ [t <- ~s, x <- ~s, y <- ~s]
+    where
+      // Electrode has always been at (3,4) with potential 5 - and forever will
+      var POTENTIAL = if #.x == 3 && #.y == 4 then 5 else 0 fi
+      var S = if POTENTIAL != 0 then POTENTIAL else fby.t 0 (avg S) fi
+      fun avg A = ((prev.x A + next.x A) + (prev.y A + next.y A)) / 4
+    end
+    where
+      dim t <- 0 // time
+      dim x <- 0
+      dim y <- 0
+    end
+    where
+      fun fby.d X Y = if #.d == 0 then X else Y @ [d <- #.d - 1] fi
+      fun prev.d M = M @ [d <- #.d - 1]
+      fun next.d M = M @ [d <- #.d + 1]
+    end",
+  {foreach, fun setup/0, fun cleanup/1,
+   [
+    ?_assertMatch({5,_}, eval(lists:flatten(io_lib:format(SFormat, ["0","3","4"])))),
+    ?_assertMatch({5,_}, eval(lists:flatten(io_lib:format(SFormat, ["1","3","4"])))),
+    %%
+    ?_assertMatch({0,_}, eval(lists:flatten(io_lib:format(SFormat, ["0","4","4"])))),
+    ?_assertMatch({1.25,_}, eval(lists:flatten(io_lib:format(SFormat, ["1","4","4"])))),
+    ?_assertMatch({1.25,_}, eval(lists:flatten(io_lib:format(SFormat, ["2","4","4"]))))
+   ]}.
+
 
 sequential_multi_dimensional() ->
   %% Sequential, multi-dimensional wheredim clause
