@@ -27,7 +27,7 @@ e2_test() ->
             dim t <- 1
         end"),
   ?assertEqual(
-     {where, plus({'#',{dim,"t"}},
+     {where, tprimop:plus({'#',{dim,"t"}},
                   {'#',{dim,"s"}}),
       [{dim,"t",1}]},
      Tree).
@@ -40,8 +40,8 @@ e3_test() ->
             dim s <- 3
         end"),
   ?assertEqual(
-     {where, plus({'#',{dim,"t"}},
-                  {'#',{dim,"s"}}),
+     {where, tprimop:plus({'#',{dim,"t"}},
+                          {'#',{dim,"s"}}),
       [{dim,"t",2},
        {dim,"s",3}]},
      Tree).
@@ -56,8 +56,8 @@ e4_test() ->
         end"),
   ?assertEqual(
      {where, "X",
-      [{var, "X", plus({'#',{dim,"t"}},
-                       {'#',{dim,"s"}})},
+      [{var, "X", tprimop:plus({'#',{dim,"t"}},
+                               {'#',{dim,"s"}})},
        {dim, "t", 2},
        {dim, "s", 3} ]},
      Tree).
@@ -83,16 +83,16 @@ e5_test() ->
      {where, "N0",
       [
        {var, "N0",
-        {'if', eq({'#',TimeD}, 0),
+        {'if', tprimop:eq({'#',TimeD}, 0),
          "N1",
          {'@', "N0",
-          {t, [{TimeD, minus({'#',TimeD}, 1)}]}}}},
+          {t, [{TimeD, tprimop:minus({'#',TimeD}, 1)}]}}}},
        {var, "N1",
-        {'if', eq({'#', SpaceD}, 0),
+        {'if', tprimop:eq({'#', SpaceD}, 0),
          1,
-         times({'@', "N1",
-                {t, [{SpaceD, minus({'#',SpaceD}, 1)}]}},
-               2)
+         tprimop:times({'@', "N1",
+                        {t, [{SpaceD, tprimop:minus({'#',SpaceD}, 1)}]}},
+                       2)
         }},
        {dim, "t", 10},
        {dim, "s", 10}
@@ -129,18 +129,18 @@ e6_test() ->
      {where, "A",
       [
        {var, "A",
-        {'if', lte({'#', TimeD}, 0),
+        {'if', tprimop:lte({'#', TimeD}, 0),
          "B",
          {'@',
-          plus({'@', "A", {t, [{SpaceD,      times({'#', SpaceD}, 2    )}]}},
-               {'@', "A", {t, [{SpaceD, plus(times({'#', SpaceD}, 2), 1)}]}}),
-          {t, [{TimeD, minus({'#', TimeD}, 1)}]}
+          tprimop:plus({'@', "A", {t, [{SpaceD,              tprimop:times({'#', SpaceD}, 2    )}]}},
+                       {'@', "A", {t, [{SpaceD, tprimop:plus(tprimop:times({'#', SpaceD}, 2), 1)}]}}),
+          {t, [{TimeD, tprimop:minus({'#', TimeD}, 1)}]}
          }
         }
        },
        {var, "B",
-        {'if', tand(gte({'#', SpaceD}, 1),
-                    lte({'#', SpaceD}, 1024)),
+        {'if', tprimop:tand(tprimop:gte({'#', SpaceD}, 1),
+                            tprimop:lte({'#', SpaceD}, 1024)),
          {'#', SpaceD},
          1
         }
@@ -177,29 +177,29 @@ e7_test() ->
      {where, {'@', "Y1", {t, [{XD,0}]}},
        [
         {var, "Y1",
-         {'if', lte({'#', TimeD}, 0),
+         {'if', tprimop:lte({'#', TimeD}, 0),
           "X1",
-          {'@', plus(
-                  plus({'@', "Y1",
-                        {t, [{XD,      times({'#', XD}, 2)    },
-                             {YD,      times({'#', YD}, 2)    }]}},
+          {'@', tprimop:plus(
+                  tprimop:plus({'@', "Y1",
+                        {t, [{XD,              tprimop:times({'#', XD}, 2)    },
+                             {YD,              tprimop:times({'#', YD}, 2)    }]}},
                        {'@', "Y1",
-                        {t, [{XD, plus(times({'#', XD}, 2), 1)},
-                             {YD,      times({'#', YD}, 2)    }]}}),
-                  plus({'@', "Y1",
-                        {t, [{XD,      times({'#', XD}, 2)    },
-                             {YD, plus(times({'#', YD}, 2), 1)}]}},
+                        {t, [{XD, tprimop:plus(tprimop:times({'#', XD}, 2), 1)},
+                             {YD,              tprimop:times({'#', YD}, 2)    }]}}),
+                  tprimop:plus({'@', "Y1",
+                        {t, [{XD,              tprimop:times({'#', XD}, 2)    },
+                             {YD, tprimop:plus(tprimop:times({'#', YD}, 2), 1)}]}},
                        {'@', "Y1",
-                        {t, [{XD, plus(times({'#', XD}, 2), 1)},
-                             {YD, plus(times({'#', YD}, 2), 1)}]}})
+                        {t, [{XD, tprimop:plus(tprimop:times({'#', XD}, 2), 1)},
+                             {YD, tprimop:plus(tprimop:times({'#', YD}, 2), 1)}]}})
                  ),
-           {t, [{TimeD, minus({'#', TimeD}, 1)}]}}}},
+           {t, [{TimeD, tprimop:minus({'#', TimeD}, 1)}]}}}},
         {var, "X1",
-         {'if', tand(
-                  tand(gte({'#', XD},    1),
-                       lte({'#', YD}, 1024)),
-                  tand(gte({'#', YD},    1),
-                       lte({'#', YD}, 1024))),
+         {'if', tprimop:tand(
+                  tprimop:tand(tprimop:gte({'#', XD},    1),
+                               tprimop:lte({'#', YD}, 1024)),
+                  tprimop:tand(tprimop:gte({'#', YD},    1),
+                               tprimop:lte({'#', YD}, 1024))),
           {'#', XD},
           1}},
         {dim, "t", 2},
@@ -209,20 +209,5 @@ e7_test() ->
      Tree).
 
 %% Internals
-
-eq (A, B) ->
-  {primop, fun erlang:'=='/2, [A, B]}.
-tand (A, B) ->
-  {primop, fun erlang:'and'/2, [A, B]}.
-lte (A, B) ->
-  {primop, fun erlang:'=<'/2, [A, B]}.
-gte (A, B) ->
-  {primop, fun erlang:'>='/2, [A, B]}.
-plus (A, B) ->
-  {primop, fun erlang:'+'/2, [A,B]}.
-times (A, B) ->
-  {primop, fun erlang:'*'/2, [A,B]}.
-minus (A, B) ->
-  {primop, fun erlang:'-'/2, [A, B]}.
 
 %% End of Module.

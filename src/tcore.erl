@@ -14,23 +14,24 @@ eval(Const, _I, _E, _K, _D, _W, T) when is_number(Const) orelse is_boolean(Const
 eval({string, Str}, _I, _E, _K, _D, _W, T) ->
   {{string, Str}, T};
 
-eval({char, Str}, _I, _E, _K, _D, _W, T) ->
-  {{char, Str}, T};
+eval({char, Char}, _I, _E, _K, _D, _W, T) ->
+  {{char, Char}, T};
 
 %%-------------------------------------------------------------------------------------
 %% Primop
 %%-------------------------------------------------------------------------------------
-eval({primop, F, Eis}, I, E, K, D, W, T) ->
+eval({primop, Primop, Eis}, I, E, K, D, W, T) ->
   {Dis, MaxT} = tpar:eval(Eis, I, E, K, D, W, T),
   case tset:union_d(Dis) of
     {true, Dims} ->
       {Dims, MaxT};
     {false, Dis1} ->
+      F = tprimop:f(Primop),
       R = apply(F, Dis1),
-      tv:hook(?MODULE, self(), primop_apply, {{primop,F,Dis1},R}),
+      tv:hook(?MODULE, self(), primop_apply, {{primop,Primop,Dis1},R}),
       {R, MaxT}
   end;
-      
+
 %%-------------------------------------------------------------------------------------
 %% Tuple Expressions
 %%-------------------------------------------------------------------------------------
@@ -86,16 +87,16 @@ eval({Q, E0}, I, E, K, D, W, T) when Q == '#' orelse Q == '?' ->
       {D0, T0};
     false ->
       case lists:member(D0, D) of
-	true ->
+        true ->
           DimType =
             case Q of
               '#' -> dim;
               '?' -> phi
             end,
           DimType = element(1, D0), %% Hardcoded expectation
-	  {lookup_ordinate(D0, K), T0};
-	false ->
-	  {[D0], T0}
+          {lookup_ordinate(D0, K), T0};
+        false ->
+          {[D0], T0}
       end
   end;
 
@@ -192,6 +193,21 @@ eval({wheredim, E0, XiEis}, I, E, K, D, W, T) ->
   end;
 
 %%-------------------------------------------------------------------------------------
+%% Extensional expression
+%%-------------------------------------------------------------------------------------
+eval({ext_expr, _E0, {DimTypesIn, _TypeOut}, 1=_Gr}=Expr,
+     _I, _E, K, D, _W, T) ->
+  DimsIn = lists:map(fun({Dim,_OrdType}) -> Dim end, DimTypesIn),
+  case tset:difference(DimsIn, D) of
+    [] ->
+      KD = tset:restrict_domain(K, D),
+      [V] = textensional:eval_ext(Expr, [KD]),
+      {V, T};
+    MissingDimsIn ->
+      {MissingDimsIn, T}
+  end;
+
+%%-------------------------------------------------------------------------------------
 %% Dimension Identifiers (public)
 %%-------------------------------------------------------------------------------------
 eval({dim,Xi}=Di, _I, _E, _K, _D, _W, T) when is_list(Xi) orelse is_atom(Xi) ->
@@ -213,8 +229,7 @@ eval({phi,Xi}=Di, _I, _E, _K, _D, _W, T) when is_list(Xi) orelse is_atom(Xi) ->
 %% Variable Identifiers
 %%-------------------------------------------------------------------------------------
 eval(Xi, I, E, K, D, W, T) when is_list(Xi) orelse is_atom(Xi) ->
-  {_D0, _T0} = eval1(Xi, I, E, K, [], W, T),
-  tcache:find(Xi, K, D, W, T).
+  {_D0, _T0} = eval1(Xi, I, E, tset:restrict_domain(K, D), [], W, T).
 
 %%-------------------------------------------------------------------------------------
 %% Finding identifiers in the cache

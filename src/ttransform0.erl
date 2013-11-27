@@ -35,6 +35,9 @@ transform0(Const) when is_number(Const) orelse is_boolean(Const) ->
 transform0({string, Str}) ->
   {string, Str};
 
+transform0({char, Char}) ->
+  {char, Char};
+
 %%------------------------------------------------------------------------------
 %% Primop
 %%------------------------------------------------------------------------------
@@ -110,6 +113,14 @@ transform0({where, E0, VDisEis}) ->
      || {fn,Fi,Params,E} <- VDisEis],
   Dims = [{Xi,transform0(Ei)} || {dim,Xi,Ei} <- VDisEis],
   transform0_where(Vars, Dims, E0);
+
+%%-------------------------------------------------------------------------------------
+%% Extensional expression
+%%-------------------------------------------------------------------------------------
+transform0({ext_expr, _E0, _InOutSpec, _Gr}=Expr) ->
+  %% Extensional variable is not supposed to contain elements affected
+  %% by transformation.
+  Expr;
 
 %%-------------------------------------------------------------------------------------
 %% Dimension Identifiers

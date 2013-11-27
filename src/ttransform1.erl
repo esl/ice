@@ -56,6 +56,9 @@ transform1(Const, _P, _HD, _HV) when is_number(Const) orelse is_boolean(Const) -
 transform1({string, Str}, _P, _HD, _HV) ->
   {string, Str};
 
+transform1({char, Char}, _P, _HD, _HV) ->
+  {char, Char};
+
 %%------------------------------------------------------------------------------
 %% Primop
 %%------------------------------------------------------------------------------
@@ -188,6 +191,18 @@ transform1({wheredim, E0, XiEis}, P, HD, HV) ->
               %% Deal with e.g. nested wheredims with same local dim id
               set_union_w_dim_shadowing(HD, Dims), HV),
    DimsEis};
+
+%%-------------------------------------------------------------------------------------
+%% Extensional expression
+%%-------------------------------------------------------------------------------------
+transform1({ext_expr, E0, {DimTypesIn, TypeOut}, Gr}, P, HD, HV) ->
+  In = lists:keymap(fun({dim,_}=Dim) -> transform1(Dim, P, HD, HV) end,
+                    1, DimTypesIn),
+  %% XXX Fully transforming the body of the extensional expression is
+  %% overkill. Transformation here shall only handle local dimension
+  %% identifiers defined in outer wheredim clauses. Split
+  %% transformation module in multiple transformation modules?
+  {ext_expr, transform1(E0, P, HD, HV), {In, TypeOut}, Gr};
 
 %%-------------------------------------------------------------------------------------
 %% Dimension Identifiers

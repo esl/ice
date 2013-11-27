@@ -42,20 +42,25 @@ i(String) ->
 
 rework_tree (Tree) ->
   V = fun
-        ({expr, _, E}) ->
-          E;
-        ({call, _, FunExpr, Params}) ->
-          {fn_call, FunExpr, lists:map(fun rework_fun_param/1, Params)};
+        ({expr, _, E}) -> E;
+
+        ({call, _, FunExpr, Params}) -> {fn_call, FunExpr, Params};
 
         ({where, _, Exp, DimDecls, VarDecls}) ->
           TopExpr = Exp,
-          Vars = [{var,Var,E} || {var_decl,_,Var,E} <- VarDecls],
           Dims = [{dim,Dim,N} || {dim_decl,_,Dim,N} <- DimDecls],
-          Funs = [{fn, Name,
-                   lists:map(fun rework_fun_param/1, Params),
-                   Body}
-                  || {fun_decl,_,Name,Params,Body} <- VarDecls],
-          {where, TopExpr, Vars ++ Dims ++ Funs};
+          Vars = [{var,Var,E} || {var_decl,_,Var,E} <- VarDecls],
+          Funs =
+            [{fn,Fn,Params,Body} || {fun_decl,_,Fn,Params,Body} <- VarDecls],
+          Exts =  %% Extensional variables
+            [{var,Var,
+              {ext_expr,Body,rework_ext_inout_spec(DimTypesIn,TypeOut),Gr}}
+             || {ext_decl,_,Var,DimTypesIn,TypeOut,Body,Gr} <- VarDecls],
+          {where, TopExpr, Vars ++ Dims ++ Funs ++ Exts};
+
+        ({base_param,  _, P}) -> {b_param, P};
+        ({named_param, _, P}) -> {n_param, P};
+        ({value_param, _, P}) -> {v_param, P};
 
         ({'if', _, Ifs, Else}) -> unwrap_elsifs(Ifs, Else);
 
@@ -70,29 +75,29 @@ rework_tree (Tree) ->
           %%   defined as a ‘set of (dimension, value) pairs’.
           {{dim,Lhs}, Rhs};
 
-        ({'or'=Op, _, A, B})  -> {primop, fun erlang:Op/2, [A,B]};
-        ({'and'=Op, _, A, B}) -> {primop, fun erlang:Op/2, [A,B]};
-        ({'<'=Op, _, A, B})   -> {primop, fun erlang:Op/2, [A,B]};
-        ({'<=', _, A, B})     -> {primop, fun erlang:'=<'/2, [A,B]};
-        ({'=='=Op, _, A, B})  -> {primop, fun erlang:Op/2, [A,B]};
-        ({'>='=Op, _, A, B})  -> {primop, fun erlang:Op/2, [A,B]};
-        ({'>'=Op, _, A, B})   -> {primop, fun erlang:Op/2, [A,B]};
-        ({'!=', _, A, B})     -> {primop, fun erlang:'=/='/2, [A,B]};
-        ({'+'=Op, _, A, B})   -> {primop, fun erlang:Op/2, [A,B]};
-        ({'-'=Op, _, A, B})   -> {primop, fun erlang:Op/2, [A,B]};
-        ({'*'=Op, _, A, B})   -> {primop, fun erlang:Op/2, [A,B]};
-                                                % No '/' yet because lack of floats.
-        ({'%', _, A, B})      -> {primop, fun mod/2, [A,B]};
-
-        ({bool, _, Boolean}) -> Boolean;
-        ({raw_string, _, S})    -> {string, S};
-        ({cooked_string, _, S}) -> {string, S};
-        ({char, _, Char}) -> {char, Char};
-
         ({'@', _, A, B}) -> {'@', A, B};
+
+        ({'or',  _, A, B}) -> tprimop:tor(A, B);
+        ({'and', _, A, B}) -> tprimop:tand(A, B);
+        ({'<',   _, A, B}) -> tprimop:lt(A, B);
+        ({'<=',  _, A, B}) -> tprimop:lte(A, B);
+        ({'==',  _, A, B}) -> tprimop:eq(A, B);
+        ({'>=',  _, A, B}) -> tprimop:gte(A, B);
+        ({'>',   _, A, B}) -> tprimop:gt(A, B);
+        ({'!=',  _, A, B}) -> tprimop:neq(A, B);
+        ({'+',   _, A, B}) -> tprimop:plus(A, B);
+        ({'-',   _, A, B}) -> tprimop:minus(A, B);
+        ({'*',   _, A, B}) -> tprimop:times(A, B);
+        ({'/',   _, A, B}) -> tprimop:divide(A, B);
+        ({'%',   _, A, B}) -> tprimop:mod(A, B);
 
         ({int,_,N}) -> N;
         ({float,_,N}) -> N;
+        ({bool, _, Boolean}) -> Boolean;
+        ({char, _, Char}) -> {char, Char};
+        ({raw_string, _, S})    -> {string, S};
+        ({cooked_string, _, S}) -> {string, S};
+
         ({id,_,Name}) -> Name
       end,
   case tvisitor:visit(V, Tree, bottom_up) of
@@ -103,17 +108,17 @@ rework_tree (Tree) ->
   end.
 
 
-rework_fun_param({base_param,  _, P}) -> {b_param, P};
-rework_fun_param({named_param, _, P}) -> {n_param, P};
-rework_fun_param({value_param, _, P}) -> {v_param, P}.
+rework_ext_inout_spec(DimTypesIn, {cl_scalar,_,TypeOut}) ->
+  {lists:map(
+     fun({ext_ty,_,DimIn,{cl_scalar,_,TypeIn}}) ->
+         {{dim,DimIn},TypeIn}
+     end,
+     DimTypesIn),
+   TypeOut}.
 
 unwrap_elsifs ([{if_expr,_,Cond,Then}|Rest], Else) ->
   {'if', Cond, Then, unwrap_elsifs(Rest,Else)};
 unwrap_elsifs ([], Else) ->
   Else.
-
-mod (X, Y) ->
-  %% http://stackoverflow.com/a/858649/1418165
-  (X rem Y + Y) rem Y.
 
 %% End of Module.
