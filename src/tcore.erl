@@ -88,12 +88,14 @@ eval({Q, E0}, I, E, K, D, W, T) when Q == '#' orelse Q == '?' ->
     false ->
       case lists:member(D0, D) of
         true ->
-          DimType =
-            case Q of
-              '#' -> dim;
-              '?' -> phi
-            end,
-          DimType = element(1, D0), %% Hardcoded expectation
+          case {Q, D0} of
+            {'?', {phi,_}} ->
+              ok;
+            {'#', {dim,_,_}} ->
+              ok;
+            {'#', _} ->
+              io:format("Querying (~p) context for dimension ~p~n", [Q, D0])
+          end,
           {lookup_ordinate(D0, K), T0};
         false ->
           {[D0], T0}
@@ -103,52 +105,55 @@ eval({Q, E0}, I, E, K, D, W, T) when Q == '#' orelse Q == '?' ->
 %%------------------------------------------------------------------------------
 %% Base Abstraction
 %%------------------------------------------------------------------------------
-eval({b_abs, Is, _Params, _E0}=Abs, I, E, K, D, W, T) ->
+eval({b_abs, _Is, _Params, _E0}=Abs, I, E, K, D, W, T) ->
   tv:hook(?MODULE, self(), eval, Abs),
-  eval_abs(Is, Abs, I, E, K, D, W, T);
+  freeze_closure(tclosure:close_abs(Abs, I, E), I, E, K, D, W, T);
 
 eval({b_apply, E0, Eis}, I, E, K, D, W, T) ->
   tv:hook(?MODULE, self(), eval, {b_apply, E0, Eis}),
-  %% The evaluation of abs is serialized from the evaluation of actual
-  %% parameters for re-using the context perturbation '@' expression
-  {D0, T0} = eval(E0, I, E, K, D, W, T),
-  case tset:is_k(D0) of
-    true ->
-      {D0, T0};
-    false ->
-      {frozen_b_abs, AbsI, AbsE, FrozenK, AbsParams, AbsBody} = D0,
-      eval({'@', AbsBody, {t, lists:zip(AbsParams, Eis)}},
-           AbsI, AbsE, FrozenK, tset:domain(FrozenK), W, T0)
+  {D0is, MaxT} = tpar:eval([E0 | Eis], I, E, K, D, W, T),
+  case tset:union_d(D0is) of
+    {true, Dims} ->
+      {Dims, MaxT};
+    {false, D0is1} -> %% XXX Why Dis1 even if equal to Dis?
+      [D0 | Dis] = D0is1,
+      {frozen_closed_b_abs, ClI, ClE, FrozenK, AbsParams, AbsBody} = D0,
+      AbsParamsK = lists:zip(AbsParams, Dis),
+      FPK = tset:perturb(FrozenK, AbsParamsK),
+      eval(AbsBody, ClI, ClE,
+           FPK, tset:domain(FPK),
+           W, MaxT)
   end;
 
 %%------------------------------------------------------------------------------
 %% Value Abstraction
 %%------------------------------------------------------------------------------
-eval({v_abs, Is, _Params, _E0}=Abs, I, E, K, D, W, T) ->
+eval({v_abs, _Is, _Params, _E0}=Abs, I, E, K, D, W, T) ->
   tv:hook(?MODULE, self(), eval, Abs),
-  eval_abs(Is, Abs, I, E, K, D, W, T);
+  freeze_closure(tclosure:close_abs(Abs, I, E), I, E, K, D, W, T);
 
 eval({v_apply, E0, Eis}, I, E, K, D, W, T) ->
   tv:hook(?MODULE, self(), eval, {v_apply, E0, Eis}),
-  %% The evaluation of abs is serialized from the evaluation of actual
-  %% parameters for re-using the context perturbation '@' expression
-  {D0, T0} = eval(E0, I, E, K, D, W, T),
-  case tset:is_k(D0) of
-    true ->
-      {D0, T0};
-    false ->
-      {frozen_v_abs, AbsI, AbsE, FrozenK, AbsParams, AbsBody} = D0,
-      eval({'@', AbsBody, {t, lists:zip(AbsParams, Eis)}}, AbsI, AbsE,
-           tset:perturb(K, FrozenK), tset:union(D, tset:domain(FrozenK)),
-           W, T0)
+  {D0is, MaxT} = tpar:eval([E0 | Eis], I, E, K, D, W, T),
+  case tset:union_d(D0is) of
+    {true, Dims} ->
+      {Dims, MaxT};
+    {false, D0is1} -> %% XXX Why Dis1 even if equal to Dis?
+      [D0 | Dis] = D0is1,
+      {frozen_closed_v_abs, ClI, ClE, FrozenK, AbsParams, AbsBody} = D0,
+      AbsParamsK = lists:zip(AbsParams, Dis),
+      FPK = tset:perturb(FrozenK, AbsParamsK),
+      eval(AbsBody, ClI, ClE,
+           tset:perturb(K, FPK), tset:union(D, tset:domain(FPK)),
+           W, MaxT)
   end;
 
 %%------------------------------------------------------------------------------
 %% Intension Abstraction
 %%------------------------------------------------------------------------------
-eval({i_abs, Is, _E0}=Abs, I, E, K, D, W, T) ->
+eval({i_abs, _Is, _E0}=Abs, I, E, K, D, W, T) ->
   tv:hook(?MODULE, self(), eval, Abs),
-  eval_abs(Is, Abs, I, E, K, D, W, T);
+  freeze_closure(tclosure:close_abs(Abs, I, E), I, E, K, D, W, T);
 
 eval({i_apply, E0}, I, E, K, D, W, T) ->
   tv:hook(?MODULE, self(), eval, {i_apply, E0}),
@@ -157,17 +162,27 @@ eval({i_apply, E0}, I, E, K, D, W, T) ->
     true ->
       {D0, T0};
     false ->
-      {frozen_i_abs, AbsI, AbsE, FrozenK, AbsBody} = D0,
-      eval(AbsBody, AbsI, AbsE,
+      {frozen_closed_i_abs, ClI, ClE, FrozenK, AbsBody} = D0,
+      eval(AbsBody, ClI, ClE,
            tset:perturb(K, FrozenK), tset:union(D, tset:domain(FrozenK)),
            W, T0)
   end;
+
+%%------------------------------------------------------------------------------
+%% Closure of abstraction over enviroment
+%%------------------------------------------------------------------------------
+eval({closure, _ClI, _ClE, _Abs}=Cl, I, E, K, D, W, T) ->
+  freeze_closure(Cl, I, E, K, D, W, T);
 
 %%-------------------------------------------------------------------------------------
 %% Wherevar
 %%-------------------------------------------------------------------------------------
 eval({wherevar, E0, XiEis}, I, E, K, D, W, T) ->
-  eval(E0, I, tset:perturb(E, XiEis), K, D, W, T);
+  %% Close shallowest abstractions in new expressions in environment
+  %% if needed. Wherevar is the only expression changing the
+  %% environment, therefore the only one needing to do this.
+  XiClEis = tclosure:close_shallowest_abs_in_wherevar_expressions(XiEis, I, E),
+  eval(E0, I, tset:perturb(E, XiClEis), K, D, W, T);
 
 %%-------------------------------------------------------------------------------------
 %% Wheredim
@@ -208,13 +223,7 @@ eval({ext_expr, _E0, {DimTypesIn, _TypeOut}, 1=_Gr}=Expr,
   end;
 
 %%-------------------------------------------------------------------------------------
-%% Dimension Identifiers (public)
-%%-------------------------------------------------------------------------------------
-eval({dim,Xi}=Di, _I, _E, _K, _D, _W, T) when is_list(Xi) orelse is_atom(Xi) ->
-  {Di, T};
-
-%%-------------------------------------------------------------------------------------
-%% Dimension Identifiers (hidden) replacing local dimensions in wheredim clauses
+%% Dimension Identifiers replacing local dimensions in wheredim clauses
 %%-------------------------------------------------------------------------------------
 eval({dim,{_Pos,_Idx},Xi}=Di, _I, _E, _K, _D, _W, T) when is_list(Xi) orelse is_atom(Xi) ->
   {Di, T};
@@ -237,8 +246,13 @@ eval(Xi, I, E, K, D, W, T) when is_list(Xi) orelse is_atom(Xi) ->
 eval1(Xi, I, E, K, D, W, T) ->
   {D0, T0} = eval2(Xi, I, E, K, D, W, T),
   case tset:is_k(D0) andalso tset:subset(D0, tset:domain(K)) of
-    true -> 
-      eval1(Xi, I, E, K, tset:union(D, D0), W, T);
+    true ->
+      case tset:difference(D0, D) of
+        [] ->
+          {error, loop_detected, {already_known_dimensions, D0}};
+        _ ->
+          eval1(Xi, I, E, K, tset:union(D, D0), W, T)
+      end;
     false ->
       {D0, T0}
   end.
@@ -292,8 +306,12 @@ even_elements([X|L], N, Acc) when N rem 2 =/= 0 ->
 even_elements([_|L], N, Acc) ->
   even_elements(L, N+1, Acc).
 
-
-eval_abs(Is, Abs, I, E, K, D, W, T) ->
+%%------------------------------------------------------------------------------
+%% @doc Freeze closure.
+%% @private
+%%------------------------------------------------------------------------------
+freeze_closure({closure, _ClI, _ClE, Abs}=Cl, I, E, K, D, W, T) ->
+  Is = frozen_expressions(Abs),
   {Dis, MaxT} = tpar:eval(Is, I, E, K, D, W, T),
   case tset:union_d(Dis) of
     {true, Dims} ->
@@ -303,15 +321,19 @@ eval_abs(Is, Abs, I, E, K, D, W, T) ->
         [] ->
           KD = tset:restrict_domain(K, D),
           FrozenK = tset:restrict_domain(KD, Dis1),
-          {freeze_abs(I, E, FrozenK, Abs), MaxT};
+          {freeze_closure_in_k(Cl, FrozenK), MaxT};
         Dims2 -> %% Missing frozen dims
           {Dims2, MaxT}
       end
   end.
 
-freeze_abs(I, E, FrozenK, {i_abs, _Is, E0}) ->
-  {frozen_i_abs, I, E, FrozenK, E0};
-freeze_abs(I, E, FrozenK, {b_abs, _Is, Params, E0}) ->
-  {frozen_b_abs, I, E, FrozenK, Params, E0};
-freeze_abs(I, E, FrozenK, {v_abs, _Is, Params, E0}) ->
-  {frozen_v_abs, I, E, FrozenK, Params, E0}.
+frozen_expressions({b_abs, Is, _Params, _E0}) -> Is;
+frozen_expressions({v_abs, Is, _Params, _E0}) -> Is;
+frozen_expressions({i_abs, Is,          _E0}) -> Is.
+
+freeze_closure_in_k({closure, ClI, ClE, {b_abs, _Is, Params, E0}}, FrozenK) ->
+  {frozen_closed_b_abs, ClI, ClE, FrozenK, Params, E0};
+freeze_closure_in_k({closure, ClI, ClE, {v_abs, _Is, Params, E0}}, FrozenK) ->
+  {frozen_closed_v_abs, ClI, ClE, FrozenK, Params, E0};
+freeze_closure_in_k({closure, ClI, ClE, {i_abs, _Is,         E0}}, FrozenK) ->
+  {frozen_closed_i_abs, ClI, ClE, FrozenK,         E0}.

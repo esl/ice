@@ -44,19 +44,24 @@ rework_tree (Tree) ->
   V = fun
         ({expr, _, E}) -> E;
 
+        ({intension_creation, _, FrozenDims, Body}) ->
+          {i_abs, FrozenDims, Body};
+        ({intension_evaluation, _, IAbsExpr}) ->
+          {i_apply, IAbsExpr};
+
         ({call, _, FunExpr, Params}) -> {fn_call, FunExpr, Params};
 
         ({where, _, Exp, DimDecls, VarDecls}) ->
           TopExpr = Exp,
           Dims = [{dim,Dim,N} || {dim_decl,_,Dim,N} <- DimDecls],
+          Funs = [{var,Name,{fn,Params,Body}}
+                  || {fun_decl,_,Name,Params,Body} <- VarDecls],
           Vars = [{var,Var,E} || {var_decl,_,Var,E} <- VarDecls],
-          Funs =
-            [{fn,Fn,Params,Body} || {fun_decl,_,Fn,Params,Body} <- VarDecls],
           Exts =  %% Extensional variables
             [{var,Var,
               {ext_expr,Body,rework_ext_inout_spec(DimTypesIn,TypeOut),Gr}}
              || {ext_decl,_,Var,DimTypesIn,TypeOut,Body,Gr} <- VarDecls],
-          {where, TopExpr, Vars ++ Dims ++ Funs ++ Exts};
+          {where, TopExpr, Dims ++ Vars ++ Funs ++ Exts};
 
         ({base_param,  _, P}) -> {b_param, P};
         ({named_param, _, P}) -> {n_param, P};
@@ -64,16 +69,10 @@ rework_tree (Tree) ->
 
         ({'if', _, Ifs, Else}) -> unwrap_elsifs(Ifs, Else);
 
-        ({'#.', _, Val}) ->
-          %% On Section 6.4.4 “Querying the context” of the TL-doc-0.3.0
-          %%   it explicitly states that ‘#.’ takes a dimension as input.
-          {'#', {dim,Val}};
+        ({'#.', _, Val}) -> {'#', Val};
 
         ({tuple, _, Assocs}) -> {t, Assocs};
-        ({tuple_element, _, Lhs, Rhs}) ->
-          %% On Section 6.4.5 “Tuples” of the TL-doc-0.3.0, tuples are
-          %%   defined as a ‘set of (dimension, value) pairs’.
-          {{dim,Lhs}, Rhs};
+        ({tuple_element, _, Lhs, Rhs}) -> {Lhs, Rhs};
 
         ({'@', _, A, B}) -> {'@', A, B};
 
@@ -111,7 +110,7 @@ rework_tree (Tree) ->
 rework_ext_inout_spec(DimTypesIn, {cl_scalar,_,TypeOut}) ->
   {lists:map(
      fun({ext_ty,_,DimIn,{cl_scalar,_,TypeIn}}) ->
-         {{dim,DimIn},TypeIn}
+         {DimIn,TypeIn}
      end,
      DimTypesIn),
    TypeOut}.
