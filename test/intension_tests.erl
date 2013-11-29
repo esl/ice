@@ -34,6 +34,8 @@ i_abs_body_does_not_need_parentheses_test_() ->
       s("↓(↑{}  #.t ) where dim t <- 0;; end;;"))
   ].
 
+i_can_be_written_wo_unicode_chars_test_() ->
+  ?_assertEqual(s("↓ (↑ {} 46)"), s("i!(i^{} 46)")).
 
 intension_wo_frozen_dims() ->
   ?assertMatch({46,_}, eval("↓(↑{} 46)")).
