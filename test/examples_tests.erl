@@ -54,6 +54,83 @@ laplatian_relaxation_test_() ->
     ?_assertMatch({1.25,_}, eval(lists:flatten(io_lib:format(SFormat, ["2","4","4"]))))
    ]}.
 
+max_examples_test_() ->
+  {foreach, fun setup/0, fun cleanup/1,
+   [
+    ?_assertMatch(
+       {2,_},
+       eval(
+         "Max @ [x <- 1, y <- 2]
+         where
+           var Max = if #.x > #.y then #.x else #.y fi
+           dim x <- 0
+           dim y <- 0
+         end")),
+    %%
+    ?_assertMatch(
+       {2,_},
+       eval(
+         "(MaxF!x!y) @ [x <- 1, y <- 2]
+         where
+           fun MaxF!px!py =
+             Max
+             where
+               var Max = if #.px > #.py then #.px else #.py fi
+             end
+           dim x <- 0
+           dim y <- 0
+         end")),
+    ?_assertMatch(
+       {2,_},
+       eval(
+         "CurriedMaxF!y @ [x <- 1, y <- 2]
+         where
+           var CurriedMaxF =
+             // The returned abstraction is closed over the first formal
+             // parameter i.e. dim id x, but the ordinate of dim x is not saved
+             (MaxF!x) @ [x <- 100]
+           fun MaxF!px!py =
+             Max
+             where
+               var Max = if #.px > #.py then #.px else #.py fi
+             end
+           dim x <- 0
+           dim y <- 0
+         end")),
+    ?_assertMatch(
+       {2,_},
+       eval(
+         "FakeCurriedMaxF!0 @ [x <- 1, y <- 2]
+         where
+           var FakeCurriedMaxF =
+             // The returned abstraction is closed over the formal parameters
+             // i.e. dim id x and dim id y, but the ordinates are not saved.
+             (MaxF!x!y) @ [x <- 100, y <- 200]
+           fun MaxF!px!py!unusedparam =
+             Max
+             where
+               var Max = if #.px > #.py then #.px else #.py fi
+             end
+           dim x <- 0
+           dim y <- 0
+         end")),
+    %%
+    ?_assertMatch(
+       {2,_},
+       eval(
+         "(i! IMax @ [x <- 1, y <- 2]
+         where
+           var IMax = (i^ {dx, dy} Max) @ [dx <- x, dy <- y]
+           var Max = if #.(#.dx) > #.(#.dy) then #.(#.dx) else #.(#.dy) fi
+           dim dx <- 0
+           dim dy <- 0
+         end)
+         where
+           dim x <- 0
+           dim y <- 0
+         end"))
+   ]}.
+
 
 sequential_multi_dimensional() ->
   %% Sequential, multi-dimensional wheredim clause
