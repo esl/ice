@@ -54,6 +54,90 @@ laplatian_relaxation_test_() ->
     ?_assertMatch({1.25,_}, eval(lists:flatten(io_lib:format(SFormat, ["2","4","4"]))))
    ]}.
 
+matrix_multiplication_test_() ->
+  %% Ref: Nov 2013 semantics paper.
+  SFormat =
+    "(multiply.r.c.p A B
+    where
+      var p = ~p
+      var A = ~s
+      var B = ~s
+      dim r <- ~p
+      dim c <- ~p
+    end
+    ) where
+
+      fun fby.d X Y = if #.d == 0 then X else Y @ [d <- #.d - 1] fi
+
+      // Change variance in dimension d_1 of X to dimension d_2.
+      fun rotate.d_1.d_2 X = X @ [d_1 <- #.d_2]
+
+      // Add up the first n elements in direction d_x of the encapsulated
+      // intension X. The local variable Y holds the running sums of the
+      // elements of X.
+      fun sum.d_x.n X = Y @ [d_x <- n]
+      where
+        var Y = fby.d_x 0 (X + Y)
+      end
+
+      fun multiply.d_r.d_c.k X Y = W
+      where
+        dim d <- 0
+        var Xd = rotate.d_c.d X
+        var Yd = rotate.d_r.d Y
+        var Z = Xd * Yd
+        var W = sum.d.k Z
+      end
+
+    end",
+  F = fun(P, A, B, {R,C}) ->
+          lists:flatten(io_lib:format(SFormat, [P, A, B, R, C]))
+      end,
+  [
+   %% A[](1x1) * B[](1x1) = [](1x1)
+   {setup, fun setup/0, fun cleanup/1,
+    ?_assertMatch({46,_}, eval(F(1, "2", "23", {1,1})))}, %% 2 * 23
+   %%
+   %% A[](mxp) * B[](pxn) = [](mxn)
+   {foreach, fun setup/0, fun cleanup/1,
+    %% A[](2x3)       * B[](3x2)           = [](2x2)
+    %% [1 2 3; 4 5 6] * [7 8; 9 10; 11 12] = [58 64; 139 154]
+    %% Ref: http://www.mathsisfun.com/algebra/matrix-multiplying.html
+    [?_assertMatch(
+        {Res,_},
+        eval(
+          F(3,
+            %% A = [1 2 3; 4 5 6]
+            "if #.r == 0 then
+              if #.c == 0 then 1 elsif
+                 #.c == 1 then 2 elsif
+                 #.c == 2 then 3 else 999 fi
+            elsif #.r == 1 then
+              if #.c == 0 then 4 elsif
+                 #.c == 1 then 5 elsif
+                 #.c == 2 then 6 else 999 fi
+            else
+              999
+            fi",
+            %% B = [7 8; 9 10; 11 12]
+            "if #.r == 0 then
+              if #.c == 0 then  7 elsif
+                 #.c == 1 then  8 else 999 fi
+            elsif #.r == 1 then
+              if #.c == 0 then  9 elsif
+                 #.c == 1 then 10 else 999 fi
+            elsif #.r == 2 then
+              if #.c == 0 then 11 elsif
+                 #.c == 1 then 12 else 999 fi
+            else
+              999
+            fi",
+            {R,C}))) || {R,C,Res} <- [ %% [58 64; 139 154]
+                                       {0,0, 58}, {0,1, 64},
+                                       {1,0,139}, {1,1,154}
+                                     ]]}
+  ].
+
 max_examples_test_() ->
   {foreach, fun setup/0, fun cleanup/1,
    [
