@@ -54,6 +54,28 @@ laplatian_relaxation_test_() ->
     ?_assertMatch({1.25,_}, eval(lists:flatten(io_lib:format(SFormat, ["2","4","4"]))))
    ]}.
 
+fibonacci_test_() ->
+  SFormat =
+    "(fib @ [t <- ~s]
+    where
+      var fib = fby.t 0 (fby.t 1 (fib + fib @ [t <- #.t + 1]))
+      dim t <- 0
+    end
+    ) where
+      fun fby.d X Y = if #.d == 0 then X else Y @ [d <- #.d - 1] fi
+    end",
+  {foreach, fun setup/0, fun cleanup/1,
+   [
+    ?_assertMatch({ 0,_}, eval(lists:flatten(io_lib:format(SFormat, ["0"])))),
+    ?_assertMatch({ 1,_}, eval(lists:flatten(io_lib:format(SFormat, ["1"])))),
+    ?_assertMatch({ 1,_}, eval(lists:flatten(io_lib:format(SFormat, ["2"])))),
+    ?_assertMatch({ 2,_}, eval(lists:flatten(io_lib:format(SFormat, ["3"])))),
+    ?_assertMatch({ 3,_}, eval(lists:flatten(io_lib:format(SFormat, ["4"])))),
+    ?_assertMatch({ 5,_}, eval(lists:flatten(io_lib:format(SFormat, ["5"])))),
+    ?_assertMatch({13,_}, eval(lists:flatten(io_lib:format(SFormat, ["7"])))),
+    ?_assertMatch({55,_}, eval(lists:flatten(io_lib:format(SFormat, ["10"]))))
+   ]}.
+
 matrix_multiplication_test_() ->
   %% Ref: Nov 2013 semantics paper.
   SFormat =
