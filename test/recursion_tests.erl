@@ -84,7 +84,7 @@ fun_recursing_on_dim3() ->
   ?assertMatch({6,_}, eval(S)).
 
 fun_recursing_on_dim4() ->
-  S = "fact.0
+  S = "fact.3
       where
         fun fact.n = F
         where
@@ -97,7 +97,7 @@ fun_recursing_on_dim4() ->
           fun index!d = #.d + 1
         end
       end",
-  ?assertMatch({1,_}, eval(S)). %% XXX Computation should be fact.3, not fact.0. TODO Fix semantics
+  ?assertMatch({6,_}, eval(S)).
 
 base_funs_mutually_recursing_on_params() ->
   S = "is_even.46
