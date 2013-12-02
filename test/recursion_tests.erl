@@ -23,10 +23,9 @@ recursion_test_() ->
 
 
 var_recursing_on_dim() ->
-  S = "X
+  S = "fact @ [t <- 3]
       where
         dim t <- 0
-        var X = fact @ [t <- 3]
         var fact = if #.t == 0 then 1 else #.t * fact @ [t <- #.t - 1] fi
       end",
   ?assertMatch({6,_}, eval(S)).
