@@ -106,11 +106,9 @@ eval({Q, E0}, I, E, K, D, W, T) when Q == '#' orelse Q == '?' ->
 %% Base Abstraction
 %%------------------------------------------------------------------------------
 eval({b_abs, _Is, _Params, _E0}=Abs, I, E, K, D, W, T) ->
-  tv:hook(?MODULE, self(), eval, Abs),
   freeze_closure(tclosure:close_abs(Abs, I, E), I, E, K, D, W, T);
 
 eval({b_apply, E0, Eis}, I, E, K, D, W, T) ->
-  tv:hook(?MODULE, self(), eval, {b_apply, E0, Eis}),
   {D0is, MaxT} = tpar:eval([E0 | Eis], I, E, K, D, W, T),
   case tset:union_d(D0is) of
     {true, Dims} ->
@@ -129,11 +127,9 @@ eval({b_apply, E0, Eis}, I, E, K, D, W, T) ->
 %% Value Abstraction
 %%------------------------------------------------------------------------------
 eval({v_abs, _Is, _Params, _E0}=Abs, I, E, K, D, W, T) ->
-  tv:hook(?MODULE, self(), eval, Abs),
   freeze_closure(tclosure:close_abs(Abs, I, E), I, E, K, D, W, T);
 
 eval({v_apply, E0, Eis}, I, E, K, D, W, T) ->
-  tv:hook(?MODULE, self(), eval, {v_apply, E0, Eis}),
   {D0is, MaxT} = tpar:eval([E0 | Eis], I, E, K, D, W, T),
   case tset:union_d(D0is) of
     {true, Dims} ->
@@ -152,11 +148,9 @@ eval({v_apply, E0, Eis}, I, E, K, D, W, T) ->
 %% Intension Abstraction
 %%------------------------------------------------------------------------------
 eval({i_abs, _Is, _E0}=Abs, I, E, K, D, W, T) ->
-  tv:hook(?MODULE, self(), eval, Abs),
   freeze_closure(tclosure:close_abs(Abs, I, E), I, E, K, D, W, T);
 
 eval({i_apply, E0}, I, E, K, D, W, T) ->
-  tv:hook(?MODULE, self(), eval, {i_apply, E0}),
   {D0, T0} = eval(E0, I, E, K, D, W, T),
   case tset:is_k(D0) of
     true ->
