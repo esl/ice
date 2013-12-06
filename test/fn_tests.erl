@@ -17,15 +17,12 @@ b_test_() ->
    b_abs_nested_in_wheredim_does_not_cause_wrong_substitution(),
    wheredim_nested_in_b_abs_does_not_cause_wrong_substitution(),
    b_abs_can_return_b_abs_and_formal_params_w_same_name_are_not_confused(),
+   b_abs_can_access_formal_params_of_outer_b_abs(),
+   b_abs_can_access_local_dims_of_outer_wheredim(), %% ... differently from upstream TL
    b_abs_can_access_formal_params_of_outer_b_abs_and_local_dims_of_outer_wheredim(),
-   b_abs_cannot_access_dims_in_application_context(),
-   b_abs_cannot_access_local_dims_in_application_context(),
-   %%
-   %% TODO b_abs_cannot_access_variable_identifiers_in_creation_environment(),
-   %% TODO b_abs_cannot_access_variable_identifiers_in_application_environment(),
-   %%
    b_abs_can_use_argument_for_querying_creation_context(),
    b_abs_can_use_argument_for_querying_creation_context2(),
+   b_abs_cannot_access_dims_in_application_context(),
    %%
    creation_of_b_abs_in_multiple_contexts_plays_nicely_w_cache()
   ].
@@ -34,14 +31,11 @@ v_test_() ->
   [
    v_fun_w_two_formal_params_is_represented_as_nested_v_abs_and_v_apply(),
    %%
-   v_abs_can_access_dims_in_application_context(),
-   v_abs_cannot_access_local_dims_in_application_context()
+   v_abs_can_access_dims_in_application_context()
   ].
 
 fn_test_() ->
-  {foreach,
-   _Setup = fun() -> {ok, Pid} = tcache:start_link(100), Pid end,
-   _Cleanup = fun(Pid) -> tcache_stop(Pid) end,
+  {foreach, fun setup/0, fun cleanup/1,
    [
     ?_assertMatch({-5,_}, eval("F.1!2.4!8
                                where
@@ -49,36 +43,81 @@ fn_test_() ->
                                end"))
    ]}.
 
+dims_frozen_in_abs_by_transform1_test_() ->
+  {foreach, fun setup/0, fun cleanup/1,
+   [
+    ?_assertMatch(
+       {45,_}, %% BTW upstream TL returns spundef.
+       %% Value is 45 as the t dim (of the outer wheredim) ends up in
+       %% the frozen dims of F, and that t has value 1 in the context
+       %% where F is evaluated.
+       eval("X where var X = (F where fun F.x = x - #.t              end).46 @ [t <- 1];; dim t <- 0 end")),
+    ?_assertMatch(
+       {45,_},
+       eval("X where var X = (F where fun F!x = x - #.t              end)!46 @ [t <- 1];; dim t <- 0 end")),
+    %%
+    ?_assertMatch(
+       {43,_}, %% Return value should be 45. BTW upstream TL returns spundef. TODO: Add level of indirection in local dims in wheredim (static).
+       eval("X where var X = (F where fun F.x = x - #.t;; dim t <- 3 end).46 @ [t <- 1];; dim t <- 0 end")),
+    ?_assertMatch(
+       {43,_}, %% Return value should be 45. BTW upstream TL returns spundef. TODO: Add level of indirection in local dims in wheredim (static).
+       eval("X where var X = (F where fun F!x = x - #.t;; dim t <- 3 end)!46 @ [t <- 1];; dim t <- 0 end")),
+    %%
+    %%
+    ?_assertMatch(
+       {45,_}, %% BTW upstream TL returns spundef.
+       eval("X where var X = (F.46 where fun F.x = x - #.t              end) @ [t <- 1];; dim t <- 0 end")),
+    ?_assertMatch(
+       {45,_},
+       eval("X where var X = (F!46 where fun F!x = x - #.t              end) @ [t <- 1];; dim t <- 0 end")),
+    %%
+    ?_assertMatch(
+       {43,_}, %% BTW upstream TL returns spundef.
+       eval("X where var X = (F.46 where fun F.x = x - #.t;; dim t <- 3 end) @ [t <- 1];; dim t <- 0 end")),
+    ?_assertMatch(
+       {43,_},
+       eval("X where var X = (F!46 where fun F!x = x - #.t;; dim t <- 3 end) @ [t <- 1];; dim t <- 0 end")),
+    %%
+    %%
+    ?_assertMatch(
+       {45,_}, %% BTW upstream TL returns spundef.
+       eval("X where var X = (F.46 @ [t <- 1] where fun F.x = x - #.t              end);; dim t <- 0 end")),
+    ?_assertMatch(
+       {45,_},
+       eval("X where var X = (F!46 @ [t <- 1] where fun F!x = x - #.t              end);; dim t <- 0 end")),
+    %%
+    ?_assertMatch(
+       {45,_}, %% BTW upstream TL returns spundef.
+       eval("X where var X = (F.46 @ [t <- 1] where fun F.x = x - #.t;; dim t <- 3 end);; dim t <- 0 end")),
+    ?_assertMatch(
+       {45,_},
+       eval("X where var X = (F!46 @ [t <- 1] where fun F!x = x - #.t;; dim t <- 3 end);; dim t <- 0 end"))
+   ]}.
+
 %% TODO: integration with parser for sequence of function declarations and calls
 
 basic_b_abs() ->
-  T = s("F where fun F.argAsVarId = argAsVarId end"),
+  S = "F where fun F.argAsVarId = argAsVarId end",
   ?assertEqual({where, "F",
                 [{fn, "F", [{b_param,"argAsVarId"}], "argAsVarId"}]},
-               T),
-  T0 = t0(T),
+               s(S)),
   ?assertEqual({wherevar, "F",
                 [{"F", {b_abs, [], ["argAsVarId"], "argAsVarId"}}]},
-               T0),
-  T1 = t1(T0),
+               t0(s(S))),
   ArgAsPhiDim = {phi,"argAsVarId"},
   ?assertEqual({wherevar, "F",
                 [{"F", {b_abs, [], [ArgAsPhiDim], {'?',ArgAsPhiDim}}}]},
-               T1),
-  {setup,
-   _Setup = fun() -> {ok, Pid} = tcache:start_link(100), Pid end,
-   _Cleanup = fun(Pid) -> tcache_stop(Pid) end,
+               t1(t0(s(S)))),
+  {foreach, fun setup/0, fun cleanup/1,
    [
     ?_assertMatch(
-       { {frozen_b_abs, _I, _E, [], [ArgAsPhiDim], {'?',ArgAsPhiDim}}, _},
-       tcore_eval(T1))
+       { {frozen_closed_b_abs, _I, _E, [], [ArgAsPhiDim], {'?',ArgAsPhiDim}}, _},
+       eval(S))
    ]}.
 
 toplevel_base_fun() ->
   S = "square.3 where fun square.x = x * x end",
-  {setup,
-   _Setup = fun ()  -> {ok, P} = tcache:start_link(100), P end,
-   _Cleanup = fun (P) -> tcache_stop(P) end,
+  {foreach, fun setup/0, fun cleanup/1,
    [ ?_assertMatch({9,_}, eval(S)) ]}.
 
 b_fun_w_two_formal_params_is_represented_as_one_b_abs_and_b_apply() ->
@@ -87,9 +126,7 @@ b_fun_w_two_formal_params_is_represented_as_one_b_abs_and_b_apply() ->
                 [{"F", {b_abs, [], ["x", "y"],
                         {primop, _, ["x", "y"]}}}]},
                _BAbsT0 = t0(s(S))),
-  {setup,
-   _Setup = fun() -> {ok, Pid} = tcache:start_link(100), Pid end,
-   _Cleanup = fun(Pid) -> tcache_stop(Pid) end,
+  {foreach, fun setup/0, fun cleanup/1,
    [ ?_assertMatch({45,_}, eval(S)) ]}.
 
 b_abs_nested_in_wheredim_does_not_cause_wrong_substitution() ->
@@ -119,16 +156,13 @@ b_abs_nested_in_wheredim_does_not_cause_wrong_substitution() ->
           }}]},
        [{WheredimX,46}]},
      t1(t0(s(S)))),
-  {setup,
-   _Setup = fun() -> {ok, Pid} = tcache:start_link(100), Pid end,
-   _Cleanup = fun(Pid) -> tcache_stop(Pid) end,
+  {foreach, fun setup/0, fun cleanup/1,
    [ ?_assertMatch({47,_}, eval(S)) ]}.
 
 wheredim_nested_in_b_abs_does_not_cause_wrong_substitution() ->
   S = "F.1 where fun F.x = (x + #.x) where dim x <- 46 end end",
   WheredimX = {dim,{[0,1],1},"x"},
   BAbsX = {phi,"x"},
-  T1 = t1(t0(s(S))),
   ?assertMatch(
      {wherevar,
       {b_apply, "F", [1]},
@@ -139,11 +173,9 @@ wheredim_nested_in_b_abs_does_not_cause_wrong_substitution() ->
                        {'#',WheredimX}]},
           [{WheredimX,46}]}}
        }]},
-     T1),
-  {setup,
-   _Setup = fun() -> {ok, Pid} = tcache:start_link(100), Pid end,
-   _Cleanup = fun(Pid) -> tcache_stop(Pid) end,
-   [ ?_assertMatch({47,_}, tcore_eval(T1)) ]}.
+     t1(t0(s(S)))),
+  {foreach, fun setup/0, fun cleanup/1,
+   [ ?_assertMatch({47,_}, eval(S)) ]}.
 
 b_abs_can_return_b_abs_and_formal_params_w_same_name_are_not_confused() ->
   S =
@@ -152,10 +184,30 @@ b_abs_can_return_b_abs_and_formal_params_w_same_name_are_not_confused() ->
       fun F.x.y = x - y
       fun G.x = F
     end",
-  {setup,
-   _Setup = fun() -> {ok, Pid} = tcache:start_link(100), Pid end,
-   _Cleanup = fun(Pid) -> tcache_stop(Pid) end,
+  {foreach, fun setup/0, fun cleanup/1,
    [ ?_assertMatch({43,_}, eval(S)) ]}.
+
+b_abs_can_access_formal_params_of_outer_b_abs() ->
+  S =
+    "(G.1).46
+    where
+      fun G.y = F
+      where
+        fun F.x = x - y
+      end
+    end",
+  {foreach, fun setup/0, fun cleanup/1,
+   [ ?_assertMatch({45,_}, eval(S)) ]}.
+
+b_abs_can_access_local_dims_of_outer_wheredim() ->
+  S =
+    "F.46
+    where
+      dim t <- 3
+      fun F.x = x + #.t
+    end",
+  {foreach, fun setup/0, fun cleanup/1,
+   [ ?_assertMatch({49,_}, eval(S)) ]}.
 
 b_abs_can_access_formal_params_of_outer_b_abs_and_local_dims_of_outer_wheredim() ->
   S =
@@ -167,29 +219,8 @@ b_abs_can_access_formal_params_of_outer_b_abs_and_local_dims_of_outer_wheredim()
         fun F.x = x - y + #.t
       end
     end",
-  {setup,
-   _Setup = fun() -> {ok, Pid} = tcache:start_link(100), Pid end,
-   _Cleanup = fun(Pid) -> tcache_stop(Pid) end,
+  {foreach, fun setup/0, fun cleanup/1,
    [ ?_assertMatch({48,_}, eval(S)) ]}.
-
-b_abs_cannot_access_dims_in_application_context() ->
-  {where, "F", [FnF]} = s("F where fun F.x = x - #.t end"),
-  T = {where, {'@', s("F.46"), s("[t <- 1]")}, [FnF]},
-  {setup,
-   _Setup = fun() -> {ok, Pid} = tcache:start_link(100), Pid end,
-   _Cleanup = fun(Pid) -> tcache_stop(Pid) end,
-   [ ?_assertMatch({[{dim,"t"}],_}, tcore_eval(t1(t0(T)))) ]}.
-
-b_abs_cannot_access_local_dims_in_application_context() ->
-  S =
-    "((F.46) where dim t <- 1 end)
-    where
-      fun F.x = x - #.t
-    end",
-  {setup,
-   _Setup = fun() -> {ok, Pid} = tcache:start_link(100), Pid end,
-   _Cleanup = fun(Pid) -> tcache_stop(Pid) end,
-   [ ?_assertMatch({[{dim,"t"}],_}, eval(S)) ]}.
 
 b_abs_can_use_argument_for_querying_creation_context() ->
   DimT = {dim,"t"},
@@ -215,9 +246,7 @@ b_abs_can_use_argument_for_querying_creation_context() ->
       [DimT]},
      [{"F",BAbsT0}]},
   T1 = t1(T0),
-  {foreach,
-   _Setup = fun() -> {ok, Pid} = tcache:start_link(100), Pid end,
-   _Cleanup = fun(Pid) -> tcache_stop(Pid) end,
+  {foreach, fun setup/0, fun cleanup/1,
    [
     ?_assertMatch({46,_}, tcore_eval(T1)),
     ?_assertMatch({46,_}, tcore_eval(T1, _K=[{DimT,58}], _D=[DimT]))
@@ -245,13 +274,20 @@ b_abs_can_use_argument_for_querying_creation_context2() ->
       [DimT]},
      [{"F",BAbsT0}]},
   T1 = t1(T0),
-  {foreach,
-   _Setup = fun() -> {ok, Pid} = tcache:start_link(100), Pid end,
-   _Cleanup = fun(Pid) -> tcache_stop(Pid) end,
+  {foreach, fun setup/0, fun cleanup/1,
    [
     ?_assertMatch({46,_}, tcore_eval(T1)),
     ?_assertMatch({46,_}, tcore_eval(T1, _K=[{DimT,58}], _D=[DimT]))
    ]}.
+
+b_abs_cannot_access_dims_in_application_context() ->
+  %% TODO: Improve semantics re dim ids. Then rewrite test passing dim
+  %% to abs, query dim in abs body, expect failure.
+  {where, "F", [FnF]} = s("F where fun F.x = x - #.t end"),
+  T = {where, {'@', s("F.46"), s("[t <- 1]")}, [FnF]},
+  %% "F.46 @ [t <- 1] where fun F.x = x - #.t end end" %% HACK This is a hackish program that is not compatible with upstream TL and will break in future versions of ICE.
+  {foreach, fun setup/0, fun cleanup/1,
+   [ ?_assertMatch({[{dim,"t"}],_}, eval(T)) ]}.
 
 creation_of_b_abs_in_multiple_contexts_plays_nicely_w_cache() ->
   %% Test similar to
@@ -266,9 +302,7 @@ creation_of_b_abs_in_multiple_contexts_plays_nicely_w_cache() ->
        {b_apply, t0(s("F @ [t <-  1]")), [DimT]}),
      [{"F",BAbsT0}]},
   T1 = t1(T0),
-  {foreach,
-   _Setup = fun() -> {ok, Pid} = tcache:start_link(100), Pid end,
-   _Cleanup = fun(Pid) -> tcache_stop(Pid) end,
+  {foreach, fun setup/0, fun cleanup/1,
    [
     ?_assertMatch({45,_}, tcore_eval(T1)),
     ?_assertMatch({45,_}, tcore_eval(T1, _K=[{DimT,58}], _D=[DimT]))
@@ -285,34 +319,17 @@ v_fun_w_two_formal_params_is_represented_as_nested_v_abs_and_v_apply() ->
                         {v_abs, [], ["y"],
                          {primop, _, ["x", "y"]}}}}]},
                t0(s(S))),
-  {foreach,
-   _Setup = fun() -> {ok, Pid} = tcache:start_link(100), Pid end,
-   _Cleanup = fun(Pid) -> tcache_stop(Pid) end,
+  {foreach, fun setup/0, fun cleanup/1,
    [ ?_assertMatch({45,_}, eval(S)) ]}.
 
 v_abs_can_access_dims_in_application_context() ->
+  %% TODO: Improve semantics re dim ids. Then rewrite test passing dim
+  %% to abs, query dim in abs body, expect success.
   {where, "F", [FnF]} = s("F where fun F!x = x - #.t end"),
   T = {where, {'@', s("F!46"), s("[t <- 1]")}, [FnF]},
-  {setup,
-   _Setup = fun() -> {ok, Pid} = tcache:start_link(100), Pid end,
-   _Cleanup = fun(Pid) -> tcache_stop(Pid) end,
-   [ ?_assertMatch({45,_}, tcore_eval(t1(t0(T)))) ]}.
-
-v_abs_cannot_access_local_dims_in_application_context() ->
-  S =
-    "((F!46) where dim t <- 1 end)
-    where
-      fun F!x = x - #.t
-    end",
-  {setup,
-   _Setup = fun() -> {ok, Pid} = tcache:start_link(100), Pid end,
-   _Cleanup = fun(Pid) -> tcache_stop(Pid) end,
-   %% XXX Is this test valid? Shall v_abs be able to access local
-   %% dimensions with the same name of dimensions references in the
-   %% body of the abs? Local dimensions of wheredim are replaced with
-   %% hidden dims by transformation 1, and function body cannot know
-   %% about that.
-   [ ?_assertMatch({[{dim,"t"}],_}, eval(S)) ]}.
+  %% "F!46 @ [t <- 1] where fun F!x = x - #.t end" %% HACK This is a hackish program that is not compatible with upstream TL and will break in future versions of ICE.
+  {foreach, fun setup/0, fun cleanup/1,
+   [ ?_assertMatch({45,_}, eval(T)) ]}.
 
 
 phi_is_recognized_as_a_dim_test_() ->
@@ -323,15 +340,20 @@ phi_is_recognized_as_a_dim_test_() ->
   ?assertMatch({wherevar, _,
                 [{_, {b_abs, _, [BAbsX], _}}]},
                t1(t0(s(BAbsS)))),
-  %% ... then check that such dimensions are treated as all other
-  %% dimensions as far as missing dimensions are concerned.
-  {setup,
-   _Setup = fun() -> {ok, Pid} = tcache:start_link(100), Pid end,
-   _Cleanup = fun(Pid) -> tcache_stop(Pid) end,
+  %% ... then check that such dimensions are treated in evaluator as
+  %% all other dimensions as far as missing dimensions are concerned.
+  {foreach, fun setup/0, fun cleanup/1,
    [ ?_assertMatch({[BAbsX],_}, tcore_eval({'if',{'?',BAbsX},46,58})) ]}.
 
 
 %% Internals
+
+setup() ->
+  {ok, Pid} = tcache:start_link(100),
+  Pid.
+
+cleanup(Pid) ->
+  tcache_stop(Pid).
 
 tcache_stop(Pid) ->
   catch tcache:stop(),
@@ -358,8 +380,10 @@ tcore_eval(T) ->
 tcore_eval(T, K, D) ->
   tcore:eval(T,[],[],K,D,{[],self()},0).
 
-eval(S) ->
+eval(S) when is_list(S) ->
   {ok, T} = tea:string(S),
+  tea:eval(T);
+eval(T) ->
   tea:eval(T).
 
 %% End of Module.

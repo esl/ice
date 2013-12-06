@@ -13,27 +13,14 @@ recursion_test_() ->
    _Cleanup = fun(Pid) -> tcache_stop(Pid) end,
    [
     ?_assertMatch({6,_}, eval(var_recursing_on_dim())),
-    ?_assertMatch(
-       {[{phi,"n"}],_}, %% XXX Result is wrong, it should be 6. TODO Fix semantics
-       eval(base_fun_recursing_on_param())),
+    ?_assertMatch({6,_}, eval(base_fun_recursing_on_param())),
+    ?_assertMatch({6,_}, eval(fun_recursing_on_dim1())),
+    ?_assertMatch({6,_}, eval(fun_recursing_on_dim2())),
+    ?_assertMatch({6,_}, eval(fun_recursing_on_dim3())),
     ?_assertMatch(
        {1,_}, %% XXX Computation should be fact.3, not fact.0. TODO Fix semantics
-       eval(fun_recursing_on_dim())),
-    ?_assertMatch(
-       {[{phi,"n"}],_}, %% XXX Result is wrong, it should be true. TODO Fix semantics
-       eval(base_funs_mutually_recursing_on_params()))
-   ]}.
-
-environment_closure_test_() ->
-  {foreach,
-   _Setup = fun() -> {ok, Pid} = tcache:start_link(100), Pid end,
-   _Cleanup = fun(Pid) -> tcache_stop(Pid) end,
-   [
-    ?_assertMatch(
-       {[{phi,"y"}],_}, %% XXX Result is wrong, it should be 46. TODO Fix semantics (specifically env closure, as {phi,"y"} ends up in frozen dims of F as defined in closure of G ATM)
-       eval("A where var A = G.46;; fun G.y = F.y;; fun F.x = x end"))
-    %% Vars with the same name in nested wherevar clauses are not
-    %% supported ATM - there will be namespaces for avoiding this.
+       eval(fun_recursing_on_dim4())),
+    ?_assertMatch({true,_}, eval(base_funs_mutually_recursing_on_params()))
    ]}.
 
 
@@ -57,7 +44,84 @@ base_fun_recursing_on_param() ->
   %%   fun fact.n = if n == 0 then 1 else n * fact.(n-1) fi
   %% end".
 
-fun_recursing_on_dim() ->
+fun_recursing_on_dim1() ->
+  {where, s("fact.3"),
+   [{fn, "fact", [{b_param,"n"}],
+     {where, "F",
+      [{dim, "d", "n"},
+       {var, "F",
+        {'if', s("#.d == 0"),
+         s("1"),
+         tprimop:times(
+           {'#',{dim,"d"}},
+           {'@', s("F"), s("[d <- #.d - 1]")} )}}]}}]}.
+  %% "fact.3
+  %% where
+  %%   fun fact.n = F
+  %%   where
+  %%     dim d <- n
+  %%     var F = if #.d == 0 then
+  %%               1
+  %%             else
+  %%               #.d * (F @ [d <- #.d - 1])
+  %%             fi
+  %%   end
+  %% end".
+
+fun_recursing_on_dim2() ->
+  {where, s("fact.3"),
+   [{fn, "fact", [{b_param,"n"}],
+     {where, "F",
+      [{dim, "d", "n"},
+       {var, "F",
+        {'if', s("#.d == 0"),
+         s("1"),
+         {'@', tprimop:times(
+                 tprimop:plus({'#',{dim,"d"}}, s("1")),
+                 s("F")),
+          s("[d <- #.d - 1]")}}}]}}]}.
+  %% "fact.3
+  %% where
+  %%   fun fact.n = F
+  %%   where
+  %%     dim d <- n
+  %%     var F = if #.d == 0 then
+  %%               1
+  %%             else
+  %%               ((#.d + 1) * F) @ [d <- #.d - 1]
+  %%             fi
+  %%   end
+  %% end".
+
+fun_recursing_on_dim3() ->
+  {where, s("fact.3"),
+   [{fn, "fact", [{b_param,"n"}],
+     {where, "F",
+      [{dim, "d", "n"},
+       {var, "F",
+        {'if', s("#.d == 0"),
+         s("1"),
+         {'@', tprimop:times(
+                 {fn_call, "index", [{v_param,{dim,"d"}}]},
+                 s("F")),
+          s("[d <- #.d - 1]")}}}]}},
+    {fn, "index", [{v_param,"d"}],
+     tprimop:plus({'#',s("d")}, s("1"))}]}.
+  %% "fact.3
+  %% where
+  %%   fun fact.n = F
+  %%   where
+  %%     dim d <- n
+  %%     var F = if #.d == 0 then
+  %%               1
+  %%             else
+  %%               (index!d * F) @ [d <- #.d - 1]
+  %%             fi
+  %%   end
+  %%   fun index!d = #.d + 1
+  %% end".
+
+fun_recursing_on_dim4() ->
   {where, s("fact.0"),
    [{fn, "fact", [{b_param,"n"}],
      {where, "F",
