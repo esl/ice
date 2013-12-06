@@ -4,17 +4,37 @@
 -export([lookup/2, insert/2]).
 -export([test/0]).
 
+-type x() :: term().
+-type dim() :: term().
+-type v() :: term().
+-type k() :: [{dim(), v()}].
+
+-type dims() :: [dim()].
+-type known_ords() :: [k()].
+
+-type node() :: {node,
+                 {x(), dims(),
+                  v() | {i, dims(), known_ords()}
+                 },
+                 dtree()}.
+-type dtree() :: [node()].
+
 %%------------------------------------------------------------------------------
 %% @doc Create a new dtree node (empty dtree nodes are not allowed).
 %%------------------------------------------------------------------------------
+-spec new() -> dtree().
 new() ->
   [].
 
 %%------------------------------------------------------------------------------
 %% @doc Lookup an {Xi,K} in the dtree
 %%------------------------------------------------------------------------------
+-spec lookup({x(), k()}, dtree()) -> v().
 lookup(XiK, DTree) ->
   lookup(XiK, [], [], DTree).
+
+-spec lookup({x(), k()}, XXX1 :: dims(), XXX2 :: dims(), Tree :: dtree()) ->
+                dims() | v().
 
 %%------------------------------------------------------------------------------
 %% When the context, delta and tree are empty, no result has been found.
@@ -79,8 +99,12 @@ lookup({Xi, K}, Di, Dims, [Node|Tree]) ->
 %%------------------------------------------------------------------------------
 %% @doc Insert / Update an {Xi, K, V} in the dtree
 %%------------------------------------------------------------------------------
+-spec insert({x(), k(), v()}, dtree()) -> dtree().
 insert(XiKV, Tree) ->
   insert(XiKV, [], Tree, []).
+
+-spec insert({x(), k(), v()}, XXX :: dims(), Tree :: dtree(),
+             Acc :: dtree()) -> dtree().
 
 %%------------------------------------------------------------------------------
 %% When the context, delta and tree are empty, insert new
@@ -155,8 +179,8 @@ insert({Xi, K0, V}, Di0, [Node|Tree], Acc) ->
 %% Tests
 %%------------------------------------------------------------------------------
 correct_tree() ->
-  [{node, {"A", [], {i,[{dim,t}],[[{{dim,t},0}],[{{dim,t},1}], [{{dim,t},2}]]}},
-    [{node, {"A", [{{dim,t},0}], {i,[s],[[{s,0}],[{s,1}]]}},
+  [{node, {"A", [], {i,[{dim,t}],[[{{dim,t},0}], [{{dim,t},1}], [{{dim,t},2}]]}},
+    [{node, {"A", [{{dim,t},0}], {i,[s],[[{s,0}]]}},
       [{node, {"A", [{s,0}], 1}, []}]},
      {node, {"A", [{{dim,t},1}], {i,[s],[[{s,0}],[{s,1}]]}},
       [{node, {"A", [{s,0}], 2}, []},
