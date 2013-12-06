@@ -2,6 +2,8 @@
 %% -*- coding: utf-8 -*-
 -module(intension_tests).
 
+%% Tests for intension abstractions / applications.
+
 -include_lib("eunit/include/eunit.hrl").
 
 
@@ -14,10 +16,9 @@ i_test_() ->
     ?_test(intension_w_one_frozen_dim()),
     ?_test(intension_w_one_frozen_dim_w_homonymous()),
     ?_test(intension_w_two_frozen_dims()),
+    %%
     ?_test(intention_abstraction_w_missing_frozen_dim()),
-    ?_test(intention_application_w_missing_frozen_dim()),
-    ?_test(temperatureAtInuvik()),
-    ?_test(temperatureAtInuvik_wo_string_comparison())
+    ?_test(intention_application_w_missing_frozen_dim())
    ]}.
 
 i_abs_body_does_not_need_parentheses_test_() ->
@@ -40,7 +41,7 @@ intension_wo_frozen_dims() ->
 intension_w_one_frozen_dim() ->
   S = "↓((↑{t} #.t) @ [t <- 46]) where dim t <- 0 end",
   %% Behaviour of upstream TL:
-  %% * "↓((↑{t} #.t) @ [t <- 46]) where dim t <- 0;; end;;" returns typeerror
+  %% * "↓((↑{t}  #.t ) @ [t <- 46]) where dim t <- 0;; end;;" returns typeerror
   %% * "↓((↑{t} (#.t)) @ [t <- 46]) where dim t <- 0;; end;;" returns 0
   %% Ignoring upstream TL as it looks broken
   ?assertMatch({46,_}, eval(S)).
@@ -48,7 +49,7 @@ intension_w_one_frozen_dim() ->
 intension_w_one_frozen_dim_w_homonymous() ->
   S = "↓(((↑{t} #.t) where dim t <- 46 end) where dim t <- 0 end)",
   %% Behaviour of upstream TL:
-  %% * "↓(((↑{t} #.t) where dim t <- 46;; end) where dim t <- 0;; end);;" returns typeerror
+  %% * "↓(((↑{t}  #.t ) where dim t <- 46;; end) where dim t <- 0;; end);;" returns typeerror
   %% * "↓(((↑{t} (#.t)) where dim t <- 46;; end) where dim t <- 0;; end);;" returns spdim
   %% Ignoring upstream TL as it looks broken
   ?assertMatch({46,_}, eval(S)).
@@ -56,20 +57,15 @@ intension_w_one_frozen_dim_w_homonymous() ->
 intension_w_two_frozen_dims() ->
   S = "↓((↑{t,s} #.t - #.s) @ [t <- 46, s <- 1]) where dim t <- 58;; dim s <- 0 end",
   %% Behaviour of upstream TL:
-  %% * "↓((↑{t,s} #.t - #.s) @ [t <- 46, s <- 1]) where dim t <- 58;; dim s <- 0;; end;;" returns typeerror
+  %% * "↓((↑{t,s}  #.t - #.s ) @ [t <- 46, s <- 1]) where dim t <- 58;; dim s <- 0;; end;;" returns typeerror
   %% * "↓((↑{t,s} (#.t - #.s)) @ [t <- 46, s <- 1]) where dim t <- 58;; dim s <- 0;; end;;" returns 58
   %% Ignoring upstream TL as it looks broken
   ?assertMatch({45,_}, eval(S)).
 
 intention_abstraction_w_missing_frozen_dim() ->
-  S = "↑{t} 46",
-  DimT = {dim,"t"},
-  %% Check representation of dim, in case modify the test
-  ?assertMatch({i_abs, [DimT], _}, s(S)),
-  K = [{DimT,0}],
-  D = [],
+  IAbsS = "↑{t} 46",
   %% Upstream TL returns 'intension"I don\'t know how to print this
-  %% type"'.
+  %% type"' when evaluating "↑{t} 46".
   %%
   %% Note on frozen dims in intension abstractions - It looks like
   %% that upstream TL, when evaluating an intension abstraction,
@@ -81,65 +77,32 @@ intention_abstraction_w_missing_frozen_dim() ->
   %% that if an intension abstraction is the expression of a variable,
   %% the frozen dims need to be checked at the time of evaluation of
   %% the abstraction in order to properly populate the cache and (2)
-  %% that the evaluation of variables start with no known dims, so the
+  %% that the evaluation of variables starts with no known dims, so the
   %% evaluation of the abstraction needs to complain about missing
   %% frozen dims in order to have them.  What applies to the frozen
   %% dims in intension abstractions applies also to the frozen dims in
   %% anonymous functions.
-  ?assertMatch({[DimT],_}, eval(S, K, D)).
-
-intention_application_w_missing_frozen_dim() ->
-  S = "↓(↑{t} 46)",
-  DimT = {dim,"t"},
-  %% Check representation of dim, in case modify the test
-  ?assertMatch({i_apply, {i_abs, [DimT], _}}, s(S)),
+  %%
+  %% Extract valid hidden dim id...
+  TmpS = "(" ++ IAbsS ++ ") where dim t <- 0 end",
+  {wheredim, IAbsT1, _Dims=[{DimT,0}]} = t1(t0(s(TmpS))),
+  %% ... for explicitly specifying context and known dims.
   K = [{DimT,0}],
   D = [],
-  %% Upstream TL returns 46. See "Note on frozen dims in intension
-  %% abstractions".
-  ?assertMatch({[DimT],_}, eval(S, K, D)).
+  ?assertMatch({[DimT],_}, tcore_eval(IAbsT1, K, D)).
 
-temperatureAtInuvik() ->
-  S = "(↓ tempInuvik) @ [location <- `Paris`]
-      where
-        dim location <- `Somewhere`
-        var temperature =
-          if #.location == `Inuvik` then
-            46
-          elsif #.location == `Paris` then
-            58
-          else
-            1
-          fi
-        var tempAtLocation = ↑{location} temperature
-        var tempInuvik = tempAtLocation @ [location <- `Inuvik`]
-      end",
-  %% Upstream TL returns spundef - ignoring it as in upstream TL
-  %% comparison between strings is broken
-  ?assertMatch({46,_}, eval(S)).
-
-temperatureAtInuvik_wo_string_comparison() ->
-  %% In upstream TL, comparison between strings is broken
-  S = "// Legenda:
-       // * Somewhere <-> 11
-       // * Inuvik    <-> 22
-       // * Paris     <-> 33
-      (↓ tempInuvik) @ [location <- 33]
-      where
-        dim location <- 11
-        var temperature =
-          if #.location == 22 then
-            46
-          elsif #.location == 33 then
-            58
-          else
-            1
-          fi
-        var tempAtLocation = ↑{location} temperature
-        var tempInuvik = tempAtLocation @ [location <- 22]
-      end",
-  %% Upstream TL returns 58 - ignoring it as it looks broken
-  ?assertMatch({46,_}, eval(S)).
+intention_application_w_missing_frozen_dim() ->
+  IApplyS = "↓(↑{t} 46)",
+  %% Upstream TL returns 46 when evaluating "↓(↑{t} 46)". See "Note on
+  %% frozen dims in intension abstractions".
+  %%
+  %% Extract valid hidden dim id...
+  TmpS = "(" ++ IApplyS ++ ") where dim t <- 0 end",
+  {wheredim, IApplyT1, _Dims=[{DimT,0}]} = t1(t0(s(TmpS))),
+  %% ... for explicitly specifying context and known dims.
+  K = [{DimT,0}],
+  D = [],
+  ?assertMatch({[DimT],_}, tcore_eval(IApplyT1, K, D)).
 
 
 %% Internals
@@ -175,11 +138,6 @@ tcore_eval(T, K, D) ->
 
 eval(S) when is_list(S) ->
   {ok, T} = tea:string(S),
-  tea:eval(T);
-eval(T) ->
   tea:eval(T).
-
-eval(S, K, D) when is_list(S) ->
-  tcore_eval(t1(t0(s(S))), K, D).
 
 %% End of Module.

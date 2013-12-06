@@ -3,8 +3,6 @@
 %%------------------------------------------------------------------------------
 -module(ttransform0).
 
--include_lib("eunit/include/eunit.hrl").
-
 -export([transform0/1]).
 -export([test/0]).
 
@@ -124,13 +122,7 @@ transform0({where, E0, VDisEis}) ->
   transform0_where(Vars, Dims, E0);
 
 %%-------------------------------------------------------------------------------------
-%% Dimension Identifiers
-%%-------------------------------------------------------------------------------------
-transform0({dim, Xi}=Di) when is_list(Xi) orelse is_atom(Xi) ->
-  Di;
-
-%%-------------------------------------------------------------------------------------
-%% Variable Identifiers
+%% Identifiers
 %%-------------------------------------------------------------------------------------
 transform0(Xi) when is_list(Xi) orelse is_atom(Xi) ->
   Xi.
@@ -241,20 +233,3 @@ d1_tournament() ->
 test() ->
   transform0(d1_tournament()),
   transform0(fby()).
-
-
-wherevar_only_test() ->
-  {ok, T} = tea:string("X where var X = 46 end"),
-  ExpectedT = {where, "X", [{var,"X",46}]},
-  ?assertEqual(ExpectedT, T),
-  T0 = transform0(T),
-  ExpectedT0 = {wherevar, "X", [{"X", 46}]},
-  ?assertEqual(ExpectedT0, T0).
-
-wheredim_only_test() ->
-  {ok, T} = tea:string("#.t where dim t <- 58 end"),
-  ExpectedT = {where, {'#', {dim,"t"}}, [{dim,"t",58}]},
-  ?assertEqual(ExpectedT, T),
-  T0 = transform0(T),
-  ExpectedT0 = {wheredim, {'#', {dim,"t"}}, [{"t", 58}]},
-  ?assertEqual(ExpectedT0, T0).
