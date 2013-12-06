@@ -30,6 +30,23 @@ where_test_() ->
     ?_testMockingTpar(dim_cannot_use_var_in_same_where())
    ]}.
 
+fn_declaration_test_() ->
+  {foreach, fun setup/0, fun cleanup/1,
+   [
+    ?_assertMatch({-5,_}, eval("F.1!2.4!8
+                               where
+                                 fun F.b1!v1.b2!v2 = b1 - v1 + b2 - v2
+                               end")),
+    ?_assertMatch({46,_}, eval("(F.1).46
+                               where
+                                 fun F.x =
+                                   G
+                                   where
+                                     fun G.y = y where var KeepMe = 0 end
+                                   end
+                               end"))
+   ]}.
+
 
 where_with_only_dims_is_represented_as_wheredim_only() ->
   S = "#.t where dim t <- 46 end",

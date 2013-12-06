@@ -51,11 +51,11 @@ rework_tree (Tree) ->
 
         ({where, _, Exp, DimDecls, VarDecls}) ->
           TopExpr = Exp,
-          Vars = [{var,Var,E} || {var_decl,_,Var,E} <- VarDecls],
           Dims = [{dim,Dim,N} || {dim_decl,_,Dim,N} <- DimDecls],
-          Funs = [{fn,Name,Params,Body}
+          Funs = [{var,Name,{fn,Params,Body}}
                   || {fun_decl,_,Name,Params,Body} <- VarDecls],
-          {where, TopExpr, Vars ++ Dims ++ Funs};
+          Vars = [{var,Var,E} || {var_decl,_,Var,E} <- VarDecls] ++ Funs,
+          {where, TopExpr, Dims ++ Vars};
 
         ({base_param,  _, P}) -> {b_param, P};
         ({named_param, _, P}) -> {n_param, P};
