@@ -66,7 +66,7 @@ try_to_find_wo_knowing_enough_needed_dims() ->
         // But it returns calc :( therefore A thinks there is a hang
         var B = #.t + #.d
       end",
-  ?assertMatch(hang, eval(S)). %% TODO This should not hang but return 0
+  ?assertMatch({0,_}, eval(S)).
 
 
 %% Internals
