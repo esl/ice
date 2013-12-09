@@ -128,6 +128,14 @@ t0({where, E0, VDisEis}, NPs0) ->
   %% We should probably signal an error when the body contains other elements..
   t0_where(Vars1, Dims, E0, NPs2);
 
+%%-------------------------------------------------------------------------------------
+%% Extensional expression
+%%-------------------------------------------------------------------------------------
+t0({ext_expr, _E0, _InOutSpec, _Gr}=Expr, _) ->
+  %% Extensional variable is not supposed to contain elements affected
+  %% by transformation.
+  Expr;
+
 %%------------------------------------------------------------------------------
 %% Identifiers
 %%------------------------------------------------------------------------------
