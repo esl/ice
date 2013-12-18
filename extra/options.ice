@@ -15,8 +15,8 @@ fun black_scholes_call.S.X.T.r.v = return where
             + ~0.356563782 * K_y
             +  1.781477937 * K_z
             + ~1.821255978 * K_w
-    var W = (dot + 1.330274429 * K_w * K_x) / sqrt.(2*π) * exp.(~0.5 * pow.L.2)
-    var π = 3.1415926535
+    var W = (dot + 1.330274429 * K_w * K_x) / sqrt.(2*Pi) * exp.(~0.5 * pow.L.2)
+    var Pi = 3.1415926535
     var cnd_ret = if X > 0
                   then 1 - W
                   else     W fi
