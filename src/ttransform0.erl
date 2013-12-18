@@ -25,11 +25,6 @@
 %% Where AST should look like this:
 %% {where, E0, [{dim, DName, DVal}, {var, VName, VVal}]}
 %%
-%% Unnamed function AST should look like this:
-%% {b_abs, [FrozenDimName], [BArg], E}
-%% {v_abs, [FrozenDimName], [VArg], E}
-%% {n_abs, [FrozenDimName], [NArg], E}
-%%
 %% Intension abstraction/application AST should look like this:
 %% {i_abs, [FrozenDimName], E}
 %% {i_apply, E}
