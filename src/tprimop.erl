@@ -12,6 +12,11 @@
 -export([ilogn/1]).
 
 -export([floor/1, ceil/1]).
+-export([  'sin'/1,   'cos'/1,   'tan'/1
+        , 'asin'/1,  'acos'/1,  'atan'/1, 'atan2'/2
+        ,  'sinh'/1,  'cosh'/1,  'tanh'/1
+        , 'asinh'/1, 'acosh'/1, 'atanh'/1
+        , 'exp'/1, 'log'/1, 'log10'/1, 'pow'/1, 'sqrt'/1]).
 
 -export([f/1]).
 
