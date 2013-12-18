@@ -42,6 +42,9 @@ rework_tree (Tree) ->
   V = fun
         ({expr, _, E}) -> E;
 
+        ({lambda, _, FrozenDims, Params, Body}) ->
+          {fn, FrozenDims, Params, Body};
+
         ({intension_creation, _, FrozenDims, Body}) ->
           {i_abs, FrozenDims, Body};
         ({intension_evaluation, _, IAbsExpr}) ->
@@ -79,7 +82,7 @@ rework_tree (Tree) ->
         ({where, _, Exp, DimDecls, VarDecls}) ->
           TopExpr = Exp,
           Dims = [{dim,Dim,N} || {dim_decl,_,Dim,N} <- DimDecls],
-          Funs = [{var,Name,{fn,Params,Body}}
+          Funs = [{var,Name,{fn,[],Params,Body}}
                   || {fun_decl,_,Name,Params,Body} <- VarDecls],
           Vars = [{var,Var,E} || {var_decl,_,Var,E} <- VarDecls] ++ Funs,
           {where, TopExpr, Dims ++ Vars};
