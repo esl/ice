@@ -2,8 +2,9 @@
 // An ICE Options Pricer
 
 fun black_scholes_call.S.X.T.r.v = return where
-  var d1 = (log.(S/X) + (r + 0.5f0 * pow.v.2) * T) / (v * sqrt.T)
-  var d2 = d1 - v * sqrt.T
+  var vsqrT = v * sqrt.T
+  var d1 = (log.(S/X) + (r + 0.5f0 * pow.v.2) * T) / vsqrT
+  var d2 = d1 - vsqrT
   var return = S * cnd.d1 - X * exp.(~r * T) * cnd.d2
   fun cnd.X = cnd_ret where
     var L = abs.X
