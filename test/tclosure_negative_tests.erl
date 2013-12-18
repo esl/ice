@@ -75,58 +75,47 @@ tests_w_b_abs_from_various_expressions(A=_UndefVarIdA, T=_ASTGenF) ->
    ?_assertUndefVarIdMockingTprimop(A, {'primop_identity', fun(X) -> X end},
                                     T({primop, 'primop_identity', [BAbs]})),
    %%
-   ?_assertUndefVarIdMockingTpar(A, T({'@', s("#.t"), {t, [{"t", BAbs}]}})),
-   %% "#.t @ [t <- \_x -> A]"
+   ?_assertUndefVarIdMockingTpar(A, T(s("#.t @ [t <- \\.x -> A]"))),
    %%
    ?_assertUndefVarIdMockingTpar(
       A,
-      T({'@', {b_abs, [], [s("x")], 1}, %% A harmless b_abs, just for returning one
-         {t, [
-              %% Define a tuple with a dummy dimension
-              %% identifier-ordinate couple. The dim id is an 'if'
-              %% expression, the ordinate is a dumb unused '0'. The
-              %% dim id is an 'if' expression in order to evaluate
-              %% BAbs while still returning a valid dim id.
-              { {'if', tprimop:eq(
-                         {b_apply, BAbs, [0]}, %% Force evaluation of BAbs
-                         {b_apply, BAbs, [0]}), %% Result should be true...
-                 "t", %% 'then' part of if-then-else
-                 s("false")}, %% 'else' part of if-then-else - dead code
-                0 %% A dumb ordinate
-              }
-             ]}})),
-   %% "(\_ x -> 1) @ [(if ((\_x -> A).0 == (\_x -> A).0) then t else 0 fi) <- 0]"
+      T(s("(\\.x -> 1) // A harmless b_abs, just for returning one
+            @ [
+               // Define a tuple with a dummy dimension
+               // identifier-ordinate couple. The dim id is an 'if'
+               // expression, the ordinate is a dumb unused '0'. The
+               // dim id is an 'if' expression in order to evaluate
+               // BAbs while still returning a valid dim id.
+               (if
+                 (   (\\.x -> A).0 // Force evaluation of BAbs
+                  == (\\.x -> A).0 )
+               then // Condition should be true
+                 t
+               else // Dead code
+                 false
+               fi)
+                 <- 0 // A dumb ordinate
+              ]"))),
    %%
-   ?_assertUndefVarId(A, T({'@', BAbs, s("[t <- 0]")})),
-   %% "(\_ x -> A) @ [t <- 0]"
+   ?_assertUndefVarId(A, T(s("(\\.x -> A) @ [t <- 0]"))),
    %%
-   ?_assertUndefVarId(A, T({'if', s("true"), BAbs, s("false")})),
-   ?_assertUndefVarId(A, T({'if', s("false"), s("true"), BAbs})),
-   %% "if true then (\_ x -> A) else false fi"
-   %% "if false then true else (\_ x -> A) fi"
+   ?_assertUndefVarId(A, T(s("if true then (\\.x -> A) else false fi"))),
+   ?_assertUndefVarId(A, T(s("if false then true else (\\.x -> A) fi"))),
    %%
-   ?_assertUndefVarId(A, T({b_apply, {b_abs, [], [s("a")], BAbs}, [s("0")]})),
-   ?_assertUndefVarId(A, T({v_apply, {v_abs, [], [s("a")], BAbs}, [s("0")]})),
-   %% TODO: Improve transformation 0 %% ?_assertUndefVarId(A, T({n_apply, {n_abs, [], [s("a")], BAbs}, [s("0")]})),
-   ?_assertUndefVarId(A, T({i_apply, {i_abs, [],           BAbs}          })),
-   %% "(\_ a -> \_ x -> A).0"
-   %% "(\  a -> \_ x -> A)!0"
-   %% "(\\ a -> \_ x -> A) 0"
-   %% "↓(↑{} \_ x -> A)"
+   ?_assertUndefVarId(A, T(s("(\\.a -> \\.x -> A).0"))),
+   ?_assertUndefVarId(A, T(s("(\\!a -> \\.x -> A)!0"))),
+   ?_assertUndefVarId(A, T(s("(\\ a -> \\.x -> A) 0"))),
+   ?_assertUndefVarId(A, T(s("↓(↑{} \\.x -> A)"))),
    %%
-   ?_assertUndefVarId(A, T({b_apply, {b_abs, [], [s("a")], s("a")}, [BAbs]})),
-   ?_assertUndefVarId(A, T({v_apply, {v_abs, [], [s("a")], s("a")}, [BAbs]})),
-   %% TODO: Improve transformation 0 %% {n_apply, {n_abs, [], [s("a")], s("a")}, [BAbs]}
+   ?_assertUndefVarId(A, T(s("(\\.a -> a).(\\.x -> A)"))),
+   ?_assertUndefVarId(A, T(s("(\\!a -> a)!(\\.x -> A)"))),
+   ?_assertUndefVarId(A, T(s("(\\ a -> a) (\\.x -> A)"))),
    %%
-   ?_assertUndefVarId(A, T({where, s("G"), [{var,"G",BAbs}]})),
-   ?_assertUndefVarId(A, T({where, BAbs, [{var,"KeepMe",s("0")}]})),
-   %% G where var G = \_ x -> A end
-   %% \_ x -> A where var KeepMe = 0 end
+   ?_assertUndefVarId(A, T(s("G where var G = \\.x -> A end"))),
+   ?_assertUndefVarId(A, T(s("\\.x -> A where var KeepMe = 0 end"))),
    %%
-   ?_assertUndefVarId(A, T({where, s("#.g"), [{dim,"g",BAbs}]})),
-   ?_assertUndefVarId(A, T({where, BAbs, [{dim,"keep_me",s("0")}]}))
-   %% #.g where dim g <- \_ x -> A end
-   %% \_ x -> A where dim keep_me <- 0 end
+   ?_assertUndefVarId(A, T(s("#.g where dim g <- \\.x -> A end"))),
+   ?_assertUndefVarId(A, T(s("\\.x -> A where dim keep_me <- 0 end")))
   ].
 
 
