@@ -220,7 +220,7 @@ eval(Xi, I, E, K, D, W, T) when is_list(Xi) orelse is_atom(Xi) ->
   %% of GC concurrent with the invocation of beta.find().
   %%
   %% XXX Can GC be concurrent in the first place? Answer via email by
-  %% John Plaice indicates that "he collect cannot be run
+  %% John Plaice indicates that "the collect cannot be run
   %% simultaneously".
   %%
   %% The rule as per Feb 2013 cache semantics paper has (or at least
