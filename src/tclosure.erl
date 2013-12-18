@@ -16,6 +16,12 @@
 %%
 %% Close the shallowest abstractions in the specified new expressions
 %% defined in a wherevar clause.
+%%
+%% Only the shallowest abstractions are closed, and not all the
+%% expressions, in order to keep the abstract syntax tree as clean as
+%% possible.  Closing all expressions (i.e. not only the abstractions)
+%% would imply generating unnecessary/untidy abstract syntax tree
+%% nodes, e.g. a closure node with only a ground value inside.
 %%------------------------------------------------------------------------------
 close_shallowest_abs_in_wherevar_expressions(XiEis, I, E) ->
   EPert = tset:perturb(E, XiEis), %% XXX This perturbation could be a union...
@@ -26,7 +32,11 @@ close_shallowest_abs_in_wherevar_expressions(XiEis, I, E) ->
 %%------------------------------------------------------------------------------
 %% @doc Close the specified abstraction.
 %%------------------------------------------------------------------------------
-close_abs(Abs, I, E) ->
+close_abs({b_abs, _Is, _Params, _E0}=Abs, I, E) ->
+  {closure, I, E, Abs};
+close_abs({v_abs, _Is, _Params, _E0}=Abs, I, E) ->
+  {closure, I, E, Abs};
+close_abs({i_abs, _Is,          _E0}=Abs, I, E) ->
   {closure, I, E, Abs}.
 
 
