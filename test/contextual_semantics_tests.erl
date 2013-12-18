@@ -89,7 +89,7 @@ wheredim_returning_abs_varying_in_dim_defined_in_same_wheredim() ->
   S = "BadF!1
       where
         var BadF = // This is a tricky declaration
-          (F where fun F!x = #.d end) // (\ {d} x -> #.d) TODO Implement anonymous functions
+          (\\ !x -> #.d)
           where
             dim d <- 46
           end
@@ -107,17 +107,12 @@ wheredim_returning_abs_varying_in_dim_defined_in_same_wheredim_freezing_dim() ->
   S = "BadF!1
       where
         var BadF = // This is a tricky declaration
-          (F where fun F!x = #.d end) // (\ {d} x -> #.d) TODO Implement anonymous functions
+          (\\ {d} !x -> #.d)
           where
             dim d <- 46
           end
       end",
-  %% Hack below needed ATM for defining value abs with frozen
-  %% dim. After anonymous functions are implemented, this should not
-  %% be needed anymore.
-  _  = {wherevar, BadF1, [{"BadF", {wheredim, {wherevar, "F", [{"F", {v_abs,[   ],["x"],FBody}}]}, [{"d",46}]}}]} = t0(s(S)),
-  T0 = {wherevar, BadF1, [{"BadF", {wheredim, {wherevar, "F", [{"F", {v_abs,["d"],["x"],FBody}}]}, [{"d",46}]}}]},
-  ?assertMatch({46,_}, tcore_eval(t1(T0))). %% Upstream TL returns 46
+  ?assertMatch({46,_}, eval(S)). %% Upstream TL returns 46
 
 wheredim_recursing_on_input_outer_dim() ->
   S = "F @ [n <- 3]
@@ -252,12 +247,6 @@ t0(T) ->
 
 t1(T) ->
   ttransform1:transform1(T).
-
-tcore_eval(T) ->
-  tcore_eval(T, [], []).
-
-tcore_eval(T, K, D) ->
-  tcore:eval(T,[],[],K,D,{[],self()},0).
 
 eval(S) when is_list(S) ->
   {ok, T} = tea:string(S),
