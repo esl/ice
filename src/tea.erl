@@ -47,7 +47,33 @@ rework_tree (Tree) ->
         ({intension_evaluation, _, IAbsExpr}) ->
           {i_apply, IAbsExpr};
 
-        ({call, _, FunExpr, Params}) -> {fn_call, FunExpr, Params};
+        ({call, _, FunExpr, Params}) ->
+          case {FunExpr,Params} of
+            {"atan2",[{b_param,N},{b_param,M}]} ->
+              tprimop:atan2(N, M);
+            {Fun,[{b_param,N}]} when Fun == "floor";
+                                     Fun == "ceil";
+                                     Fun == "sin";
+                                     Fun == "cos";
+                                     Fun == "tan";
+                                     Fun == "asin";
+                                     Fun == "acos";
+                                     Fun == "atan";
+                                     Fun == "sinh";
+                                     Fun == "cosh";
+                                     Fun == "tanh";
+                                     Fun == "asinh";
+                                     Fun == "acosh";
+                                     Fun == "atanh";
+                                     Fun == "exp";
+                                     Fun == "log";
+                                     Fun == "log10";
+                                     Fun == "pow";
+                                     Fun == "sqrt" ->
+              tprimop:(list_to_existing_atom(Fun))(N);
+            _ ->
+              {fn_call, FunExpr, Params}
+          end;
 
         ({where, _, Exp, DimDecls, VarDecls}) ->
           TopExpr = Exp,
