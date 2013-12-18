@@ -69,7 +69,8 @@ rework_tree (Tree) ->
                                      Fun == "log";
                                      Fun == "log10";
                                      Fun == "pow";
-                                     Fun == "sqrt" ->
+                                     Fun == "sqrt";
+                                     Fun == "abs" ->
               tprimop:(list_to_existing_atom(Fun))(N);
             _ ->
               {fn_call, FunExpr, Params}

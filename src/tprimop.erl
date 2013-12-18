@@ -17,6 +17,7 @@
         ,  'sinh'/1,  'cosh'/1,  'tanh'/1
         , 'asinh'/1, 'acosh'/1, 'atanh'/1
         , 'exp'/1, 'log'/1, 'log10'/1, 'pow'/1, 'sqrt'/1]).
+-export([abs/1]).
 
 -export([f/1]).
 
@@ -85,6 +86,8 @@ ilogn (N) ->
 ?primop1('pow').
 ?primop1('sqrt').
 
+?primop1('abs').
+
 %%----------------------------------------------------------------------------
 %% @doc Return the Erlang function evaluating the primitive operation.
 %%----------------------------------------------------------------------------
@@ -137,5 +140,7 @@ f(Fun) when Fun == 'sin';
             Fun == 'pow';
             Fun == 'sqrt' ->
   fun math:Fun/1;
+f('abs') ->
+  fun erlang:abs/1;
 f(Op) ->
   fun erlang:Op/2.
