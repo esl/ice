@@ -19,7 +19,7 @@
 %% error reporting.
 %%
 %% Function AST should look like this:
-%% {fn, [{b_param, BArg} | {v_param, VArg} | {n_param, NArg}], E}
+%% {fn, [FrozenDimName], [{b_param, BArg} | {v_param, VArg} | {n_param, NArg}], E}
 %% {fn_call, E, [{b_param, BArg} | {v_param, VArg} | {n_param, NArg}]}
 %%
 %% Where AST should look like this:
@@ -103,8 +103,8 @@ t0({i_apply, E}, NPs) ->
 %%------------------------------------------------------------------------------
 %% Function
 %%------------------------------------------------------------------------------
-t0({fn, Params, E}, NPs) ->
-  t0_fn(Params, E, NPs);
+t0({fn, Is, Params, E}, NPs) ->
+  t0_fn(Is, Params, E, NPs);
 
 t0({fn_call, FnE, Params}, NPs) ->
   t0_fn_call(
@@ -144,23 +144,22 @@ t0(Xi, NamedParams) when is_list(Xi) orelse is_atom(Xi) ->
 %% Programming", Aug 2012
 %% @private
 %%------------------------------------------------------------------------------
-t0_fn([], E, NPs) ->
+t0_fn([], [], E, NPs) ->
   t0(E, NPs);
-t0_fn([{b_param,_}|_]=Params, E, NPs) ->
+t0_fn(Is, [{b_param,_}|_]=Params, E, NPs) ->
   %% Group consecutive initial base params
   {BPs0, Ps} = lists:splitwith(fun({Type,_}) -> Type == b_param end, Params),
   {_, BPs1} = lists:unzip(BPs0),
-  {b_abs, [], BPs1, t0_fn(Ps, E, tset:difference(NPs, BPs1))};
-t0_fn([{v_param, Param}|Ps], E, NPs) ->
-  {v_abs, [], [Param], t0_fn(Ps, E, tset:difference(NPs, [Param]))};
-t0_fn([{n_param, Param}|Ps], E, NamedParams) ->
+  {b_abs, Is, BPs1, t0_fn([], Ps, E, tset:difference(NPs, BPs1))};
+t0_fn(Is, [{v_param, Param}|Ps], E, NPs) ->
+  {v_abs, Is, [Param], t0_fn([], Ps, E, tset:difference(NPs, [Param]))};
+t0_fn(Is, [{n_param, Param}|Ps], E, NamedParams) ->
   %%------------------------------------------------------------------------------
   %% Replace Param in E with an intension application.  Ref
   %% proposition 9 in Aug 2012 semantics paper:
   %%   [ \\ {Ei} x -> E0 ] == [ \ {Ei} x -> E0[x/↓x] ]
-  %% FIXME -- Do the same in anonymous n_abs
   %%------------------------------------------------------------------------------
-  {v_abs, [], [Param], t0_fn(Ps, E, tset:union(NamedParams, [Param]))}.
+  {v_abs, Is, [Param], t0_fn([], Ps, E, tset:union(NamedParams, [Param]))}.
 
 %%------------------------------------------------------------------------------
 %% @doc Transform function call.
