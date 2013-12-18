@@ -48,25 +48,19 @@ try_to_find_knowing_both_needed_dims() ->
   ?assertMatch({0,_}, eval(S)).
 
 try_to_find_wo_knowing_enough_needed_dims() ->
-  S = "A // Evaluator tries to find A, w/o any known dims...
+  S = "A
       where
         dim t <- 0
         dim d <- 0
         var A =
-          // ... then it realizes that t is needed,
-          // therefore it tries to find A w/ known t...
           if #.t == 0 then
-            B // ... but evaluating A requires evaluating B...
+            B
           else
             B
           fi
-        // ... and B needs both t and d,
-        // therefore the result of the evaluation of B w/ known dim t
-        // should be 'missing dimension d'.
-        // But it returns calc :( therefore A thinks there is a hang
         var B = #.t + #.d
       end",
-  ?assertMatch(hang, eval(S)). %% TODO This should not hang but return 0
+  ?assertMatch({0,_}, eval(S)).
 
 
 %% Internals

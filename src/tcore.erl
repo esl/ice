@@ -215,6 +215,27 @@ eval({phi,Xi}=Di, _I, _E, _K, _D, _W, T) when is_list(Xi) orelse is_atom(Xi) ->
 %% Variable Identifiers
 %%-------------------------------------------------------------------------------------
 eval(Xi, I, E, K, D, W, T) when is_list(Xi) orelse is_atom(Xi) ->
+  %% This rule differs from the one described in the Feb 2013 cache
+  %% semantics paper in order to avooid to return a calc value in case
+  %% of GC concurrent with the invocation of beta.find().
+  %%
+  %% XXX Can GC be concurrent in the first place? Answer via email by
+  %% John Plaice indicates that "the collect cannot be run
+  %% simultaneously".
+  %%
+  %% The rule as per Feb 2013 cache semantics paper has (or at least
+  %% Luca thinks it has) the aim of resetting to 0 the age of the
+  %% queried value (and upstream chain). The removal of the final call
+  %% to beta.find() nullifies such (alleged) aim.
+  %%
+  %% In order to restore such aim, a new instruction shall be designed
+  %% and implemented for the cache, beta.pseudo_find(), whose aim is
+  %% traversing the tree in search of the specified (x,k) and
+  %% resetting beta.age (whatever it is) and gamma_j.age in all the
+  %% chain until the position of the node is reached. If
+  %% beta.data(x,k) is not defined, *no calc<w> node shall be
+  %% created*. Probably, GC shall be triggered by this instruction
+  %% too.
   {_D0, _T0} = eval1(Xi, I, E, tset:restrict_domain(K, D), [], W, T).
 
 %%-------------------------------------------------------------------------------------
