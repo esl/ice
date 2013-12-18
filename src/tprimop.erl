@@ -11,7 +11,14 @@
 -export([mod/2]).
 -export([ilogn/1]).
 
+-export([floor/1, ceil/1]).
+
 -export([f/1]).
+
+-define(primop1(Name),
+        Name (N) -> {primop, Name, [N]}).
+-define(primop2(Name),
+        Name (N,M) -> {primop, Name, [N,M]}).
 
 %%----------------------------------------------------------------------------
 %% Functions for creating the AST nodes of primitive operations
@@ -51,6 +58,27 @@ mod (A, B) ->
 ilogn (N) ->
   {primop, 'ilogn', [N]}.
 
+?primop1('floor').
+?primop1('ceil').
+
+?primop1('sin').
+?primop1('cos').
+?primop1('tan').
+?primop1('asin').
+?primop1('acos').
+?primop1('atan').
+?primop2('atan2').
+?primop1('sinh').
+?primop1('cosh').
+?primop1('tanh').
+?primop1('asinh').
+?primop1('acosh').
+?primop1('atanh').
+?primop1('exp').
+?primop1('log').
+?primop1('log10').
+?primop1('pow').
+?primop1('sqrt').
 
 %%----------------------------------------------------------------------------
 %% @doc Return the Erlang function evaluating the primitive operation.
@@ -64,5 +92,45 @@ f('ilogn') ->
     (0) -> 0;
     (X) -> round(math:log(X) / math:log(2))
   end;
+f('floor') ->
+  fun %% https://erlangcentral.org/wiki/index.php/Floating_Point_Rounding
+    (X) when X >= 0 -> trunc(X);
+    (X) ->
+      T = trunc(X),
+      case X - T of
+        0 -> T;
+        _ -> T - 1
+      end
+  end;
+f('ceil') ->
+  fun %% https://erlangcentral.org/wiki/index.php/Floating_Point_Rounding
+    (X) when X < 0 -> trunc(X);
+    (X) ->
+      T = trunc(X),
+      case X - T of
+        0 -> T;
+        _ -> T + 1
+      end
+  end;
+f('atan2'=Fun) ->
+  fun math:Fun/2;
+f(Fun) when Fun == 'sin';
+            Fun == 'cos';
+            Fun == 'tan';
+            Fun == 'asin';
+            Fun == 'acos';
+            Fun == 'atan';
+            Fun == 'sinh';
+            Fun == 'cosh';
+            Fun == 'tanh';
+            Fun == 'asinh';
+            Fun == 'acosh';
+            Fun == 'atanh';
+            Fun == 'exp';
+            Fun == 'log';
+            Fun == 'log10';
+            Fun == 'pow';
+            Fun == 'sqrt' ->
+  fun math:Fun/1;
 f(Op) ->
   fun erlang:Op/2.
