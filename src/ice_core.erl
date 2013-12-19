@@ -32,8 +32,7 @@ eval({primop, Primop, Eis}, I, E, K, D, W, T) ->
     {true, Dims} ->
       {Dims, MaxT};
     {false, Dis1} ->
-      F = ice_primop:f(Primop),
-      {apply(F, Dis1), MaxT}
+      {apply(ice_primop_eval, Primop, Dis1), MaxT}
   end;
 
 %%-------------------------------------------------------------------------------------

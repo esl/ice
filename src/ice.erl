@@ -51,33 +51,7 @@ rework_tree (Tree) ->
           {i_apply, IAbsExpr};
 
         ({call, _, FunExpr, Params}) ->
-          case {FunExpr,Params} of
-            {"atan2",[{b_param,N},{b_param,M}]} ->
-              ice_primop:atan2(N, M);
-            {Fun,[{b_param,N}]} when Fun == "floor";
-                                     Fun == "ceil";
-                                     Fun == "sin";
-                                     Fun == "cos";
-                                     Fun == "tan";
-                                     Fun == "asin";
-                                     Fun == "acos";
-                                     Fun == "atan";
-                                     Fun == "sinh";
-                                     Fun == "cosh";
-                                     Fun == "tanh";
-                                     Fun == "asinh";
-                                     Fun == "acosh";
-                                     Fun == "atanh";
-                                     Fun == "exp";
-                                     Fun == "log";
-                                     Fun == "log10";
-                                     Fun == "pow";
-                                     Fun == "sqrt";
-                                     Fun == "abs" ->
-              ice_primop:(list_to_existing_atom(Fun))(N);
-            _ ->
-              {fn_call, FunExpr, Params}
-          end;
+          bind_primop_to_base_fn_call(FunExpr, Params);
 
         ({where, _, Exp, DimDecls, VarDecls}) ->
           TopExpr = Exp,
@@ -98,19 +72,24 @@ rework_tree (Tree) ->
         ({tuple, _, Assocs}) -> {t, Assocs};
         ({tuple_element, _, Lhs, Rhs}) -> {Lhs, Rhs};
 
-        ({'or',  _, A, B}) -> ice_primop:tor(A, B);
-        ({'and', _, A, B}) -> ice_primop:tand(A, B);
+        ({'==',  _, A, B}) -> ice_primop:eq(A, B);
+        ({'!=',  _, A, B}) -> ice_primop:neq(A, B);
         ({'<',   _, A, B}) -> ice_primop:lt(A, B);
         ({'<=',  _, A, B}) -> ice_primop:lte(A, B);
-        ({'==',  _, A, B}) -> ice_primop:eq(A, B);
-        ({'>=',  _, A, B}) -> ice_primop:gte(A, B);
         ({'>',   _, A, B}) -> ice_primop:gt(A, B);
-        ({'!=',  _, A, B}) -> ice_primop:neq(A, B);
-        ({'+',   _, A, B}) -> ice_primop:plus(A, B);
-        ({'-',   _, A, B}) -> ice_primop:minus(A, B);
-        ({'*',   _, A, B}) -> ice_primop:times(A, B);
-        ({'/',   _, A, B}) -> ice_primop:divide(A, B);
-        ({'%',   _, A, B}) -> ice_primop:mod(A, B);
+        ({'>=',  _, A, B}) -> ice_primop:gte(A, B);
+
+        ({'not', _, A   }) -> ice_primop:'not'(A);
+        ({'or',  _, A, B}) -> ice_primop:'or'(A, B);
+        ({'and', _, A, B}) -> ice_primop:'and'(A, B);
+
+        ({'+', _, A   }) -> ice_primop:plus(A);
+        ({'-', _, A   }) -> ice_primop:minus(A);
+        ({'+', _, A, B}) -> ice_primop:plus(A, B);
+        ({'-', _, A, B}) -> ice_primop:minus(A, B);
+        ({'*', _, A, B}) -> ice_primop:times(A, B);
+        ({'/', _, A, B}) -> ice_primop:divide(A, B);
+        ({'%', _, A, B}) -> ice_primop:mod(A, B);
 
         ({bool, _, Boolean}) -> Boolean;
         ({raw_string, _, S})    -> {string, S};
@@ -131,9 +110,25 @@ rework_tree (Tree) ->
   end.
 
 
-unwrap_elsifs ([{if_expr,_,Cond,Then}|Rest], Else) ->
+bind_primop_to_base_fn_call(FunExpr, Params) when is_list(FunExpr) ->
+  case lists:all(fun({Type,_}) -> Type == b_param end, Params) of
+    true ->
+      Ps = lists:map(fun({_,P}) -> P end, Params),
+      try apply(ice_primop, list_to_atom(FunExpr), Ps) of
+          Primop -> Primop
+      catch
+        error:undef ->
+          {fn_call, FunExpr, Params}
+      end;
+    false ->
+      {fn_call, FunExpr, Params}
+  end;
+bind_primop_to_base_fn_call(FunExpr, Params) ->
+  {fn_call, FunExpr, Params}.
+
+unwrap_elsifs([{if_expr,_,Cond,Then}|Rest], Else) ->
   {'if', Cond, Then, unwrap_elsifs(Rest,Else)};
-unwrap_elsifs ([], Else) ->
+unwrap_elsifs([], Else) ->
   Else.
 
 %% End of Module.

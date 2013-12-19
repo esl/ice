@@ -1,6 +1,6 @@
 %% See LICENSE for licensing information.
 %% -*- coding: utf-8 -*-
--module(tea_tests).
+-module(ice_tests).
 
 %% Simple positive tests without interaction with the cache.
 
@@ -68,11 +68,32 @@ perturb_test_() ->
 primop_test_() ->
   [
    ?_assertMatch({30, _}, eval("10 + 20")),
-   ?_assertMatch({5, _}, eval("#.t + #.s where dim t <- 2;; dim s <- 3 end"))
+   ?_assertMatch({-10, _}, eval("10 - 20")),
+   ?_assertMatch({5, _}, eval("#.t + #.s where dim t <- 2;; dim s <- 3 end")),
+   %%
+   ?_assertMatch({ 46, _}, eval("+46")),
+   ?_assertMatch({-46, _}, eval("-46")),
+   ?_assertMatch({where, {primop,'+',[_]}, _}, s("+A where var A = 46 end")),
+   ?_assertMatch({where, {primop,'-',[_]}, _}, s("-A where var A = 46 end")),
+   ?_assertEqual({primop,'+',[46]}, s("+46")), %% No optimization
+   ?_assertEqual({primop,'-',[46]}, s("-46")), %% No optimization
+   %%
+   ?_assertMatch({46, _}, eval("abs.(-46)")),
+   ?_assertMatch({0.0, _}, eval("atan2.0.1")),
+   %%
+   ?_assertThrow({parse_error,_}, eval("+.46")),
+   ?_assertThrow({parse_error,_}, eval("+.1.2")),
+   ?_assertThrow({parse_error,_}, eval("not.true")),
+   ?_assertThrow({parse_error,_}, eval("(not).true")),
+   ?_assertThrow({parse_error,_}, eval("and.true.false"))
   ].
 
 
 %% Internals
+
+s(S) ->
+  {ok, T} = ice:string(S),
+  T.
 
 eval(S) when is_list(S) ->
   {ok, T} = ice:string(S),

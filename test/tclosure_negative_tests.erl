@@ -13,10 +13,10 @@
 -define(_assertUndefVarIdMockingIcePar(VarId, SOrT),
         {setup, fun mock_ice_par/0, fun(_) -> unmock_ice_par() end,
          ?_assertUndefVarId(VarId, SOrT)}).
--define(_assertUndefVarIdMockingIce_Primop(VarId, Ice_PrimopMockArgs, SOrT),
+-define(_assertUndefVarIdMockingIcePrimopEval(VarId, MockArgs, SOrT),
         {setup,
-         fun() -> mock_ice_primop(Ice_PrimopMockArgs) end,
-         fun(_) -> unmock_ice_primop() end,
+         fun() -> mock_ice_primop_eval(MockArgs) end,
+         fun(_) -> unmock_ice_primop_eval() end,
          ?_assertUndefVarId(VarId, SOrT)}).
 
 
@@ -72,8 +72,10 @@ abs_cannot_access_variable_ids_in_creation_env_test_() ->
 tests_w_b_abs_from_various_expressions(A=_UndefVarIdA, T=_ASTGenF) ->
   BAbs = {b_abs, [], [s("x")], s(A)}, %% \_ x -> A
   [
-   ?_assertUndefVarIdMockingIce_Primop(A, {'primop_identity', fun(X) -> X end},
-                                    T({primop, 'primop_identity', [BAbs]})),
+   ?_assertUndefVarIdMockingIcePrimopEval(
+      A,
+      {'primop_identity', fun(X) -> X end},
+      T({primop, 'primop_identity', [BAbs]})),
    %%
    ?_assertUndefVarIdMockingIcePar(A, T(s("#.t @ [t <- \\.x -> A]"))),
    %%
@@ -131,18 +133,12 @@ mock_ice_par() ->
 unmock_ice_par() ->
   ok = meck:unload(ice_par).
 
-mock_ice_primop({MockedOp, F}) ->
-  ok = meck:new(ice_primop, [passthrough]),
-  ExpectationFun = fun
-                     (Op) when Op =:= MockedOp ->
-                       F;
-                     (Op) ->
-                       meck:passthrough([Op])
-                   end,
-  ok = meck:expect(ice_primop, f, ExpectationFun).
+mock_ice_primop_eval({MockedOp, F}) ->
+  ok = meck:new(ice_primop_eval, [passthrough, non_strict]),
+  ok = meck:expect(ice_primop_eval, MockedOp, F).
 
-unmock_ice_primop() ->
-  ok = meck:unload(ice_primop).
+unmock_ice_primop_eval() ->
+  ok = meck:unload(ice_primop_eval).
 
 %% Internals
 
