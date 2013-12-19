@@ -3,8 +3,8 @@
 -export([intersection/2, difference/2]).
 -export([restrict/2, union/2, restrict_domain/2]).
 -export([subset/2, domain/1, is_d/1, is_k/1]).
--export([subtract/2]).
--export([subtract_domain/2, perturb/2, union_d/1]).
+-export([subtract/2, subtract_domain/2, subtract_by_domain/2]).
+-export([perturb/2, union_d/1]).
 -export([identical/2]).
 
 %%-------------------------------------------------------------------------------------
@@ -38,16 +38,22 @@ subtract(A, B) ->
   [X || X <- A, lists:member(X, B) =:= false].
 
 %%------------------------------------------------------------------------------
-%% @doc Subtract the domain of B from the domain of A
+%% @doc Subtract the domain B from the domain of A
 %%------------------------------------------------------------------------------
 subtract_domain(A, B) ->
+  [{X,V} || {X,V} <- A, lists:member(X, B) =:= false].
+
+%%------------------------------------------------------------------------------
+%% @doc Subtract the domain of B from the domain of A
+%%------------------------------------------------------------------------------
+subtract_by_domain(A, B) ->
   [{X,V} || {X,V} <- A, lists:keymember(X, 1, B) =:= false].
 
 %%-------------------------------------------------------------------------------------
 %% @doc Perturb (|) set A by set B
 %%-------------------------------------------------------------------------------------
 perturb(A, B) ->
-  A1 = subtract_domain(A, B),
+  A1 = subtract_by_domain(A, B),
   union(A1, B).
 
 %%-------------------------------------------------------------------------------------

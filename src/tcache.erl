@@ -10,13 +10,15 @@
 -export([handle_call/3, handle_cast/2, handle_info/2]).
 -export([code_change/3, init/1, terminate/2]).
 
+-define(TABLE_NAME, ice_cache).
+
 %%------------------------------------------------------------------------------
 %% State
 %%------------------------------------------------------------------------------
 -record(state, { 
 	  ck    = 0,
 	  age   = 2,
-	  data  = tdtree:new(),
+	  data  = tdtree:new(?TABLE_NAME),
 	  limit = undefined
 	 }).
 
@@ -75,9 +77,8 @@ find_update(X, K, D, {Id0,_}=W0, _T, S0) ->
   KD = lists:keysort(1, tset:restrict_domain(K, D)),
   case tdtree:lookup({X,KD}, S0#state.data) of
     [] ->
-      io:format("Inserting {~p,~p} = ~p~n", [X,KD,{calc,W0}]),
       Tr = tdtree:insert({X,KD,{calc,W0}}, S0#state.data),
-      S2 = S0#state{data = Tr, ck = S0#state.ck + 1},
+      S2 = S0#state{ck = S0#state.ck + 1},
       {reply, {{calc,W0}, S2#state.ck},  S2};
     {calc, {Id1,_}=W1} = V ->
       case lists:prefix(Id1, Id0) of
@@ -107,7 +108,7 @@ add_update(X, K, D, W, _T, V1, S0) ->
 	  io:format("Inserting {~p,~p} = ~p~n", [X,KD,V1]),
 	  Tr = tdtree:insert({X,KD,V1}, S0#state.data)
       end,
-      S1 = S0#state{data = Tr, ck = S0#state.ck + 1},
+      S1 = S0#state{ck = S0#state.ck + 1},
       {reply, {V1, S1#state.ck}, S1};
     {calc, _} = Thr ->
       io:format("Wrong thread ~p~n", [Thr]),
