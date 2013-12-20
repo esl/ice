@@ -10,8 +10,8 @@
         ?_assertError(
            {badmatch, {error, undefined_identifier, VarId}},
            eval(SOrT))).
--define(_assertUndefVarIdMockingTpar(VarId, SOrT),
-        {setup, fun mock_tpar/0, fun(_) -> unmock_tpar() end,
+-define(_assertUndefVarIdMockingIcePar(VarId, SOrT),
+        {setup, fun mock_ice_par/0, fun(_) -> unmock_ice_par() end,
          ?_assertUndefVarId(VarId, SOrT)}).
 -define(_assertUndefVarIdMockingTprimop(VarId, TprimopMockArgs, SOrT),
         {setup,
@@ -75,9 +75,9 @@ tests_w_b_abs_from_various_expressions(A=_UndefVarIdA, T=_ASTGenF) ->
    ?_assertUndefVarIdMockingTprimop(A, {'primop_identity', fun(X) -> X end},
                                     T({primop, 'primop_identity', [BAbs]})),
    %%
-   ?_assertUndefVarIdMockingTpar(A, T(s("#.t @ [t <- \\.x -> A]"))),
+   ?_assertUndefVarIdMockingIcePar(A, T(s("#.t @ [t <- \\.x -> A]"))),
    %%
-   ?_assertUndefVarIdMockingTpar(
+   ?_assertUndefVarIdMockingIcePar(
       A,
       T(s("(\\.x -> 1) // A harmless b_abs, just for returning one
             @ [
@@ -121,15 +121,15 @@ tests_w_b_abs_from_various_expressions(A=_UndefVarIdA, T=_ASTGenF) ->
 
 %% Internals - Mocking
 
-mock_tpar() ->
-  ok = meck:new(tpar, [passthrough]),
-  ok = meck:expect(tpar, eval,
+mock_ice_par() ->
+  ok = meck:new(ice_par, [passthrough]),
+  ok = meck:expect(ice_par, eval,
                    fun(Xs, I, E, K, D, W, T) ->
-                       tpar:eval_seq(Xs, I, E, K, D, W, T)
+                       ice_par:eval_seq(Xs, I, E, K, D, W, T)
                    end).
 
-unmock_tpar() ->
-  ok = meck:unload(tpar).
+unmock_ice_par() ->
+  ok = meck:unload(ice_par).
 
 mock_tprimop({MockedOp, F}) ->
   ok = meck:new(tprimop, [passthrough]),

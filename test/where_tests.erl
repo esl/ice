@@ -8,8 +8,8 @@
 
 -include_lib("eunit/include/eunit.hrl").
 
--define(_testMockingTpar(Expr),
-        {setup, fun mock_tpar/0, fun(_) -> unmock_tpar() end,
+-define(_testMockingIcePar(Expr),
+        {setup, fun mock_ice_par/0, fun(_) -> unmock_ice_par() end,
          ?_test(Expr)}).
 
 
@@ -27,7 +27,7 @@ where_test_() ->
     ?_test(var_can_refer_to_var_defined_before_in_same_where()),
     ?_test(var_can_refer_to_var_defined_after_in_same_where()),
     %%
-    ?_testMockingTpar(dim_cannot_use_var_in_same_where())
+    ?_testMockingIcePar(dim_cannot_use_var_in_same_where())
    ]}.
 
 fn_declaration_test_() ->
@@ -81,15 +81,15 @@ dim_cannot_use_var_in_same_where() ->
 
 %% Internals - Mocking
 
-mock_tpar() ->
-  ok = meck:new(tpar, [passthrough]),
-  ok = meck:expect(tpar, eval,
+mock_ice_par() ->
+  ok = meck:new(ice_par, [passthrough]),
+  ok = meck:expect(ice_par, eval,
                    fun(Xs, I, E, K, D, W, T) ->
-                       tpar:eval_seq(Xs, I, E, K, D, W, T)
+                       ice_par:eval_seq(Xs, I, E, K, D, W, T)
                    end).
 
-unmock_tpar() ->
-  ok = meck:unload(tpar).
+unmock_ice_par() ->
+  ok = meck:unload(ice_par).
 
 %% Internals
 setup() ->

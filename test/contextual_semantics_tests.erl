@@ -6,8 +6,8 @@
 
 -include_lib("eunit/include/eunit.hrl").
 
--define(_testMockingTpar(Expr),
-        {setup, fun mock_tpar/0, fun(_) -> unmock_tpar() end,
+-define(_testMockingIcePar(Expr),
+        {setup, fun mock_ice_par/0, fun(_) -> unmock_ice_par() end,
          ?_test(Expr)}).
 
 %% API tests.
@@ -79,8 +79,8 @@ wheredim_shall_not_depend_on_same_wheredim_in_different_context_test_() ->
   {foreach, fun setup/0, fun cleanup/1,
    [
     ?_test(wheredim_recursing_on_input_outer_dim()),
-    ?_testMockingTpar(wheredim_recursing_on_local_dim()),
-    ?_testMockingTpar(wheredim_recursing_on_local_wheredim_and_wrapped_in_fun()),
+    ?_testMockingIcePar(wheredim_recursing_on_local_dim()),
+    ?_testMockingIcePar(wheredim_recursing_on_local_wheredim_and_wrapped_in_fun()),
     ?_test(var_recursing_on_input_outer_dim())
    ]}.
 
@@ -210,15 +210,15 @@ var_recursing_on_input_outer_dim() ->
 
 %% Internals - Mocking
 
-mock_tpar() ->
-  ok = meck:new(tpar, [passthrough]),
-  ok = meck:expect(tpar, eval,
+mock_ice_par() ->
+  ok = meck:new(ice_par, [passthrough]),
+  ok = meck:expect(ice_par, eval,
                    fun(Xs, I, E, K, D, W, T) ->
-                       tpar:eval_seq(Xs, I, E, K, D, W, T)
+                       ice_par:eval_seq(Xs, I, E, K, D, W, T)
                    end).
 
-unmock_tpar() ->
-  ok = meck:unload(tpar).
+unmock_ice_par() ->
+  ok = meck:unload(ice_par).
 
 %% Internals
 
