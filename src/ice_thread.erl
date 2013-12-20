@@ -1,7 +1,7 @@
 %%-------------------------------------------------------------------------------------
 %% Threading
 %%-------------------------------------------------------------------------------------
--module(tthread).
+-module(ice_thread).
 
 -export([spawn_n/2, join/8]).
 -export([evaluator/1]).
@@ -19,7 +19,7 @@ spawn_n({P, Su} = W, Lim) ->
 spawn_n(_W, N, Lim, Pids) when N >= Lim->
   lists:reverse(Pids);
 spawn_n({P, Su} = W, N, Lim, Pids) ->
-  Pid = spawn(tthread, evaluator, [Su]),
+  Pid = spawn(ice_thread, evaluator, [Su]),
   spawn_n(W, N+1, Lim, [{P ++ [N], Pid}|Pids]).
 
 %%-------------------------------------------------------------------------------------
