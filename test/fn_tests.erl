@@ -258,20 +258,10 @@ next_out_of_wheredim_test_() ->
 %% Internals
 
 setup() ->
-  {ok, Pid} = tcache:start_link(100),
-  Pid.
+  ice_cache:create().
 
-cleanup(Pid) ->
-  tcache_stop(Pid).
-
-tcache_stop(Pid) ->
-  catch tcache:stop(),
-  case is_process_alive(Pid) of
-    false ->
-      ok;
-    true ->
-      tcache_stop(Pid)
-  end.
+cleanup(_) ->
+  ice_cache:delete().
 
 s(S) ->
   {ok, T} = tea:string(S),

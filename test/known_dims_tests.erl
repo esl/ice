@@ -78,11 +78,10 @@ primop_returns_as_missing_only_needed_unknown_dims() ->
 %% Internals
 
 setup() ->
-  {ok, Pid} = tcache:start_link(100),
-  Pid.
+  ice_cache:create().
 
 cleanup(Pid) ->
-  tcache_stop(Pid).
+  ice_cache:delete().
 
 tcache_stop(Pid) ->
   catch tcache:stop(),

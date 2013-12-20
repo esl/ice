@@ -13,7 +13,7 @@ parallelism_examples_test_() ->
   {foreach, fun setup/0, fun cleanup/1,
    [
     ?_test(sequential_multi_dimensional()),
-    ?_test(parallel_one_dimensional_tournament()),
+    {timeout, 10, ?_test(parallel_one_dimensional_tournament())},
     ?_test(parallel_two_dimensional_tournament()),
     ?_test(parallel_multi_dimensional_matrix_multiplication())
    ]}.
@@ -402,7 +402,7 @@ parallel_one_dimensional_tournament() ->
     "// Tournament in 1 dimension
     A
     where
-      dim t <- 2
+      dim t <- 12
       dim s <- 0
 
       // Compute A across space
@@ -421,7 +421,7 @@ parallel_one_dimensional_tournament() ->
           1
         fi
     end",
-  ?assertMatch({7,_}, eval(S)).
+  ?assertMatch({527872,_}, eval(S)).
 
 parallel_two_dimensional_tournament() ->
   %% Parallel, two-dimensional (tournament)
@@ -501,20 +501,10 @@ temperatureAtInuvik_wo_string_comparison() ->
 %% Internals
 
 setup() ->
-  {ok, Pid} = tcache:start_link(100),
-  Pid.
+  ice_cache:create().
 
-cleanup(Pid) ->
-  tcache_stop(Pid).
-
-tcache_stop(Pid) ->
-  catch tcache:stop(),
-  case is_process_alive(Pid) of
-    false ->
-      ok;
-    true ->
-      tcache_stop(Pid)
-  end.
+cleanup(_) ->
+  ice_cache:delete().
 
 eval(S) when is_list(S) ->
   {ok, T} = tea:string(S),

@@ -23,20 +23,20 @@ superfluous_calc() ->
   DimS = "s",
   K = [{DimT,1},{DimS,0}],
   D = [          DimS   ],
-  %%     {V', T'} = tcache:... ( X ,K,     D     ,W,T, V -if any-)
-  {{calc,W}   ,2} = tcache:find("X",K,[         ],W,1            ),
-  {[DimS,DimT],3} = tcache:add ("X",K,[         ],W,2,[DimS,DimT]),
-  {{calc,W}   ,4} = tcache:find("X",K,[DimS,DimT],W,3            ),
-  {46         ,5} = tcache:add ("X",K,[DimS,DimT],W,4,46         ),
+  %%     {V', T'} = ice_cache:... ( X ,K,     D     ,W,T, V -if any-)
+  {{calc,W}   ,0} = ice_cache:find("X",K,[         ],W,1            ),
+  {[DimS,DimT],0} = ice_cache:add ("X",K,[         ],W,2,[DimS,DimT]),
+  {{calc,W}   ,0} = ice_cache:find("X",K,[DimS,DimT],W,3            ),
+  {46         ,0} = ice_cache:add ("X",K,[DimS,DimT],W,4,46         ),
   %% XXX Is the following calc wrong? Or shall the semantics not ask
   %% this question/find as K is supposed to have D as domain?
-  {{calc,W}   ,6} = tcache:find("X",K,     D     ,W,1            ).
+  {{calc,W}   ,0} = ice_cache:find("X",K,     D     ,W,1            ).
 
 try_to_find_knowing_both_needed_dims() ->
   S = "A
       where
-        dim t <- 0
-        dim d <- 0
+        dim t <- 1
+        dim d <- 2
         var A =
           if #.t + #.d == 0 then
             B
@@ -45,7 +45,7 @@ try_to_find_knowing_both_needed_dims() ->
           fi
         var B = #.t + #.d
       end",
-  ?assertMatch({0,_}, eval(S)).
+  ?assertMatch({3,_}, eval(S)).
 
 try_to_find_wo_knowing_enough_needed_dims() ->
   S = "A
@@ -66,20 +66,10 @@ try_to_find_wo_knowing_enough_needed_dims() ->
 %% Internals
 
 setup() ->
-  {ok, Pid} = tcache:start_link(100),
-  Pid.
+  ice_cache:create().
 
 cleanup(Pid) ->
-  tcache_stop(Pid).
-
-tcache_stop(Pid) ->
-  catch tcache:stop(),
-  case is_process_alive(Pid) of
-    false ->
-      ok;
-    true ->
-      tcache_stop(Pid)
-  end.
+  ice_cache:delete().
 
 eval(S) when is_list(S) ->
   {ok, T} = tea:string(S),
