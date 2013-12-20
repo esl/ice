@@ -79,7 +79,7 @@ misc_abs_test_() ->
 %% Internals
 
 s(S) ->
-  {ok, T} = tea:string(S),
+  {ok, T} = ice:string(S),
   T.
 
 %% End of Module.

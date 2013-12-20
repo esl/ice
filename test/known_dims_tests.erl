@@ -34,7 +34,7 @@ context_query_needs_dim() ->
   %% ... for explicitly specifying context and known dims.
   K = [{DimT,46}],
   D = [],
-  ?assertMatch({[DimT],_}, tcore_eval(QT1, K, D)).
+  ?assertMatch({[DimT],_}, ice_core_eval(QT1, K, D)).
 
 tuple_does_not_need_dim() ->
   TS = "[t <- 46]",
@@ -44,7 +44,7 @@ tuple_does_not_need_dim() ->
   %% ... for explicitly specifying context and known dims.
   K = [{DimT,0}],
   D = [],
-  ?assertMatch({{te,[{DimT,46}]},_}, tcore_eval(TT1, K, D)).
+  ?assertMatch({{te,[{DimT,46}]},_}, ice_core_eval(TT1, K, D)).
 
 context_perturbation_does_not_need_dim() ->
   PS = "#.t @ [t <- 46]",
@@ -54,7 +54,7 @@ context_perturbation_does_not_need_dim() ->
   %% ... for explicitly specifying context and known dims.
   K = [{DimT,0}],
   D = [],
-  ?assertMatch({46,_}, tcore_eval(PT1, K, D)).
+  ?assertMatch({46,_}, ice_core_eval(PT1, K, D)).
 
 wheredim_does_not_need_dim() ->
   S = "#.t where dim t <- 46 end",
@@ -72,7 +72,7 @@ primop_returns_as_missing_only_needed_unknown_dims() ->
   %% ... for explicitly specifying context and known dims.
   K = [{DimT,0}, {DimS,1}],
   D = [DimT],
-  ?assertMatch({[DimS],_}, tcore_eval(PT1, K, D)).
+  ?assertMatch({[DimS],_}, ice_core_eval(PT1, K, D)).
 
 
 %% Internals
@@ -93,7 +93,7 @@ tcache_stop(Pid) ->
   end.
 
 s(S) ->
-  {ok, T} = tea:string(S),
+  {ok, T} = ice:string(S),
   T.
 
 t0(T) ->
@@ -102,11 +102,11 @@ t0(T) ->
 t1(T) ->
   ttransform1:transform1(T).
 
-tcore_eval(T, K, D) ->
-  tcore:eval(T,[],[],K,D,{[],self()},0).
+ice_core_eval(T, K, D) ->
+  ice_core:eval(T,[],[],K,D,{[],self()},0).
 
 eval(S) when is_list(S) ->
-  {ok, T} = tea:string(S),
-  tea:eval(T).
+  {ok, T} = ice:string(S),
+  ice:eval(T).
 
 %% End of Module.

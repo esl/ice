@@ -20,7 +20,7 @@ eval(Xs, I, E, K, D, W, T) ->
   tthread:join(Pids, Xs, I, E, K, D, W, T).
 
 %%-------------------------------------------------------------------------------------
-%% @doc Evaluate expressions sequentially (useful for debugging)
+%% @doc Evaluate a sequence expressions 
 %%-------------------------------------------------------------------------------------
 eval_seq(Xs, I, E, K, D, W, T) ->
   eval_seq(Xs, I, E, K, D, W, T, []).
@@ -28,13 +28,14 @@ eval_seq(Xs, I, E, K, D, W, T) ->
 eval_seq([], I, E, K, D, W, T, Acc) ->
   {lists:reverse(Acc), T};
 eval_seq([X|Xs], I, E, K, D, W, T, Acc) ->
-  {D0, T1} = tcore:eval(X, I, E, K, D, W, T),
+  {D0, T1} = ice_core:eval(X, I, E, K, D, W, T),
   case T1 > T of
     true ->
       eval_seq(Xs, I, E, K, D, W, T1, [D0|Acc]);
     false ->
       eval_seq(Xs, I, E, K, D, W, T, [D0|Acc])
   end.
+
 
 
 

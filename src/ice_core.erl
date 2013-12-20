@@ -1,7 +1,7 @@
 %%-------------------------------------------------------------------------------------
 %% Evaluator
 %%-------------------------------------------------------------------------------------
--module(tcore).
+-module(ice_core).
 
 -export([eval/7]).
 
@@ -288,7 +288,7 @@ eval_seq(Xs, I, E, K, D, W, T) ->
 eval_seq([], I, E, K, D, W, T, Acc) ->
   {hd(lists:reverse(Acc)), T};
 eval_seq([X|Xs], I, E, K, D, W, T, Acc) ->
-  {D0, T1} = tcore:eval(X, I, E, K, D, W, T),
+  {D0, T1} = eval(X, I, E, K, D, W, T),
   case T1 > T of
     true ->
       eval_seq(Xs, I, E, K, D, W, T1, [D0|Acc]);

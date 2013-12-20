@@ -1,8 +1,8 @@
 %% See LICENSE for licensing information.
 %% -*- coding: utf-8 -*-
--module(tea).
+-module(ice).
 
-%% tea: interpreter for the Tea language
+%% ice: interpreter for the Ice language
 
 -export([string/1, file/1]).
 -export([eval/1]).
@@ -13,8 +13,8 @@
 %% API
 
 -spec string(string()) -> {ok | error, ast()}.
-string(TeaCode) ->
-  {ok, Tree} = tparser:string(TeaCode),
+string(IceCode) ->
+  {ok, Tree} = tparser:string(IceCode),
   rework_tree(Tree).
 
 -spec file(string()) -> {ok | error, ast()}.
@@ -26,14 +26,14 @@ file(Filename) ->
 eval(T) ->
   T0 = ttransform0:transform0(T),
   T1 = ttransform1:transform1(T0),
-  tcore:eval(T1,[],[],[],[],{[],self()},0).
+  ice_core:eval(T1,[],[],[],[],{[],self()},0).
 
 -spec i(string()) -> term().
 i(String) ->
   {ok, Tree} = string(String),
-  tcache:start_link(100),
+  ice_cache:create(),
   Res = eval(Tree),
-  tcache:stop(),
+  ice_cache:delete(),
   Res.
 
 %% Internals

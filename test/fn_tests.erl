@@ -20,7 +20,7 @@ phi_is_recognized_as_a_dim_test_() ->
   %% ... then check that such dimensions are treated in evaluator as
   %% all other dimensions as far as missing dimensions are concerned.
   {setup, fun setup/0, fun cleanup/1,
-   ?_assertMatch({[BAbsX],_}, tcore_eval({'if',{'?',BAbsX},46,58}))}.
+   ?_assertMatch({[BAbsX],_}, ice_core_eval({'if',{'?',BAbsX},46,58}))}.
 
 b_test_() ->
   {foreach, fun setup/0, fun cleanup/1,
@@ -264,7 +264,7 @@ cleanup(_) ->
   ice_cache:delete().
 
 s(S) ->
-  {ok, T} = tea:string(S),
+  {ok, T} = ice:string(S),
   T.
 
 t0(T) ->
@@ -273,16 +273,16 @@ t0(T) ->
 t1(T) ->
   ttransform1:transform1(T).
 
-tcore_eval(T) ->
-  tcore_eval(T, [], []).
+ice_core_eval(T) ->
+  ice_core_eval(T, [], []).
 
-tcore_eval(T, K, D) ->
-  tcore:eval(T,[],[],K,D,{[],self()},0).
+ice_core_eval(T, K, D) ->
+  ice_core:eval(T,[],[],K,D,{[],self()},0).
 
 eval(S) when is_list(S) ->
-  {ok, T} = tea:string(S),
-  tea:eval(T);
+  {ok, T} = ice:string(S),
+  ice:eval(T);
 eval(T) ->
-  tea:eval(T).
+  ice:eval(T).
 
 %% End of Module.

@@ -117,9 +117,9 @@ cleanup(_) ->
   ice_cache:delete().
 
 eval(S) when is_list(S) ->
-  {ok, T} = tea:string(S),
-  tea:eval(T);
+  {ok, T} = ice:string(S),
+  ice:eval(T);
 eval(T) ->
-  tea:eval(T).
+  ice:eval(T).
 
 %% End of Module.

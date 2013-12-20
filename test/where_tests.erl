@@ -99,14 +99,14 @@ cleanup(_) ->
   ice_cache:delete().
 
 s(S) ->
-  {ok, T} = tea:string(S),
+  {ok, T} = ice:string(S),
   T.
 
 t0(T) ->
   ttransform0:transform0(T).
 
 eval(S) when is_list(S) ->
-  {ok, T} = tea:string(S),
-  tea:eval(T).
+  {ok, T} = ice:string(S),
+  ice:eval(T).
 
 %% End of Module.

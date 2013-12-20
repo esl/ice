@@ -89,7 +89,7 @@ intention_abstraction_w_missing_frozen_dim() ->
   %% ... for explicitly specifying context and known dims.
   K = [{DimT,0}],
   D = [],
-  ?assertMatch({[DimT],_}, tcore_eval(IAbsT1, K, D)).
+  ?assertMatch({[DimT],_}, ice_core_eval(IAbsT1, K, D)).
 
 intention_application_w_missing_frozen_dim() ->
   IApplyS = "↓(↑{t} 46)",
@@ -102,7 +102,7 @@ intention_application_w_missing_frozen_dim() ->
   %% ... for explicitly specifying context and known dims.
   K = [{DimT,0}],
   D = [],
-  ?assertMatch({[DimT],_}, tcore_eval(IApplyT1, K, D)).
+  ?assertMatch({[DimT],_}, ice_core_eval(IApplyT1, K, D)).
 
 
 %% Internals
@@ -114,7 +114,7 @@ cleanup(_) ->
   ice_cache:delete().
 
 s(S) ->
-  {ok, T} = tea:string(S),
+  {ok, T} = ice:string(S),
   T.
 
 t0(T) ->
@@ -123,11 +123,11 @@ t0(T) ->
 t1(T) ->
   ttransform1:transform1(T).
 
-tcore_eval(T, K, D) ->
-  tcore:eval(T,[],[],K,D,{[],self()},0).
+ice_core_eval(T, K, D) ->
+  ice_core:eval(T,[],[],K,D,{[],self()},0).
 
 eval(S) when is_list(S) ->
-  {ok, T} = tea:string(S),
-  tea:eval(T).
+  {ok, T} = ice:string(S),
+  ice:eval(T).
 
 %% End of Module.
