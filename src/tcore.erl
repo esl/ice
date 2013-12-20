@@ -18,6 +18,12 @@ eval({char, Char}, _I, _E, _K, _D, _W, T) ->
   {{char, Char}, T};
 
 %%-------------------------------------------------------------------------------------
+%% Sequence
+%%-------------------------------------------------------------------------------------
+eval({seq, Eis}, I, E, K, D, W, T) ->
+  eval_seq(Eis, I, E, K, D, W, T);
+
+%%-------------------------------------------------------------------------------------
 %% Primop
 %%-------------------------------------------------------------------------------------
 eval({primop, Primop, Eis}, I, E, K, D, W, T) ->
@@ -257,13 +263,13 @@ eval1(Xi, I, E, K, D, W, T) ->
   end.
 
 eval2(Xi, I, E, K, D, W, T) ->
-  {D0, T0} = tcache:find(Xi, K, D, W, T),
+  {D0, T0} = ice_cache:find(Xi, K, D, W, T),
   case D0 of
     {calc, W} ->
       case lists:keyfind(Xi, 1, E) of
         {_, E0} ->
           {D1, T1} = eval(E0, I, E, K, D, W, T0),
-          tcache:add(Xi, K, D, W, T1, D1);
+          ice_cache:add(Xi, K, D, W, T1, D1);
         false ->
           {error, undefined_identifier, Xi}
       end;
@@ -271,6 +277,23 @@ eval2(Xi, I, E, K, D, W, T) ->
       eval2(Xi, I, E, K, D, W, T0 + 1);
     _ ->
       {D0, T0}
+  end.
+
+%%-------------------------------------------------------------------------------------
+%% @doc Evaluate a sequence expressions 
+%%-------------------------------------------------------------------------------------
+eval_seq(Xs, I, E, K, D, W, T) ->
+  eval_seq(Xs, I, E, K, D, W, T, []).
+
+eval_seq([], I, E, K, D, W, T, Acc) ->
+  {hd(lists:reverse(Acc)), T};
+eval_seq([X|Xs], I, E, K, D, W, T, Acc) ->
+  {D0, T1} = tcore:eval(X, I, E, K, D, W, T),
+  case T1 > T of
+    true ->
+      eval_seq(Xs, I, E, K, D, W, T1, [D0|Acc]);
+    false ->
+      eval_seq(Xs, I, E, K, D, W, T, [D0|Acc])
   end.
 
 %%-------------------------------------------------------------------------------------
