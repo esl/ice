@@ -59,6 +59,6 @@ evaluator(Su) ->
   evaluator(Su, X, I, E, K, D, W1, T).
 				    
 evaluator(Su, X, I, E, K, D, Wi, T) ->
-  {D0, T0} = tcore:eval(X, I, E, K, D, Wi, T),
+  {D0, T0} = ice_core:eval(X, I, E, K, D, Wi, T),
   Su ! {Wi, {D0, T0}}.
 
