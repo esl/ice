@@ -25,6 +25,10 @@ find(X, K, D, {Id0, _} = W0, _T) ->
     [] ->
 %%      io:format(user, "Inserting X = ~p, KD = ~p, {calc, ~p}~n", [X, KD, W0]),
       true = ice_dtree:insert({X,KD,{calc,W0}}),
+      %% FIXME Lookup must atomically write calc if needed, otherwise
+      %% concurrent find()s for the same {X,KD} would independently
+      %% start computing the same value and write (different) calc,
+      %% violating the assumption of add().
       {{calc,W0}, 0};
     {calc, {Id1,_} = W1} = V ->
       case lists:prefix(Id1, Id0) of
