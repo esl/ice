@@ -11,7 +11,7 @@ create() ->
   ice_dtree:new().
 
 %%------------------------------------------------------------------------------
-%% @doc 
+%% @doc Delete the named ets table which represents the cache
 %%------------------------------------------------------------------------------
 delete() ->
   ice_dtree:delete().
