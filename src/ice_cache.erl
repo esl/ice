@@ -4,6 +4,14 @@
 -export([create/0, delete/0]).
 -export([find/5, add/6]).
 
+-define(FMT_D(V), %% Format missing dimensions
+        case V of
+          Dims when is_list(Dims) andalso length(Dims) > 0 ->
+            "{i, ~p}";
+          _ ->
+            "~p"
+        end).
+
 %%------------------------------------------------------------------------------
 %% @doc Create a named ets table which represents the cache
 %%------------------------------------------------------------------------------
@@ -33,30 +41,21 @@ find(X, K, D, {Id0, _} = W0, _T) ->
           %% io:format("Found X = ~p, KD = ~p, {calc, ~p}~n", [X, KD, W1]),
           {V, 0}
       end;
-    {false, {i,Dims,[]}} ->
-      %% io:format("Found X = ~p, KD = ~p, {i, ~p}~n", [X, KD, Dims]),
-      {Dims, 0};
     {false, V} ->
-      %% io:format("Found X = ~p, KD = ~p, ~p~n", [X, KD, V]),
+      %% io:format("Found X = ~p, KD = ~p, " ++ ?FMT_D(V) ++ "~n", [X,KD,V]),
       {V, 0}
   end.
 
 %%------------------------------------------------------------------------------
 %% @doc Add an {identifier, context, value} to the cache
 %%------------------------------------------------------------------------------
-add(X, K, D, W, _T, V1) ->
+add(X, K, D, W, _T, V) ->
   KD = lists:keysort(1, ice_sets:restrict_domain(K, D)),
   case ice_dtree:lookup({X,KD}) of
     {calc, W} ->
-      case V1 of
-        V1 when is_list(V1) ->
-          %% io:format("Inserting X = ~p, KD = ~p, {i, ~p}~n", [X, KD, V1]),
-          true = ice_dtree:insert({X,KD}, {i,V1,[]});
-        V1 ->
-          %% io:format("Inserting X = ~p, KD = ~p, ~p~n", [X, KD, V1]),
-          true = ice_dtree:insert({X,KD}, V1)
-      end,
-      {V1, 0};
+      %% io:format("Inserting X = ~p, KD = ~p, " ++ ?FMT_D(V) ++ "~n", [X,KD,V]),
+      true = ice_dtree:insert({X,KD}, V),
+      {V, 0};
     _ ->
       hang
   end.

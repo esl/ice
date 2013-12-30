@@ -12,12 +12,13 @@
 -type dim() :: term().
 -type ground_value() :: term().
 -type context() :: [{dim(), ground_value()}].
+-type calc() :: {calc, Pid :: term()}.
+-type missing_dims() :: [dim(), ...].
+-type k() :: {id(), context()}.
 
 -record(?TABLE_NAME,
-        {k :: {id(), context()},
-         v :: ground_value() |
-              {calc, Pid :: term()} |
-              {i, MissingDims :: [dim()], []}}).
+        {k :: k(),
+         v :: calc() | {i, missing_dims(), []} | ground_value()}).
 
 %%------------------------------------------------------------------------------
 %% @doc Create a new ets table for the cache
@@ -47,6 +48,7 @@ delete() ->
 %%------------------------------------------------------------------------------
 %% @doc Lookup an {Identifier, Context} pair in the cache
 %%------------------------------------------------------------------------------
+-spec lookup(k()) -> calc() | missing_dims() | ground_value().
 lookup({Xi,Key} = XiKey) ->
   case mnesia:async_dirty(fun() -> mnesia:read(?TABLE_NAME, XiKey) end) of
     [] ->
@@ -78,6 +80,9 @@ lookup({Xi,Key} = XiKey, K) ->
 %%------------------------------------------------------------------------------
 %% @doc Insert a value at {Xi, Key} into the cache
 %%------------------------------------------------------------------------------
+-spec insert(k(), missing_dims() | ground_value()) -> true.
+insert({_,_} = XiKey, Dims) when is_list(Dims) andalso length(Dims) > 0 ->
+  insert(XiKey, {i,Dims,[]});
 insert({_,_} = XiKey, V) ->
   {atomic, ok} =
     mnesia:transaction(
@@ -89,7 +94,10 @@ insert({_,_} = XiKey, V) ->
 %%------------------------------------------------------------------------------
 %% @doc Insert a value at {Xi, Key} into the cache unless already present
 %%------------------------------------------------------------------------------
-insert_new({_,_} = XiKey, V) ->
+-spec insert_new(k(), calc()) ->
+                    {true, calc()} |
+                    {false, calc() | missing_dims() | ground_value()}.
+insert_new({_,_} = XiKey, {calc,_} = V) ->
   {atomic, {B, V2}} =
     mnesia:transaction(
       fun() ->
@@ -97,6 +105,8 @@ insert_new({_,_} = XiKey, V) ->
             [] ->
               ok = mnesia:write(#?TABLE_NAME{k=XiKey, v=V}),
               {true, V};
+            [#?TABLE_NAME{k=XiKey, v={i,Dims,_}}] ->
+              {false, Dims};
             [#?TABLE_NAME{k=XiKey, v=V1}] ->
               {false, V1}
           end
