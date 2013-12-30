@@ -5,6 +5,7 @@
 -export([new/0, delete/0]).
 -export([lookup/1,
          insert/2, insert_new/2]).
+-export([sort_context/1]).
 
 -define(TABLE_NAME, ice_cache).
 
@@ -47,6 +48,8 @@ delete() ->
 
 %%------------------------------------------------------------------------------
 %% @doc Lookup an {Identifier, Context} pair in the cache
+%%
+%% The specified context Key must be already sorted by dimension.
 %%------------------------------------------------------------------------------
 -spec lookup(k()) -> calc() | missing_dims() | ground_value().
 lookup({Xi,Key} = XiKey) ->
@@ -71,7 +74,7 @@ lookup({Xi,Key} = XiKey, K) ->
         [] ->
           Dims;
         K1 ->
-          lookup({Xi,K1}, ice_sets:subtract_by_domain(K, Dims))
+          lookup({Xi,sort_context(K1)}, ice_sets:subtract_by_domain(K, Dims))
       end;
     [#?TABLE_NAME{v=Value}] ->
       Value
@@ -79,10 +82,12 @@ lookup({Xi,Key} = XiKey, K) ->
 
 %%------------------------------------------------------------------------------
 %% @doc Insert a value at {Xi, Key} into the cache
+%%
+%% The specified context Key must be already sorted by dimension.
 %%------------------------------------------------------------------------------
 -spec insert(k(), missing_dims() | ground_value()) -> true.
 insert({_,_} = XiKey, Dims) when is_list(Dims) andalso length(Dims) > 0 ->
-  insert(XiKey, {i,Dims,[]});
+  insert(XiKey, {i, sort_dims(Dims), []});
 insert({_,_} = XiKey, V) ->
   {atomic, ok} =
     mnesia:transaction(
@@ -93,6 +98,8 @@ insert({_,_} = XiKey, V) ->
 
 %%------------------------------------------------------------------------------
 %% @doc Insert a value at {Xi, Key} into the cache unless already present
+%%
+%% The specified context Key must be already sorted by dimension.
 %%------------------------------------------------------------------------------
 -spec insert_new(k(), calc()) ->
                     {true, calc()} |
@@ -112,6 +119,17 @@ insert_new({_,_} = XiKey, {calc,_} = V) ->
           end
       end),
   {B, V2}.
+
+%%------------------------------------------------------------------------------
+%% @doc Sort the specified context by dimension
+%%------------------------------------------------------------------------------
+sort_context(Key) -> lists:keysort(1, Key).
+
+%%------------------------------------------------------------------------------
+%% @doc Sort the specified list of dimensions
+%% @private
+%%------------------------------------------------------------------------------
+sort_dims(Dims) -> lists:sort(Dims).
 
 
 insert_correct_tree() ->

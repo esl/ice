@@ -28,7 +28,7 @@ delete() ->
 %% @doc Find an identifier with a specific context K restricted by the domain D
 %%------------------------------------------------------------------------------
 find(X, K, D, {Id0, _} = W0, _T) ->
-  KD = lists:keysort(1, ice_sets:restrict_domain(K, D)),
+  KD = ice_dtree:sort_context(ice_sets:restrict_domain(K, D)),
   case ice_dtree:insert_new({X,KD}, {calc,W0}) of
     {true, {calc,W0}} ->
       %% io:format("Inserted X = ~p, KD = ~p, {calc, ~p}~n", [X, KD, W0]),
@@ -50,7 +50,7 @@ find(X, K, D, {Id0, _} = W0, _T) ->
 %% @doc Add an {identifier, context, value} to the cache
 %%------------------------------------------------------------------------------
 add(X, K, D, W, _T, V) ->
-  KD = lists:keysort(1, ice_sets:restrict_domain(K, D)),
+  KD = ice_dtree:sort_context(ice_sets:restrict_domain(K, D)),
   case ice_dtree:lookup({X,KD}) of
     {calc, W} ->
       %% io:format("Inserting X = ~p, KD = ~p, " ++ ?FMT_D(V) ++ "~n", [X,KD,V]),
