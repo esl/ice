@@ -24,7 +24,7 @@ dialyze: $(DIALYZER_PLT) compile
 .PHONY: dialyzer
 
 $(DIALYZER_PLT):
-	dialyzer --build_plt --output_plt $@ --apps erts kernel stdlib
+	dialyzer --build_plt --output_plt $@ --apps erts kernel stdlib mnesia
 
 rebar:
 	git clone git://github.com/rebar/rebar.git rebar.d
