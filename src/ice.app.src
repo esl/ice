@@ -1,6 +1,6 @@
-{application, tea,
+{application, ice,
  [
-  {description, "A cache-based TransLucid interpreter"},
+  {description, "Intensional Computing Engine - A cache based TransLucid interpreter"},
   {vsn, "0.1"},
   {registered, []},
   {applications, [
