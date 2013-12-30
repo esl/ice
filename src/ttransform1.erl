@@ -304,12 +304,12 @@ d1_tournament() ->
   {fn, "tournament", [{b_param, d}, {b_param, lim}, {n_param, "X"}],
    {where, "Y",
     [{var, "Y",
-      {'if', tprimop:lte({'#', time}, 0),
+      {'if', ice_primop:lte({'#', time}, 0),
        "X",
        {'@',
-	tprimop:plus({'@', "Y", {t, [{d, tprimop:plus(tprimop:times({'#', d}, 2), 1)}]}},
-		     {'@', "Y", {t, [{d, tprimop:times({'#', d}, 2)}]}}),
-	{t, [{time, tprimop:minus({'#', time}, 1)}]}}}}]}}.
+	ice_primop:plus({'@', "Y", {t, [{d, ice_primop:plus(ice_primop:times({'#', d}, 2), 1)}]}},
+		     {'@', "Y", {t, [{d, ice_primop:times({'#', d}, 2)}]}}),
+	{t, [{time, ice_primop:minus({'#', time}, 1)}]}}}}]}}.
 
 
 test() ->

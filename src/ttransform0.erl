@@ -209,9 +209,9 @@ fby() ->
   %% fun fby.d A B = if #.d <= 0 then A else B @ [d <- #.d - 1] fi
   %%------------------------------------------------------------------------------ 
   {fn, "fby", [{b_param, d}, {n_param, "A"}, {n_param, "B"}],
-   {'if', tprimop:lte({'#', {dim,d}}, 0),
+   {'if', ice_primop:lte({'#', {dim,d}}, 0),
     "A",
-    {'@', "B", {t, [{{dim,d}, tprimop:minus({'#',{dim,d}}, 1)}]}}}}.
+    {'@', "B", {t, [{{dim,d}, ice_primop:minus({'#',{dim,d}}, 1)}]}}}}.
 
 d1_tournament() ->
   %%------------------------------------------------------------------------------
@@ -230,12 +230,12 @@ d1_tournament() ->
   {fn, "tournament", [{b_param, d}, {b_param, lim}, {n_param, "X"}],
    {where, "Y",
     [{var, "Y",
-      {'if', tprimop:lte({'#', {dim,time}}, 0),
+      {'if', ice_primop:lte({'#', {dim,time}}, 0),
        "X",
        {'@',
-	tprimop:plus({'@', "Y", {t, [{{dim,d}, tprimop:plus(tprimop:times({'#', {dim,d}}, 2), 1)}]}},
-		     {'@', "Y", {t, [{{dim,d}, tprimop:times({'#', {dim,d}}, 2)}]}}),
-	{t, [{{dim,time}, tprimop:minus({'#', {dim,time}}, 1)}]}}}}]}}.
+	ice_primop:plus({'@', "Y", {t, [{{dim,d}, ice_primop:plus(ice_primop:times({'#', {dim,d}}, 2), 1)}]}},
+		     {'@', "Y", {t, [{{dim,d}, ice_primop:times({'#', {dim,d}}, 2)}]}}),
+	{t, [{{dim,time}, ice_primop:minus({'#', {dim,time}}, 1)}]}}}}]}}.
 
 
 test() ->

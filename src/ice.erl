@@ -53,7 +53,7 @@ rework_tree (Tree) ->
         ({call, _, FunExpr, Params}) ->
           case {FunExpr,Params} of
             {"atan2",[{b_param,N},{b_param,M}]} ->
-              tprimop:atan2(N, M);
+              ice_primop:atan2(N, M);
             {Fun,[{b_param,N}]} when Fun == "floor";
                                      Fun == "ceil";
                                      Fun == "sin";
@@ -74,7 +74,7 @@ rework_tree (Tree) ->
                                      Fun == "pow";
                                      Fun == "sqrt";
                                      Fun == "abs" ->
-              tprimop:(list_to_existing_atom(Fun))(N);
+              ice_primop:(list_to_existing_atom(Fun))(N);
             _ ->
               {fn_call, FunExpr, Params}
           end;
@@ -98,19 +98,19 @@ rework_tree (Tree) ->
         ({tuple, _, Assocs}) -> {t, Assocs};
         ({tuple_element, _, Lhs, Rhs}) -> {Lhs, Rhs};
 
-        ({'or',  _, A, B}) -> tprimop:tor(A, B);
-        ({'and', _, A, B}) -> tprimop:tand(A, B);
-        ({'<',   _, A, B}) -> tprimop:lt(A, B);
-        ({'<=',  _, A, B}) -> tprimop:lte(A, B);
-        ({'==',  _, A, B}) -> tprimop:eq(A, B);
-        ({'>=',  _, A, B}) -> tprimop:gte(A, B);
-        ({'>',   _, A, B}) -> tprimop:gt(A, B);
-        ({'!=',  _, A, B}) -> tprimop:neq(A, B);
-        ({'+',   _, A, B}) -> tprimop:plus(A, B);
-        ({'-',   _, A, B}) -> tprimop:minus(A, B);
-        ({'*',   _, A, B}) -> tprimop:times(A, B);
-        ({'/',   _, A, B}) -> tprimop:divide(A, B);
-        ({'%',   _, A, B}) -> tprimop:mod(A, B);
+        ({'or',  _, A, B}) -> ice_primop:tor(A, B);
+        ({'and', _, A, B}) -> ice_primop:tand(A, B);
+        ({'<',   _, A, B}) -> ice_primop:lt(A, B);
+        ({'<=',  _, A, B}) -> ice_primop:lte(A, B);
+        ({'==',  _, A, B}) -> ice_primop:eq(A, B);
+        ({'>=',  _, A, B}) -> ice_primop:gte(A, B);
+        ({'>',   _, A, B}) -> ice_primop:gt(A, B);
+        ({'!=',  _, A, B}) -> ice_primop:neq(A, B);
+        ({'+',   _, A, B}) -> ice_primop:plus(A, B);
+        ({'-',   _, A, B}) -> ice_primop:minus(A, B);
+        ({'*',   _, A, B}) -> ice_primop:times(A, B);
+        ({'/',   _, A, B}) -> ice_primop:divide(A, B);
+        ({'%',   _, A, B}) -> ice_primop:mod(A, B);
 
         ({bool, _, Boolean}) -> Boolean;
         ({raw_string, _, S})    -> {string, S};
