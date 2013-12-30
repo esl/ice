@@ -111,7 +111,7 @@ eval({Q, E0}, I, E, K, D, W, T) when Q == '#' orelse Q == '?' ->
 %% Base Abstraction
 %%------------------------------------------------------------------------------
 eval({b_abs, _Is, _Params, _E0}=Abs, I, E, K, D, W, T) ->
-  freeze_closure(tclosure:close_abs(Abs, I, E), I, E, K, D, W, T);
+  freeze_closure(ice_closure:close_abs(Abs, I, E), I, E, K, D, W, T);
 
 eval({b_apply, E0, Eis}, I, E, K, D, W, T) ->
   {D0is, MaxT} = ice_par:eval([E0 | Eis], I, E, K, D, W, T),
@@ -132,7 +132,7 @@ eval({b_apply, E0, Eis}, I, E, K, D, W, T) ->
 %% Value Abstraction
 %%------------------------------------------------------------------------------
 eval({v_abs, _Is, _Params, _E0}=Abs, I, E, K, D, W, T) ->
-  freeze_closure(tclosure:close_abs(Abs, I, E), I, E, K, D, W, T);
+  freeze_closure(ice_closure:close_abs(Abs, I, E), I, E, K, D, W, T);
 
 eval({v_apply, E0, Eis}, I, E, K, D, W, T) ->
   {D0is, MaxT} = ice_par:eval([E0 | Eis], I, E, K, D, W, T),
@@ -153,7 +153,7 @@ eval({v_apply, E0, Eis}, I, E, K, D, W, T) ->
 %% Intension Abstraction
 %%------------------------------------------------------------------------------
 eval({i_abs, _Is, _E0}=Abs, I, E, K, D, W, T) ->
-  freeze_closure(tclosure:close_abs(Abs, I, E), I, E, K, D, W, T);
+  freeze_closure(ice_closure:close_abs(Abs, I, E), I, E, K, D, W, T);
 
 eval({i_apply, E0}, I, E, K, D, W, T) ->
   {D0, T0} = eval(E0, I, E, K, D, W, T),
@@ -180,7 +180,7 @@ eval({wherevar, E0, XiEis}, I, E, K, D, W, T) ->
   %% Close shallowest abstractions in new expressions in environment
   %% if needed. Wherevar is the only expression changing the
   %% environment, therefore the only one needing to do this.
-  XiClEis = tclosure:close_shallowest_abs_in_wherevar_expressions(XiEis, I, E),
+  XiClEis = ice_closure:close_shallowest_abs_in_wherevar_expressions(XiEis, I, E),
   eval(E0, I, tset:perturb(E, XiClEis), K, D, W, T);
 
 %%-------------------------------------------------------------------------------------
