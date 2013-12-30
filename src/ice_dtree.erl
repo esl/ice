@@ -53,9 +53,9 @@ lookup({Xi,Key} = XiKey) ->
   case mnesia:async_dirty(fun() -> mnesia:read(?TABLE_NAME, XiKey) end) of
     [] ->
       lookup({Xi,[]}, Key);
-    [#?TABLE_NAME{k={_,_}, v={i,Dims,_}}] ->
+    [#?TABLE_NAME{v={i,Dims,_}}] ->
       Dims;
-    [#?TABLE_NAME{k={_,_}, v=Value}] ->
+    [#?TABLE_NAME{v=Value}] ->
       Value
   end.
 
@@ -63,17 +63,17 @@ lookup({Xi,Key} = XiKey, K) ->
   case mnesia:async_dirty(fun() -> mnesia:read(?TABLE_NAME, XiKey) end) of
     [] ->
       [];
-    [#?TABLE_NAME{k={_,_}, v={calc,_W}=Value}] ->
+    [#?TABLE_NAME{v={calc,_W}=Value}] ->
       %%throw(error_calc);
       Value;
-    [#?TABLE_NAME{k={_,Key}, v={i,Dims,_}}] ->
+    [#?TABLE_NAME{v={i,Dims,_}}] ->
       case ice_sets:restrict_domain(K, Dims) of
         [] ->
           Dims;
         K1 ->
           lookup({Xi,K1}, ice_sets:subtract_by_domain(K, Dims))
       end;
-    [#?TABLE_NAME{k={_,_}, v=Value}] ->
+    [#?TABLE_NAME{v=Value}] ->
       Value
   end.
 
@@ -105,9 +105,9 @@ insert_new({_,_} = XiKey, {calc,_} = V) ->
             [] ->
               ok = mnesia:write(#?TABLE_NAME{k=XiKey, v=V}),
               {true, V};
-            [#?TABLE_NAME{k=XiKey, v={i,Dims,_}}] ->
+            [#?TABLE_NAME{v={i,Dims,_}}] ->
               {false, Dims};
-            [#?TABLE_NAME{k=XiKey, v=V1}] ->
+            [#?TABLE_NAME{v=V1}] ->
               {false, V1}
           end
       end),
