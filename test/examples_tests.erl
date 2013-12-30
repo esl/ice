@@ -402,7 +402,7 @@ parallel_one_dimensional_tournament() ->
     "// Tournament in 1 dimension
     A
     where
-      dim t <- 12
+      dim t <- 10
       dim s <- 0
 
       // Compute A across space
@@ -421,7 +421,7 @@ parallel_one_dimensional_tournament() ->
           1
         fi
     end",
-  ?assertMatch({527872,_}, eval(S)).
+  ?assertMatch({523777,_}, eval(S)).
 
 parallel_two_dimensional_tournament() ->
   %% Parallel, two-dimensional (tournament)
