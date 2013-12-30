@@ -127,7 +127,7 @@ lexical_scoping_between_dim_id_and_formal_param_test_() ->
        eval("(F.46 where fun F.x =     #.x end) where dim x <- 1 end")),
     ?_testMockingIcePar(
        ?assertError(
-          badarith, %% Upstream TL returns spundef %% TODO Improve semantics, as ice_par:eval in evaluation of primop returns [46, [46]], but [46] is not recognized as a dimension by tset:is_d
+          badarith, %% Upstream TL returns spundef %% TODO Improve semantics, as ice_par:eval in evaluation of primop returns [46, [46]], but [46] is not recognized as a dimension by ice_sets:is_d
           eval("(F.46 where fun F.x = x + #.x end) where dim x <- 1 end"))),
     %%
     ?_assertMatch(
@@ -138,7 +138,7 @@ lexical_scoping_between_dim_id_and_formal_param_test_() ->
        eval("F.1 where fun F.x =  x        where dim x <- 46 end end")),
     ?_testMockingIcePar(
        ?assertError(
-          badarith, %% Upstream TL returns spundef %% TODO Improve semantics, as ice_par:eval in evaluation of primop returns [46, [46]], but [46] is not recognized as a dimension by tset:is_d
+          badarith, %% Upstream TL returns spundef %% TODO Improve semantics, as ice_par:eval in evaluation of primop returns [46, [46]], but [46] is not recognized as a dimension by ice_sets:is_d
           eval("F.1 where fun F.x = (x + #.x) where dim x <- 46 end end")))
    ]}.
 

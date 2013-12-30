@@ -24,7 +24,7 @@
 %% nodes, e.g. a closure node with only a ground value inside.
 %%------------------------------------------------------------------------------
 close_shallowest_abs_in_wherevar_expressions(XiEis, I, E) ->
-  EPert = tset:perturb(E, XiEis), %% XXX This perturbation could be a union...
+  EPert = ice_sets:perturb(E, XiEis), %% XXX This perturbation could be a union...
   %% ... if variables in different wherevar clauses were distinct even
   %% if with same name.
   [{Xi, close_shallowest_abs(Ei, I, EPert)} || {Xi, Ei} <- XiEis].
@@ -99,7 +99,7 @@ close_shallowest_abs({closure, _ClI, _ClE, _Abs}=Expr, _I, _E) ->
   Expr;
 close_shallowest_abs({wherevar, E0, XiEis}, I, E) ->
   XiClEis = close_shallowest_abs_in_wherevar_expressions(XiEis, I, E),
-  {wherevar, close_shallowest_abs(E0, I, tset:perturb(E, XiClEis)), XiClEis};
+  {wherevar, close_shallowest_abs(E0, I, ice_sets:perturb(E, XiClEis)), XiClEis};
 close_shallowest_abs({wheredim, E0, XiEis}, I, E) ->
   {wheredim, close_shallowest_abs(E0, I, E),
    lists:keymap(fun(Ei) -> close_shallowest_abs(Ei, I, E) end, 2, XiEis)};

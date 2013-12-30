@@ -1,4 +1,4 @@
--module(tset).
+-module(ice_sets).
 
 -export([intersection/2, difference/2]).
 -export([restrict/2, union/2, restrict_domain/2]).
@@ -66,7 +66,7 @@ union(A, B) ->
 %% @doc The union of sets in Dis where if Di is a set of known dimensions, Ui MaxI
 %%-------------------------------------------------------------------------------------
 union_d(Dis) ->
-  case lists:any(fun tset:is_k/1, Dis) of
+  case lists:any(fun ice_sets:is_k/1, Dis) of
     true ->
       {true, union_d(Dis, [])};
     false ->

@@ -116,9 +116,9 @@ t0({fn_call, FnE, Params}, NPs) ->
 %%------------------------------------------------------------------------------
 t0({where, E0, VDisEis}, NPs0) ->
   Dims = [{Xi, t0(Ei, NPs0)} || {dim,Xi,Ei} <- VDisEis],
-  NPs1 = tset:difference(NPs0, element(1, lists:unzip(Dims))),
+  NPs1 = ice_sets:difference(NPs0, element(1, lists:unzip(Dims))),
   Vars0 = [{Xi,Ei} || {var,Xi,Ei} <- VDisEis],
-  NPs2 = tset:difference(NPs1, element(1, lists:unzip(Vars0))),
+  NPs2 = ice_sets:difference(NPs1, element(1, lists:unzip(Vars0))),
   Vars1 = [{Xi, t0(Ei, NPs2)} || {Xi,Ei} <- Vars0],
   %% We should probably signal an error when the body contains other elements..
   t0_where(Vars1, Dims, E0, NPs2);
@@ -150,16 +150,16 @@ t0_fn(Is, [{b_param,_}|_]=Params, E, NPs) ->
   %% Group consecutive initial base params
   {BPs0, Ps} = lists:splitwith(fun({Type,_}) -> Type == b_param end, Params),
   {_, BPs1} = lists:unzip(BPs0),
-  {b_abs, Is, BPs1, t0_fn([], Ps, E, tset:difference(NPs, BPs1))};
+  {b_abs, Is, BPs1, t0_fn([], Ps, E, ice_sets:difference(NPs, BPs1))};
 t0_fn(Is, [{v_param, Param}|Ps], E, NPs) ->
-  {v_abs, Is, [Param], t0_fn([], Ps, E, tset:difference(NPs, [Param]))};
+  {v_abs, Is, [Param], t0_fn([], Ps, E, ice_sets:difference(NPs, [Param]))};
 t0_fn(Is, [{n_param, Param}|Ps], E, NamedParams) ->
   %%------------------------------------------------------------------------------
   %% Replace Param in E with an intension application.  Ref
   %% proposition 9 in Aug 2012 semantics paper:
   %%   [ \\ {Ei} x -> E0 ] == [ \ {Ei} x -> E0[x/↓x] ]
   %%------------------------------------------------------------------------------
-  {v_abs, Is, [Param], t0_fn([], Ps, E, tset:union(NamedParams, [Param]))}.
+  {v_abs, Is, [Param], t0_fn([], Ps, E, ice_sets:union(NamedParams, [Param]))}.
 
 %%------------------------------------------------------------------------------
 %% @doc Transform function call.

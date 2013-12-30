@@ -28,7 +28,7 @@ eval({seq, Eis}, I, E, K, D, W, T) ->
 %%-------------------------------------------------------------------------------------
 eval({primop, Primop, Eis}, I, E, K, D, W, T) ->
   {Dis, MaxT} = ice_par:eval(Eis, I, E, K, D, W, T),
-  case tset:union_d(Dis) of
+  case ice_sets:union_d(Dis) of
     {true, Dims} ->
       {Dims, MaxT};
     {false, Dis1} ->
@@ -42,7 +42,7 @@ eval({primop, Primop, Eis}, I, E, K, D, W, T) ->
 eval({t, Es}, I, E, K, D, W, T) ->
   XiEis = lists:flatmap(fun({Xi,Ei}) -> [Xi,Ei] end, Es),
   {Dis, MaxT} = ice_par:eval(XiEis, I, E, K, D, W, T), %% XXX Does evaluating lhs make sense if dims are not ground values?
-  case tset:union_d(Dis) of
+  case ice_sets:union_d(Dis) of
     {true, Dims} ->
       {Dims, MaxT};
     {false, Dis1} ->
@@ -55,13 +55,13 @@ eval({t, Es}, I, E, K, D, W, T) ->
 %%-------------------------------------------------------------------------------------
 eval({'@', E0, E1}, I, E, K, D, W, T) ->
   {Di, T1} = eval(E1, I, E, K, D, W, T),
-  case tset:is_k(Di) of
+  case ice_sets:is_k(Di) of
     true ->
-      {lists:filter(fun tset:is_d/1, Di), T1};
+      {lists:filter(fun ice_sets:is_d/1, Di), T1};
     false ->
       {te, Di2} = Di,
-      Ki = tset:perturb(K, Di2),
-      Di3 = tset:union(D, tset:domain(Di2)),
+      Ki = ice_sets:perturb(K, Di2),
+      Di3 = ice_sets:union(D, ice_sets:domain(Di2)),
       eval(E0, I, E, Ki, Di3, W, T1)
   end;
 
@@ -70,7 +70,7 @@ eval({'@', E0, E1}, I, E, K, D, W, T) ->
 %%-------------------------------------------------------------------------------------
 eval({'if', E0, E1, E2}, I, E, K, D, W, T) ->
   {D0, T0} = eval(E0, I, E, K, D, W, T),
-  case tset:is_k(D0) of
+  case ice_sets:is_k(D0) of
     true ->
       {D0, T0};
     false ->
@@ -87,7 +87,7 @@ eval({'if', E0, E1, E2}, I, E, K, D, W, T) ->
 %%-------------------------------------------------------------------------------------
 eval({Q, E0}, I, E, K, D, W, T) when Q == '#' orelse Q == '?' ->
   {D0, T0} = eval(E0, I, E, K, D, W, T),
-  case tset:is_k(D0) of
+  case ice_sets:is_k(D0) of
     true ->
       {D0, T0};
     false ->
@@ -115,16 +115,16 @@ eval({b_abs, _Is, _Params, _E0}=Abs, I, E, K, D, W, T) ->
 
 eval({b_apply, E0, Eis}, I, E, K, D, W, T) ->
   {D0is, MaxT} = ice_par:eval([E0 | Eis], I, E, K, D, W, T),
-  case tset:union_d(D0is) of
+  case ice_sets:union_d(D0is) of
     {true, Dims} ->
       {Dims, MaxT};
     {false, D0is1} -> %% XXX Why Dis1 even if equal to Dis?
       [D0 | Dis] = D0is1,
       {frozen_closed_b_abs, ClI, ClE, FrozenK, AbsParams, AbsBody} = D0,
       AbsParamsK = lists:zip(AbsParams, Dis),
-      FPK = tset:perturb(FrozenK, AbsParamsK),
+      FPK = ice_sets:perturb(FrozenK, AbsParamsK),
       eval(AbsBody, ClI, ClE,
-           FPK, tset:domain(FPK),
+           FPK, ice_sets:domain(FPK),
            W, MaxT)
   end;
 
@@ -136,16 +136,16 @@ eval({v_abs, _Is, _Params, _E0}=Abs, I, E, K, D, W, T) ->
 
 eval({v_apply, E0, Eis}, I, E, K, D, W, T) ->
   {D0is, MaxT} = ice_par:eval([E0 | Eis], I, E, K, D, W, T),
-  case tset:union_d(D0is) of
+  case ice_sets:union_d(D0is) of
     {true, Dims} ->
       {Dims, MaxT};
     {false, D0is1} -> %% XXX Why Dis1 even if equal to Dis?
       [D0 | Dis] = D0is1,
       {frozen_closed_v_abs, ClI, ClE, FrozenK, AbsParams, AbsBody} = D0,
       AbsParamsK = lists:zip(AbsParams, Dis),
-      FPK = tset:perturb(FrozenK, AbsParamsK),
+      FPK = ice_sets:perturb(FrozenK, AbsParamsK),
       eval(AbsBody, ClI, ClE,
-           tset:perturb(K, FPK), tset:union(D, tset:domain(FPK)),
+           ice_sets:perturb(K, FPK), ice_sets:union(D, ice_sets:domain(FPK)),
            W, MaxT)
   end;
 
@@ -157,13 +157,13 @@ eval({i_abs, _Is, _E0}=Abs, I, E, K, D, W, T) ->
 
 eval({i_apply, E0}, I, E, K, D, W, T) ->
   {D0, T0} = eval(E0, I, E, K, D, W, T),
-  case tset:is_k(D0) of
+  case ice_sets:is_k(D0) of
     true ->
       {D0, T0};
     false ->
       {frozen_closed_i_abs, ClI, ClE, FrozenK, AbsBody} = D0,
       eval(AbsBody, ClI, ClE,
-           tset:perturb(K, FrozenK), tset:union(D, tset:domain(FrozenK)),
+           ice_sets:perturb(K, FrozenK), ice_sets:union(D, ice_sets:domain(FrozenK)),
            W, T0)
   end;
 
@@ -181,7 +181,7 @@ eval({wherevar, E0, XiEis}, I, E, K, D, W, T) ->
   %% if needed. Wherevar is the only expression changing the
   %% environment, therefore the only one needing to do this.
   XiClEis = ice_closure:close_shallowest_abs_in_wherevar_expressions(XiEis, I, E),
-  eval(E0, I, tset:perturb(E, XiClEis), K, D, W, T);
+  eval(E0, I, ice_sets:perturb(E, XiClEis), K, D, W, T);
 
 %%-------------------------------------------------------------------------------------
 %% Wheredim
@@ -189,20 +189,20 @@ eval({wherevar, E0, XiEis}, I, E, K, D, W, T) ->
 eval({wheredim, E0, XiEis}, I, E, K, D, W, T) ->
   {Xis, Eis} = lists:unzip(XiEis),
   {Dis, MaxT} = ice_par:eval(Eis, I, E, K, D, W, T),
-  case tset:union_d(Dis) of
+  case ice_sets:union_d(Dis) of
     {true, Dims} ->
       {Dims, MaxT};
     {false, Dis} ->
-      Ki1 = tset:perturb(K, lists:zip(Xis, Dis)),
+      Ki1 = ice_sets:perturb(K, lists:zip(Xis, Dis)),
       %% XXX It is unclear if legal or illegal programs violating the
       %% following hardcoded expectation exist.
-      [] = tset:intersection(D, Xis),
+      [] = ice_sets:intersection(D, Xis),
       %% The hidden dimensions shall be added by the wheredim rule to
       %% the set of known dimensions (the rule in the paper
       %% "Multidimensional Infinite Data in the Language Lucid", Feb
       %% 2013, needs this correction re Delta) otherwise the body
       %% cannot use them.
-      Di1 = tset:union(D, Xis),
+      Di1 = ice_sets:union(D, Xis),
       eval(E0, I, E, Ki1, Di1, W, MaxT)
   end;
 
@@ -243,20 +243,20 @@ eval(Xi, I, E, K, D, W, T) when is_list(Xi) orelse is_atom(Xi) ->
   %% beta.data(x,k) is not defined, *no calc<w> node shall be
   %% created*. Probably, GC shall be triggered by this instruction
   %% too.
-  {_D0, _T0} = eval1(Xi, I, E, tset:restrict_domain(K, D), [], W, T).
+  {_D0, _T0} = eval1(Xi, I, E, ice_sets:restrict_domain(K, D), [], W, T).
 
 %%-------------------------------------------------------------------------------------
 %% Finding identifiers in the cache
 %%-------------------------------------------------------------------------------------
 eval1(Xi, I, E, K, D, W, T) ->
   {D0, T0} = eval2(Xi, I, E, K, D, W, T),
-  case tset:is_k(D0) andalso tset:subset(D0, tset:domain(K)) of
+  case ice_sets:is_k(D0) andalso ice_sets:subset(D0, ice_sets:domain(K)) of
     true ->
-      case tset:difference(D0, D) of
+      case ice_sets:difference(D0, D) of
         [] ->
           {error, loop_detected, {already_known_dimensions, D0}};
         _ ->
-          eval1(Xi, I, E, K, tset:union(D, D0), W, T)
+          eval1(Xi, I, E, K, ice_sets:union(D, D0), W, T)
       end;
     false ->
       {D0, T0}
@@ -333,14 +333,14 @@ even_elements([_|L], N, Acc) ->
 freeze_closure({closure, _ClI, _ClE, Abs}=Cl, I, E, K, D, W, T) ->
   Is = frozen_expressions(Abs),
   {Dis, MaxT} = ice_par:eval(Is, I, E, K, D, W, T),
-  case tset:union_d(Dis) of
+  case ice_sets:union_d(Dis) of
     {true, Dims} ->
       {Dims, MaxT};
     {false, Dis1} -> %% XXX Why Dis1 even if equal to Dis?
-      case tset:difference(Dis1, D) of
+      case ice_sets:difference(Dis1, D) of
         [] ->
-          KD = tset:restrict_domain(K, D),
-          FrozenK = tset:restrict_domain(KD, Dis1),
+          KD = ice_sets:restrict_domain(K, D),
+          FrozenK = ice_sets:restrict_domain(KD, Dis1),
           {freeze_closure_in_k(Cl, FrozenK), MaxT};
         Dims2 -> %% Missing frozen dims
           {Dims2, MaxT}
