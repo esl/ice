@@ -70,11 +70,13 @@ lookup({Xi,Key} = XiKey, K) ->
       %%throw(error_calc);
       Value;
     [#?TABLE_NAME{v={i,Dims}}] ->
-      case ice_sets:restrict_domain(K, Dims) of
+      case ice_sets:difference(Dims, ice_sets:domain(K)) of
         [] ->
-          Dims;
-        K1 ->
-          lookup({Xi,sort_context(K1)}, ice_sets:subtract_by_domain(K, Dims))
+          lookup(
+            {Xi, sort_context(ice_sets:union(Key, ice_sets:restrict_domain(K, Dims)))},
+            ice_sets:subtract_domain(K, Dims));
+        Dims1 ->
+          Dims1
       end;
     [#?TABLE_NAME{v=Value}] ->
       Value
