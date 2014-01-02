@@ -25,7 +25,7 @@ file(Filename) ->
 -spec eval(ast()) -> term().
 eval(T) ->
   T0 = ice_trans0:transform0(T),
-  T1 = ttransform1:transform1(T0),
+  T1 = ice_trans1:transform1(T0),
   ice_core:eval(T1,[],[],[],[],{[],self()},0).
 
 -spec i(string()) -> term().

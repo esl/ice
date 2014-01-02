@@ -271,7 +271,7 @@ t0(T) ->
   ice_trans0:transform0(T).
 
 t1(T) ->
-  ttransform1:transform1(T).
+  ice_trans1:transform1(T).
 
 ice_core_eval(T) ->
   ice_core_eval(T, [], []).
