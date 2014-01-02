@@ -53,7 +53,7 @@ delete() ->
 %%------------------------------------------------------------------------------
 -spec lookup(k()) -> calc() | missing_dims() | ground_value().
 lookup({Xi,Key} = XiKey) ->
-  case mnesia:async_dirty(fun() -> mnesia:read(?TABLE_NAME, XiKey) end) of
+  case mnesia_non_transaction(fun() -> mnesia:read(?TABLE_NAME, XiKey) end) of
     [] ->
       lookup({Xi,[]}, Key);
     [#?TABLE_NAME{v={i,Dims}}] ->
@@ -63,7 +63,7 @@ lookup({Xi,Key} = XiKey) ->
   end.
 
 lookup({Xi,Key} = XiKey, K) ->
-  case mnesia:async_dirty(fun() -> mnesia:read(?TABLE_NAME, XiKey) end) of
+  case mnesia_non_transaction(fun() -> mnesia:read(?TABLE_NAME, XiKey) end) of
     [] ->
       [];
     [#?TABLE_NAME{v={calc,_W}=Value}] ->
@@ -89,11 +89,8 @@ lookup({Xi,Key} = XiKey, K) ->
 insert({_,_} = XiKey, Dims) when is_list(Dims) andalso length(Dims) > 0 ->
   insert(XiKey, {i,sort_dims(Dims)});
 insert({_,_} = XiKey, V) ->
-  {atomic, ok} =
-    mnesia:transaction(
-      fun() ->
-          ok = mnesia:write(#?TABLE_NAME{k=XiKey, v=V})
-      end),
+  Fun = fun() -> ok = mnesia:write(#?TABLE_NAME{k=XiKey, v=V}) end,
+  ok = mnesia_transaction(Fun),
   true.
 
 %%------------------------------------------------------------------------------
@@ -105,20 +102,18 @@ insert({_,_} = XiKey, V) ->
                     {true, calc()} |
                     {false, calc() | missing_dims() | ground_value()}.
 insert_new({_,_} = XiKey, {calc,_} = V) ->
-  {atomic, {B, V2}} =
-    mnesia:transaction(
-      fun() ->
-          case mnesia:read(?TABLE_NAME, XiKey) of
-            [] ->
-              ok = mnesia:write(#?TABLE_NAME{k=XiKey, v=V}),
-              {true, V};
-            [#?TABLE_NAME{v={i,Dims}}] ->
-              {false, Dims};
-            [#?TABLE_NAME{v=V1}] ->
-              {false, V1}
-          end
-      end),
-  {B, V2}.
+  Fun = fun() ->
+            case mnesia:read(?TABLE_NAME, XiKey) of
+              [] ->
+                ok = mnesia:write(#?TABLE_NAME{k=XiKey, v=V}),
+                {true, V};
+              [#?TABLE_NAME{v={i,Dims}}] ->
+                {false, Dims};
+              [#?TABLE_NAME{v=V1}] ->
+                {false, V1}
+            end
+        end,
+  {_B, _V2} = mnesia_transaction(Fun).
 
 %%------------------------------------------------------------------------------
 %% @doc Sort the specified context by dimension
@@ -130,6 +125,16 @@ sort_context(Key) -> lists:keysort(1, Key).
 %% @private
 %%------------------------------------------------------------------------------
 sort_dims(Dims) -> lists:sort(Dims).
+
+%%------------------------------------------------------------------------------
+%% Mnesia helpers
+%%------------------------------------------------------------------------------
+mnesia_non_transaction(Fun) ->
+  mnesia:async_dirty(Fun).
+
+mnesia_transaction(Fun) ->
+  {atomic, ResultOfFun} = mnesia:transaction(Fun),
+  ResultOfFun.
 
 
 insert_correct_tree() ->
