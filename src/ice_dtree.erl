@@ -19,7 +19,7 @@
 
 -record(?TABLE_NAME,
         {k :: k(),
-         v :: calc() | {i, missing_dims(), []} | ground_value()}).
+         v :: calc() | {i, missing_dims()} | ground_value()}).
 
 %%------------------------------------------------------------------------------
 %% @doc Create a new ets table for the cache
@@ -56,7 +56,7 @@ lookup({Xi,Key} = XiKey) ->
   case mnesia:async_dirty(fun() -> mnesia:read(?TABLE_NAME, XiKey) end) of
     [] ->
       lookup({Xi,[]}, Key);
-    [#?TABLE_NAME{v={i,Dims,_}}] ->
+    [#?TABLE_NAME{v={i,Dims}}] ->
       Dims;
     [#?TABLE_NAME{v=Value}] ->
       Value
@@ -69,7 +69,7 @@ lookup({Xi,Key} = XiKey, K) ->
     [#?TABLE_NAME{v={calc,_W}=Value}] ->
       %%throw(error_calc);
       Value;
-    [#?TABLE_NAME{v={i,Dims,_}}] ->
+    [#?TABLE_NAME{v={i,Dims}}] ->
       case ice_sets:restrict_domain(K, Dims) of
         [] ->
           Dims;
@@ -87,7 +87,7 @@ lookup({Xi,Key} = XiKey, K) ->
 %%------------------------------------------------------------------------------
 -spec insert(k(), missing_dims() | ground_value()) -> true.
 insert({_,_} = XiKey, Dims) when is_list(Dims) andalso length(Dims) > 0 ->
-  insert(XiKey, {i, sort_dims(Dims), []});
+  insert(XiKey, {i,sort_dims(Dims)});
 insert({_,_} = XiKey, V) ->
   {atomic, ok} =
     mnesia:transaction(
@@ -112,7 +112,7 @@ insert_new({_,_} = XiKey, {calc,_} = V) ->
             [] ->
               ok = mnesia:write(#?TABLE_NAME{k=XiKey, v=V}),
               {true, V};
-            [#?TABLE_NAME{v={i,Dims,_}}] ->
+            [#?TABLE_NAME{v={i,Dims}}] ->
               {false, Dims};
             [#?TABLE_NAME{v=V1}] ->
               {false, V1}
@@ -133,14 +133,14 @@ sort_dims(Dims) -> lists:sort(Dims).
 
 
 insert_correct_tree() ->
-  insert({"A",[]}, {i,[{dim,t}],[]}),
-  insert({"A",[{{dim,t},0}]}, {i,[{dim,s}],[]}),
+  insert({"A",[]}, {i,[{dim,t}]}),
+  insert({"A",[{{dim,t},0}]}, {i,[{dim,s}]}),
   insert({"A",[{{dim,t},0},{{dim,s},0}]}, 1),
-  insert({"A",[{{dim,t},1}]}, {i,[{dim,s}],[]}),
+  insert({"A",[{{dim,t},1}]}, {i,[{dim,s}]}),
   insert({"A",[{{dim,t},1},{{dim,s},0}]}, 2),
   insert({"A",[{{dim,t},1},{{dim,s},1}]}, 3),
   insert({"A",[{{dim,t},2}]}, {calc,[0]}),
-  insert({"B",[]}, {i,[{dim,s}],[]}),
+  insert({"B",[]}, {i,[{dim,s}]}),
   insert({"B",[{{dim,s},0}]}, 1),
   insert({"B",[{{dim,s},1}]}, 1).
 
