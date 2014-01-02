@@ -103,7 +103,7 @@ s(S) ->
   T.
 
 t0(T) ->
-  ttransform0:transform0(T).
+  ice_trans0:transform0(T).
 
 eval(S) when is_list(S) ->
   {ok, T} = ice:string(S),

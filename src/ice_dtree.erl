@@ -44,11 +44,11 @@ lookup({Xi,Key} = XiKey, K) ->
       %%throw(error_calc);
       {calc, W};
     [{{_,Key},{i,Dims,_}}] ->
-      case tset:restrict_domain(K, Dims) of
+      case ice_sets:restrict_domain(K, Dims) of
 	[] ->
 	  Dims;
 	K1 ->
-	  lookup({Xi,K1}, tset:subtract_by_domain(K, Dims))
+	  lookup({Xi,K1}, ice_sets:subtract_by_domain(K, Dims))
       end;
     [{{_,_},Value}] ->
       Value

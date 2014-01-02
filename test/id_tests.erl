@@ -385,7 +385,7 @@ s(S) ->
   T.
 
 t0(T) ->
-  ttransform0:transform0(T).
+  ice_trans0:transform0(T).
 
 t1(T) ->
   ttransform1:transform1(T).

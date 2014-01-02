@@ -1,7 +1,7 @@
 %%------------------------------------------------------------------------------
 %% AST Transformation - Pass 1
 %%------------------------------------------------------------------------------
--module(ttransform1).
+-module(ice_trans1).
 
 -export([transform1/1]).
 -export([test/0]).
@@ -221,7 +221,7 @@ transform1(Xi, _P, H) when is_list(Xi) orelse is_atom(Xi) ->
 %% Internal - Helpers for transforming abstractions and applications
 %%-------------------------------------------------------------------------------------
 transform1_frozen_dims(Is, Ps, H) ->
-  tset:union([D || D={phi,_} <- H], [transform1(I, P, H) || {I, P} <- lists:zip(Is, Ps)]).
+  ice_sets:union([D || D={phi,_} <- H], [transform1(I, P, H) || {I, P} <- lists:zip(Is, Ps)]).
 
 transform1_actual_params(Eis, Ps, H) ->
   lists:map(fun({Ei, P}) -> transform1(Ei, P, H) end, lists:zip(Eis, Ps)).
@@ -313,5 +313,5 @@ d1_tournament() ->
 
 
 test() ->
-  R = ttransform0:transform0(d1_tournament()),
+  R = ice_trans0:transform0(d1_tournament()),
   transform1(R).
