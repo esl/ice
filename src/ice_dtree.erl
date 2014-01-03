@@ -149,8 +149,8 @@ trace_mnesia_transaction_restarts(TxFun, {Format, Data}) ->
   TracerClient = Tracee = self(),
   {ok, TraceFlags, Tracer} = setup_trace(Tracee, TracerClient),
   TxResult = TxFun(),
-  ok = cleanup_trace(Tracee, TraceFlags),
   Restarts = tracer_client(Tracer, TracerClient),
+  ok = cleanup_trace(Tracee, TraceFlags, Tracer),
   case Restarts of
     0 -> %% No contention
       %% Do not log in order to avoid excessive and irrelevant logging
@@ -167,7 +167,11 @@ tracer_server(MFA, Tracee, TracerClient) ->
     {TracerClient, restarts} ->
       Msg = {trace, Tracee, call, MFA},
       R = count_message_in_mailbox(Msg),
-      Tracee ! {self(), {restarts,R}}
+      Tracee ! {self(), {restarts,R}},
+      receive
+        {TracerClient, stop} ->
+          stopping
+      end
   end.
 
 tracer_client(TracerServer, TracerClient) when TracerClient == self() ->
@@ -199,8 +203,9 @@ count_message_in_mailbox(Msg, Count) ->
       Count
   end.
 
-cleanup_trace(Tracee, TraceFlags) ->
+cleanup_trace(Tracee, TraceFlags, Tracer) ->
   1 = erlang:trace(Tracee, false, TraceFlags),
+  Tracer ! stop,
   ok.
 
 
