@@ -9,6 +9,14 @@
 
 -define(TABLE_NAME, ice_cache).
 
+-ifdef(ICE_DEBUG).
+-define(MNESIA_TRANSACTION(Fun, DebugMsg),
+        mnesia_transaction2(Fun, DebugMsg)).
+-else.
+-define(MNESIA_TRANSACTION(Fun, DebugMsg),
+        mnesia_transaction(Fun)).
+-endif.
+
 -type id() :: nonempty_string().
 -type dim() :: term().
 -type ground_value() :: term().
@@ -90,8 +98,7 @@ insert({_,_} = XiKey, Dims) when is_list(Dims) andalso length(Dims) > 0 ->
   insert(XiKey, {i,sort_dims(Dims)});
 insert({Xi,Key} = XiKey, V) ->
   Fun = fun() -> ok = mnesia:write(#?TABLE_NAME{k=XiKey, v=V}) end,
-  %% ok = mnesia_transaction(Fun),
-  ok = mnesia_transaction2(Fun, {"insert (i.e. add) Xi = ~p, Key = ~1000p", [Xi,Key]}),
+  ok = ?MNESIA_TRANSACTION(Fun, {"insert (i.e. add) Xi = ~p, Key = ~1000p", [Xi,Key]}),
   true.
 
 %%------------------------------------------------------------------------------
@@ -114,8 +121,7 @@ insert_new({Xi,Key} = XiKey, {calc,_} = V) ->
                 {false, V1}
             end
         end,
-  %% {_B, _V2} = mnesia_transaction(Fun).
-  {_B, _V2} = mnesia_transaction2(Fun, {"insert_new (i.e. find) Xi = ~p, Key = ~1000p", [Xi,Key]}).
+  {_B, _V2} = ?MNESIA_TRANSACTION(Fun, {"insert_new (i.e. find) Xi = ~p, Key = ~1000p", [Xi,Key]}).
 
 %%------------------------------------------------------------------------------
 %% @doc Sort the specified context by dimension
