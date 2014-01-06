@@ -4,7 +4,6 @@
 -module(ice_trans1).
 
 -export([transform1/1]).
--export([test/0]).
 
 %%------------------------------------------------------------------------------
 %% This transformation module transforms local dimension identifiers
@@ -282,36 +281,3 @@ subexpr_pos(N, P) -> [N | P].
 %%-------------------------------------------------------------------------------------
 -spec hidden_dim(I :: index(), P :: pos()) -> HD :: hidden_dim().
 hidden_dim(I, P) -> {P, I}.
-
-
-%%------------------------------------------------------------------------------
-%% Insta-test
-%%------------------------------------------------------------------------------
-d1_tournament() ->
-  %%------------------------------------------------------------------------------
-  %% The following function should be equivalent to the following:
-  %%
-  %% fun tournament.d.lim X = Y
-  %% where
-  %%   var Y = 
-  %%     if #.t <= 0 then 
-  %%       X 
-  %%     else
-  %%       (Y @ [d <- #.d * 2 + 1] + Y @ [d <- #.d * 2]) @ [t <- #.t - 1]
-  %%     fi
-  %% end
-  %%------------------------------------------------------------------------------
-  {fn, "tournament", [{b_param, d}, {b_param, lim}, {n_param, "X"}],
-   {where, "Y",
-    [{var, "Y",
-      {'if', ice_primop:lte({'#', time}, 0),
-       "X",
-       {'@',
-	ice_primop:plus({'@', "Y", {t, [{d, ice_primop:plus(ice_primop:times({'#', d}, 2), 1)}]}},
-		     {'@', "Y", {t, [{d, ice_primop:times({'#', d}, 2)}]}}),
-	{t, [{time, ice_primop:minus({'#', time}, 1)}]}}}}]}}.
-
-
-test() ->
-  R = ice_trans0:transform0(d1_tournament()),
-  transform1(R).

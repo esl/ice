@@ -4,7 +4,6 @@
 -module(ice_trans0).
 
 -export([transform0/1]).
--export([test/0]).
 
 %%------------------------------------------------------------------------------
 %% @doc Transform functions and where clauses.
@@ -198,46 +197,3 @@ t0_where(Vars, [], E0, NPs) ->
   {wherevar, t0(E0, NPs), Vars};
 t0_where(Vars, Dims, E0, NPs) ->
   {wheredim, {wherevar, t0(E0, NPs), Vars}, Dims}.
-
-%%------------------------------------------------------------------------------
-%% Instant Tests - Please improve these
-%%------------------------------------------------------------------------------
-fby() ->
-  %%------------------------------------------------------------------------------
-  %% The fby function
-  %%
-  %% fun fby.d A B = if #.d <= 0 then A else B @ [d <- #.d - 1] fi
-  %%------------------------------------------------------------------------------ 
-  {fn, "fby", [{b_param, d}, {n_param, "A"}, {n_param, "B"}],
-   {'if', ice_primop:lte({'#', {dim,d}}, 0),
-    "A",
-    {'@', "B", {t, [{{dim,d}, ice_primop:minus({'#',{dim,d}}, 1)}]}}}}.
-
-d1_tournament() ->
-  %%------------------------------------------------------------------------------
-  %% The following function should be equivalent to the following:
-  %%
-  %% fun tournament.d.lim X = Y
-  %% where
-  %%   var Y = 
-  %%     if #.t <= 0 then 
-  %%       X 
-  %%     else
-  %%       (Y @ [d <- #.d * 2 + 1] + Y @ [d <- #.d * 2]) @ [t <- #.t - 1]
-  %%     fi
-  %% end
-  %%------------------------------------------------------------------------------
-  {fn, "tournament", [{b_param, d}, {b_param, lim}, {n_param, "X"}],
-   {where, "Y",
-    [{var, "Y",
-      {'if', ice_primop:lte({'#', {dim,time}}, 0),
-       "X",
-       {'@',
-	ice_primop:plus({'@', "Y", {t, [{{dim,d}, ice_primop:plus(ice_primop:times({'#', {dim,d}}, 2), 1)}]}},
-		     {'@', "Y", {t, [{{dim,d}, ice_primop:times({'#', {dim,d}}, 2)}]}}),
-	{t, [{{dim,time}, ice_primop:minus({'#', {dim,time}}, 1)}]}}}}]}}.
-
-
-test() ->
-  transform0(d1_tournament()),
-  transform0(fby()).
