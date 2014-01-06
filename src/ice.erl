@@ -6,7 +6,7 @@
 
 -export([string/1, file/1]).
 -export([eval/1]).
--export([i/1]).
+-export([i/1, f/1]).
 
 -type ast() :: term().
 
@@ -38,7 +38,7 @@ i(String) ->
 
 -spec f(string()) -> term().
 f(Filename) ->
-  {ok, Tree} = file(String),
+  {ok, Tree} = file(Filename),
   ice_cache:create(),
   Res = eval(Tree),
   ice_cache:delete(),
