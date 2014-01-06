@@ -36,6 +36,14 @@ i(String) ->
   ice_cache:delete(),
   Res.
 
+-spec f(string()) -> term().
+f(Filename) ->
+  {ok, Tree} = file(String),
+  ice_cache:create(),
+  Res = eval(Tree),
+  ice_cache:delete(),
+  Res.
+
 %% Internals
 
 rework_tree (Tree) ->
