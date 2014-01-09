@@ -46,7 +46,7 @@ dim_id_must_be_declared_before_being_queried_test_() ->
        {[0],_}, %% Upstream TL returns spdim
        eval("#.d where var d = 0 end")),
     ?_assertMatch(
-       {[{string,"t"}],_}, %% Upstream TL returns spdim
+       {["t"],_}, %% Upstream TL returns spdim
        eval("#.d where var d = `t`;; dim t <- 0 end")),
     %%
     ?_assertMatch(
@@ -96,13 +96,13 @@ id_cannot_be_defined_twice_in_same_scope_test_() ->
   {foreach, fun setup/0, fun cleanup/1,
    [
     ?_assertMatch(
-       {1,_}, %% TODO This should give a compilation error "Error, dim t already defined."
+       {_,_}, %% TODO This should give a compilation error "Error, dim t already defined."
        eval("#.t where dim t <- 0;; dim t <- 1 end")),
     ?_assertMatch(
-       {1,_}, %% TODO This should give a compilation error "Error, var A already defined."
+       {_,_}, %% TODO This should give a compilation error "Error, var A already defined."
        eval("A where var A = 0;; var A = 1 end")),
     ?_assertMatch(
-       {2,_}, %% TODO This should give a compilation error "Error, param x already defined."
+       {_,_}, %% TODO This should give a compilation error "Error, param x already defined."
        eval("F.2.1 where fun F.x.x = x*2 - x end"))
    ]}.
 
@@ -165,20 +165,20 @@ complex_ids_test_() ->
    ?_assertMatch({31,_}, eval(S))}. %% Upstream TL returns 31
 
 transform1_rules_test_() ->
-  Consts = [46,
-            false,
+  Consts = [{int, 46},
+            {bool, false},
             {string,"ciao"}],
   ConstTests = lists:zip(Consts, Consts),
   WheredimTest = {WheredimTree, WheredimExpected} =
-    { {where,    {'#',            "t" }, [{ dim,       "t", 46}]},
-      {wheredim, {'#',{dim,{[],1},"t"}}, [{{dim,{[],1},"t"},46}]} },
+    { {where,    {'#',            "t" }, [{ dim,       "t", {int,46}}]},
+      {wheredim, {'#',{dim,{[],1},"t"}}, [{{dim,{[],1},"t"},{int,46}}]} },
   WheredimTreeF =
     fun(DimName) when is_list(DimName) ->
-        {where,    {'#',             DimName }, [ {dim,        DimName,46}]}
+        {where,    {'#',             DimName }, [ {dim,        DimName,{int,46}}]}
     end,
   WheredimExpectedF =
     fun(DimName, Pos) when is_list(DimName), is_list(Pos) ->
-        {wheredim, {'#',{dim,{Pos,1},DimName}}, [{{dim,{Pos,1},DimName},46}]}
+        {wheredim, {'#',{dim,{Pos,1},DimName}}, [{{dim,{Pos,1},DimName},{int,46}}]}
     end,
   WheredimTree     = WheredimTreeF(    "t"),
   WheredimExpected = WheredimExpectedF("t", []),
@@ -195,8 +195,8 @@ transform1_rules_test_() ->
     { {'#', WheredimTree    },
       {'#', WheredimExpected} },
   TupleTests =
-    [{ {t, [{"lhs",46}]},
-       {t, [{"lhs",46}]} },
+    [{ {t, [{"lhs",{int,46}}]},
+       {t, [{"lhs",{int,46}}]} },
      { {t, [{"lhs1",WheredimTree              },
             {"lhs2",WheredimTree              }]},
        {t, [{"lhs1",WheredimExpectedF("t",[3])},
@@ -281,8 +281,8 @@ wheredim_nested_in_wheredim() ->
    ?_assertMatch(
       {wheredim,
        {wheredim, _,
-        [{InnerDimD,46}]},
-       [{OuterDimD,58}]} when InnerDimD /= OuterDimD,
+        [{InnerDimD,{int,46}}]},
+       [{OuterDimD,{int,58}}]} when InnerDimD /= OuterDimD,
       t1(t0(s(S))))
   ].
 
