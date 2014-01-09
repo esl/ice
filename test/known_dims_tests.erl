@@ -68,7 +68,7 @@ primop_returns_as_missing_only_needed_unknown_dims() ->
   PS = "#.t + #.s",
   %% Extract valid hidden dim id...
   TmpS = PS ++ " where dim t <- 0;; dim s <- 1 end",
-  {wheredim, PT1, [{DimT,0}, {DimS,1}]} = t1(t0(s(TmpS))),
+  {wheredim, PT1, [{DimT,{int,0}}, {DimS,{int,1}}]} = t1(t0(s(TmpS))),
   %% ... for explicitly specifying context and known dims.
   K = [{DimT,0}, {DimS,1}],
   D = [DimT],

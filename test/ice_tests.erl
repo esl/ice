@@ -25,12 +25,12 @@ bool_test_() ->
 
 string_test_() ->
   [
-   ?_assertMatch({{string,"Test"}, _}, eval("\"Test\"")),
-   ?_assertMatch({{string,"Test"}, _}, eval("`Test`"))
+   ?_assertMatch({"Test", _}, eval("\"Test\"")),
+   ?_assertMatch({"Test", _}, eval("`Test`"))
   ].
 
 char_test() ->
-  ?assertMatch({{char,$.}, _}, eval("'.'")).
+  ?assertMatch({$., _}, eval("'.'")).
 
 elsif_test_() ->
   [
@@ -75,8 +75,8 @@ primop_test_() ->
    ?_assertMatch({-46, _}, eval("-46")),
    ?_assertMatch({where, {primop,'+',[_]}, _}, s("+A where var A = 46 end")),
    ?_assertMatch({where, {primop,'-',[_]}, _}, s("-A where var A = 46 end")),
-   ?_assertEqual({primop,'+',[46]}, s("+46")), %% No optimization
-   ?_assertEqual({primop,'-',[46]}, s("-46")), %% No optimization
+   ?_assertEqual({primop,'+',[{int,46}]}, s("+46")), %% No optimization
+   ?_assertEqual({primop,'-',[{int,46}]}, s("-46")), %% No optimization
    %%
    ?_assertMatch({46, _}, eval("abs.(-46)")),
    ?_assertMatch({0.0, _}, eval("atan2.0.1")),

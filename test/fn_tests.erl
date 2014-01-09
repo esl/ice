@@ -137,7 +137,7 @@ toplevel_base_fun() ->
 
 b_fun_w_two_formal_params_is_represented_as_one_b_abs_and_b_apply() ->
   S = "F.46.1 where fun F.x.y = x - y end", %% Minus is not commutative
-  ?assertMatch({wherevar, {b_apply, "F", [46, 1]},
+  ?assertMatch({wherevar, {b_apply, "F", [{int,46}, {int,1}]},
                 [{"F", {b_abs, [], ["x", "y"],
                         {primop, _, ["x", "y"]}}}]},
                _BAbsT0 = t0(s(S))),
@@ -189,8 +189,8 @@ v_fun_w_two_formal_params_is_represented_as_nested_v_abs_and_v_apply() ->
   S = "F!46!1 where fun F!x!y = x - y end", %% Minus is not commutative
   ?assertMatch({wherevar,
                 {v_apply,
-                 {v_apply, "F", [46]},
-                 [1]},
+                 {v_apply, "F", [{int,46}]},
+                 [{int,1}]},
                 [{"F", {v_abs, [], ["x"],
                         {v_abs, [], ["y"],
                          {primop, _, ["x", "y"]}}}}]},
@@ -205,7 +205,7 @@ n_fun_is_represented_as_v_fun() ->
   SN = "F      46  where fun F x =  x end",
   SV = "F!(↑{} 46) where fun F!x = ↓x end",
   ?assertMatch({wherevar,
-                {v_apply, "F", [{i_abs, [], 46}]},
+                {v_apply, "F", [{i_abs, [], {int,46}}]},
                 [{"F", {v_abs, [], ["x"],
                         {i_apply, "x"}}}]},
                t0(s(SN))),

@@ -85,7 +85,7 @@ intention_abstraction_w_missing_frozen_dim() ->
   %%
   %% Extract valid hidden dim id...
   TmpS = "(" ++ IAbsS ++ ") where dim t <- 0 end",
-  {wheredim, IAbsT1, _Dims=[{DimT,0}]} = t1(t0(s(TmpS))),
+  {wheredim, IAbsT1, _Dims=[{DimT,{int,0}}]} = t1(t0(s(TmpS))),
   %% ... for explicitly specifying context and known dims.
   K = [{DimT,0}],
   D = [],
@@ -98,7 +98,7 @@ intention_application_w_missing_frozen_dim() ->
   %%
   %% Extract valid hidden dim id...
   TmpS = "(" ++ IApplyS ++ ") where dim t <- 0 end",
-  {wheredim, IApplyT1, _Dims=[{DimT,0}]} = t1(t0(s(TmpS))),
+  {wheredim, IApplyT1, _Dims=[{DimT,{int,0}}]} = t1(t0(s(TmpS))),
   %% ... for explicitly specifying context and known dims.
   K = [{DimT,0}],
   D = [],

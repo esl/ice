@@ -50,12 +50,12 @@ fn_declaration_test_() ->
 
 where_with_only_dims_is_represented_as_wheredim_only() ->
   S = "#.t where dim t <- 46 end",
-  ?assertMatch({wheredim, _, [{_, 46}]}, t0(s(S))),
+  ?assertMatch({wheredim, _, [{_, {int,46}}]}, t0(s(S))),
   ?assertMatch({46,_}, eval(S)).
 
 where_with_only_vars_is_represented_as_wherevar_only() ->
   S = "A where var A = 46 end",
-  ?assertMatch({wherevar, _, [{_, 46}]}, t0(s(S))),
+  ?assertMatch({wherevar, _, [{_, {int,46}}]}, t0(s(S))),
   ?assertMatch({46,_}, eval(S)).
 
 var_can_use_dim_in_same_where() ->
