@@ -99,15 +99,15 @@ rework_tree (Tree) ->
         ({'/', _, A, B}) -> ice_primop:divide(A, B);
         ({'%', _, A, B}) -> ice_primop:mod(A, B);
 
-        ({bool, _, Boolean}) -> Boolean;
+	({bool, _, Bool}) -> {bool, Bool};
+	({char, _, Char}) -> {char, Char};
+	({int, _, Int}) -> {int, Int};
+	({float, _, Float}) -> {float, Float};
         ({raw_string, _, S})    -> {string, S};
         ({cooked_string, _, S}) -> {string, S};
-        ({char, _, Char}) -> {char, Char};
 
         ({'@', _, A, B}) -> {'@', A, B};
 
-        ({int,_,N}) -> N;
-        ({float,_,N}) -> N;
         ({id,_,Name}) -> Name
       end,
   case ice_visitor:visit(V, Tree, bottom_up) of
