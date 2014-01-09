@@ -52,13 +52,16 @@ close_abs({i_abs, _Is,          _E0}=Abs, I, E) ->
 %% This function considers nested wherevars.
 %% @private
 %%------------------------------------------------------------------------------
-close_shallowest_abs(Const, _I, _E) when is_number(Const) orelse
-                                         is_boolean(Const) ->
-  Const;
-close_shallowest_abs({string, _Str}=Const, _I, _E) ->
-  Const;
-close_shallowest_abs({char, _Char}=Const, _I, _E) ->
-  Const;
+close_shallowest_abs({bool, _} = Bool, _I, _E) ->
+  Bool;
+close_shallowest_abs({char, _} = Char, _I, _E) ->
+  Char;
+close_shallowest_abs({int, _} = Int, _I, _E) ->
+  Int;
+close_shallowest_abs({float, _} = Float, _I, _E) ->
+  Float;
+close_shallowest_abs({string, _} = String, _I, _E) ->
+  String;
 close_shallowest_abs({primop, F, Eis}, I, E) ->
   %% If primop were not able to return one of its arguments when an
   %% abstraction, there would be no need to close arguments.
