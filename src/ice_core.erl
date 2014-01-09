@@ -8,14 +8,20 @@
 %%-------------------------------------------------------------------------------------
 %% Constant Values
 %%-------------------------------------------------------------------------------------
-eval(Const, _I, _E, _K, _D, _W, T) when is_number(Const) orelse is_boolean(Const) ->
-  {Const, T};
-
-eval({string, Str}, _I, _E, _K, _D, _W, T) ->
-  {{string, Str}, T};
+eval({bool, Bool}, _I, _E, _K, _D, _W, T) ->
+  {Bool, T};
 
 eval({char, Char}, _I, _E, _K, _D, _W, T) ->
-  {{char, Char}, T};
+  {Char, T};
+
+eval({int, Int}, _I, _E, _K, _D, _W, T) ->
+  {Int, T};
+
+eval({float, Float}, _I, _E, _K, _D, _W, T) ->
+  {Float, T};
+
+eval({string, Str}, _I, _E, _K, _D, _W, T) ->
+  {Str, T};
 
 %%-------------------------------------------------------------------------------------
 %% Sequence
