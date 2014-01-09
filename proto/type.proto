@@ -1,0 +1,27 @@
+message IceValue {
+  enum IceType {
+    IceBool    = 1;
+    IceInteger = 2;
+    IceFloat   = 3;
+    IceChar    = 4;
+    IceString  = 5;
+  }
+
+  required IceType type = 1;
+  required bytes value  = 2;
+}
+
+message IceTuple {
+  required IceValue left  = 1;
+  required IceValue right = 2;
+}
+
+message IceContext {
+  repeated IceTuple tuple = 1;
+}
+
+message IceDemand {
+  required IceValue   var  = 1;
+  required IceContext ctxt = 2;
+  required IceValue   val  = 3;
+}
