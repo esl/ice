@@ -60,14 +60,20 @@ transform1(E) ->
 %%------------------------------------------------------------------------------
 %% Constants
 %%------------------------------------------------------------------------------
-transform1(Const, _P, _H) when is_number(Const) orelse is_boolean(Const) ->
-  Const;
+transform1({bool, _} = Bool, _P, _H) ->
+  Bool;
 
-transform1({string, Str}, _P, _H) ->
-  {string, Str};
+transform1({char, _} = Char, _P, _H) ->
+  Char;
 
-transform1({char, Char}, _P, _H) ->
-  {char, Char};
+transform1({int, _} = Int, _P, _H) ->
+  Int;
+
+transform1({float, _} = Float, _P, _H) ->
+  Float;
+
+transform1({string, _} = String, _P, _H) ->
+  String;
 
 %%------------------------------------------------------------------------------
 %% Primop

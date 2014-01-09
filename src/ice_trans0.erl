@@ -33,14 +33,20 @@ transform0(E) -> t0(E, []).
 %%------------------------------------------------------------------------------
 %% Constants
 %%------------------------------------------------------------------------------
-t0(Const, _) when is_number(Const) orelse is_boolean(Const) ->
-  Const;
+t0({bool, _} = Bool, _) ->
+  Bool;
 
-t0({string, Str}, _) ->
-  {string, Str};
+t0({char, _} = Char, _) ->
+  Char;
 
-t0({char, Char}, _) ->
-  {char, Char};
+t0({int, _} = Int, _) ->
+  Int;
+
+t0({float, _} = Float, _) ->
+  Float;
+
+t0({string, _} = String, _) ->
+  String;
 
 %%------------------------------------------------------------------------------
 %% Primop
