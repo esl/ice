@@ -10,7 +10,7 @@ clean: rebar
 .PHONY: clean
 
 debug: compile
-	erl -pa ebin -pa deps/*/ebin
+	erl -pa ebin -pa deps/*/ebin -env ERL_MAX_ETS_TABLES 256000
 .PHONY: debug
 
 test: compile
