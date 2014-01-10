@@ -26,8 +26,8 @@ eval({string, Str}, _I, _E, _K, _D, _W, T) ->
 %%-------------------------------------------------------------------------------------
 %% Sequence
 %%-------------------------------------------------------------------------------------
-eval({seq, Eis}, I, E, K, D, W, T) ->
-  eval_seq(Eis, I, E, K, D, W, T);
+eval({seq, E0, E1}, I, E, K, D, W, T) ->
+  eval_seq([E0,E1], I, E, K, D, W, T);
 
 %%-------------------------------------------------------------------------------------
 %% Primop
@@ -291,7 +291,7 @@ eval_seq(Xs, I, E, K, D, W, T) ->
   eval_seq(Xs, I, E, K, D, W, T, []).
 
 eval_seq([], I, E, K, D, W, T, Acc) ->
-  {hd(lists:reverse(Acc)), T};
+  {hd(Acc), T};
 eval_seq([X|Xs], I, E, K, D, W, T, Acc) ->
   {D0, T1} = eval(X, I, E, K, D, W, T),
   %% FIXME Check missing dimensions before progressing?
