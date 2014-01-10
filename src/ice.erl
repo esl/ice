@@ -77,6 +77,9 @@ rework_tree (Tree) ->
 
         ({'#.', _, Val}) -> {'#', Val};
 
+	({';', _, X, Y}) ->
+	  {seq, X, Y};
+
         ({tuple, _, Assocs}) -> {t, Assocs};
         ({tuple_element, _, Lhs, Rhs}) -> {Lhs, Rhs};
 
