@@ -71,6 +71,10 @@ Type  = (bool|bool2|bool4|bool8|bool16|char|char2|char4|char8|char16|uchar|uchar
 
 
 %% Keywords
+Module = (module)
+Import = (import)
+As     = (as)
+Export = (export)
 Dim = (dim)
 Fun = (fun)
 Var = (var)
@@ -91,6 +95,10 @@ Rules.
 {Comment}    : skip_token.
 {Blank}      : skip_token.
 
+{Module}    : {token,{module,TokenLine}}.
+{Import}    : {token,{import,TokenLine}}.
+{As}        : {token,{as,TokenLine}}.
+{Export}    : {token,{export,TokenLine}}.
 {Dim}       : {token,{'dim',TokenLine}}.
 {Fun}       : {token,{'fun',TokenLine}}.
 {Var}       : {token,{'var',TokenLine}}.

@@ -7,7 +7,8 @@ Nonterminals
 Root
 RootElements RootElement Block Separator
 Id Bool Int Float Char RawString CookedString ClScalar
-Declarations Declaration0 Declaration ModuleDecl ModuleExpr DimDecl VarDecl FunDecl ExtDecl
+Declarations Declaration0 Declaration ModuleDecl DimDecl VarDecl FunDecl ExtDecl
+ModuleExpr ModuleExprs
 Args Arg Params Param TGuards TGuard PGuard TyAssoc TyAssocs IdList WhereEnd
 Expr Expr10 Expr100 Expr150 Expr200 Expr400 Expr500 Expr550 Expr552 Expr555 Expr650 Expr700 ExprMax ExprMaxs
 BindOperator OrOperator AndOperator ContextPerturbation ComparisonOperators RangeOperator ContextQuery UnaryOperators FunctionCall
@@ -73,7 +74,7 @@ Declaration -> FunDecl          : '$1'.
 Declaration -> ExtDecl          : '$1'.
 
 ModuleDecl -> 'module' Id                                            : {module,loc('$1'),'$2'}.
-ModuleDecl -> 'module' Id 'where' ModuleExpr 'end'                   : {module,loc('$1'),'$2','$4'}.
+ModuleDecl -> 'module' Id 'where' ModuleExprs 'end'                  : {module,loc('$1'),'$2','$4'}.
 
 DimDecl -> 'dim'     Id                                              : {dim_decl,loc('$1'),'$2'}.
 DimDecl -> 'dim'     Id                                    '<-' Expr : {dim_decl,loc('$1'),'$2','$4'}.
@@ -114,12 +115,15 @@ Declaration0 -> Declaration Separator           : '$1'.
 
 %%% Expressions
 
-ModuleExpr -> ModuleExpr WhereEnd             : rework_where_end('$1','$2').
+ModuleExprs -> ModuleExpr                     : ['$1'].
+ModuleExprs -> ModuleExpr ModuleExprs         : ['$1'|'$2'].
+
+ModuleExpr -> ModuleExprs WhereEnd            : rework_where_end('$1','$2').
 ModuleExpr -> 'export' Id                     : {export,loc('$1'),'$2'}.
 ModuleExpr -> 'export' '(' IdList ')'         : {export_all,loc('$1'),'$3'}.
 ModuleExpr -> 'import' Id                     : {import,loc('$1'),'$2'}.
 ModuleExpr -> 'import' Id 'as' Id             : {import_as,loc('$1'),'$2','$4'}.
-ModuleExpr -> 'import' Id '(' IdList ')'      : {import_only,loc('$1'),'$2','$5'}.
+ModuleExpr -> 'import' Id '(' IdList ')'      : {import_only,loc('$1'),'$2','$4'}.
 
 IdList -> Id               : ['$1'].
 IdList -> Id ',' IdList    : ['$1'|'$3'].

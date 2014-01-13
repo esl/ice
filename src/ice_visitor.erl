@@ -40,13 +40,13 @@ bottom_up (F,T) -> F(v(F,fun bottom_up/2,T)).
 v (V,W, {declaration, L, T}) -> {declaration, L, W(V,T)};
 v (V,W, {expr,        L, T}) -> {expr,        L, W(V,T)};
 
-v(V,W,{module,L,I})           -> {module,L,W(V,I)};
-v(V,W,{module,L,I,Es})        -> {module,L,W(V,I),W(V,Es)};
-v(V,W,{export,L,I})           -> {export,L,W(V,I)};
-v(V,W,{export_all,L,Is})      -> {export_all,L,W(V,Is)};
-v(V,W,{import,L,I})           -> {import,L,W(V,I)};
-v(V,W,{import_as,L,I1,I2})    -> {import_as,L,W(V,I1),W(V,I2)};
-v(V,W,{import_only,L,I,Is})   -> {import_only,L,W(V,I),W(V,Is)};
+v (V,W, {module,L,I})           -> {module,L,W(V,I)};
+v (V,W, {module,L,I,Es})        -> {module,L,W(V,I),W(V,Es)};
+v (V,W, {export,L,I})           -> {export,L,W(V,I)};
+v (V,W, {export_all,L,Is})      -> {export_all,L,W(V,Is)};
+v (V,W, {import,L,I})           -> {import,L,W(V,I)};
+v (V,W, {import_as,L,I1,I2})    -> {import_as,L,W(V,I1),W(V,I2)};
+v (V,W, {import_only,L,I,Is})   -> {import_only,L,W(V,I),W(V,Is)};
 
 v (V,W, {dim_decl, L, I}) ->       {dim_decl, L, W(V,I)};
 v (V,W, {dim_decl, L, I, E}) ->    {dim_decl, L, W(V,I), W(V,E)};

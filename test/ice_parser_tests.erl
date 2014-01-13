@@ -17,12 +17,18 @@ module_decl_test() ->
   Case5 = "module m1 where export x end",
   Case6 = "module m1 where export (x, y) end",
 
-  ?assertMatch({ok,[{module,_,{id,_,"m1"}}]}, ice_parser:string(Case1)),
-  ?assertMatch({ok,[{module,_,{id,_,"m1"},[{import,_,{id,_,"m2"}}]}]}, ice_parser:string(Case2)),
-  ?assertMatch({ok,[{module,_,{id,_,"m1"},[{import_as,_,{id,_,"m2"},{id,_,"m"}}]}]}, ice_parser:string(Case3)),  
-  ?assertMatch({ok,[{module,_,{id,_,"m1"},[{import_only,_,{id,_,"m2"},[{id,_,"x"},{id,_,"y"}]}]}]}, ice_parser:string(Case4)),
-  ?assertMatch({ok,[{module,_,{id,_,"m1"},[{export,_,{id,_,"x"}}]}]}, ice_parser:string(Case5)),
-  ?assertMatch({ok,[{module,_,{id,_,"m1"},[{export_all,_,[{id,_,"x"},{id,_,"y"}]}]}]}, ice_parser:string(Case6)).
+  ?assertMatch({ok,[{declaration,_,{module,_,{id,_,"m1"}}}]}, 
+	       ice_parser:string(Case1)),
+  ?assertMatch({ok,[{declaration,_,{module,_,{id,_,"m1"},[{import,_,{id,_,"m2"}}]}}]}, 
+	       ice_parser:string(Case2)),
+  ?assertMatch({ok,[{declaration,_,{module,_,{id,_,"m1"},[{import_as,_,{id,_,"m2"},{id,_,"m"}}]}}]}, 
+	       ice_parser:string(Case3)),  
+  ?assertMatch({ok,[{declaration,_,{module,_,{id,_,"m1"},[{import_only,_,{id,_,"m2"},[{id,_,"x"},{id,_,"y"}]}]}}]}, 
+	       ice_parser:string(Case4)),
+  ?assertMatch({ok,[{declaration,_,{module,_,{id,_,"m1"},[{export,_,{id,_,"x"}}]}}]}, 
+	       ice_parser:string(Case5)),
+  ?assertMatch({ok,[{declaration,_,{module,_,{id,_,"m1"},[{export_all,_,[{id,_,"x"},{id,_,"y"}]}]}}]}, 
+	       ice_parser:string(Case6)).
 
 var_decl_test () ->
     ?assertMatch({ok,[{declaration,_,{var_decl,_,{id,_,"bar"},{int,_,42}}}]},
