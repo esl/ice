@@ -7,8 +7,8 @@ Nonterminals
 Root
 RootElements RootElement Block Separator
 Id Bool Int Float Char RawString CookedString ClScalar
-Declarations Declaration0 Declaration DimDecl VarDecl FunDecl ExtDecl
-Args Arg Params Param TGuards TGuard PGuard TyAssoc TyAssocs WhereEnd
+Declarations Declaration0 Declaration ModuleDecl ModuleExpr DimDecl VarDecl FunDecl ExtDecl
+Args Arg Params Param TGuards TGuard PGuard TyAssoc TyAssocs IdList WhereEnd
 Expr Expr10 Expr100 Expr150 Expr200 Expr400 Expr500 Expr550 Expr552 Expr555 Expr650 Expr700 ExprMax ExprMaxs
 BindOperator OrOperator AndOperator ContextPerturbation ComparisonOperators RangeOperator ContextQuery UnaryOperators FunctionCall
 Atomic LTRassocs LTRassoc Conditional Elsifs Elsif Tuple CrIntension EvIntension Lambda FrozenDims FrozenDimsOrEmptyIntention BracedExpr
@@ -17,6 +17,7 @@ CmpOp AddOp MulOp RangeOp ContextOp UnaryOp
 
 Terminals
 ';;' '%%'
+'module' 'import' 'export' 'as'
 'dim' 'fun' 'var'
 'if' 'then' 'else' 'elsif' 'fi'
 'where' 'end'
@@ -65,10 +66,14 @@ ClScalar     -> cl_scalar     : '$1'.
 
 %%% Declarations
 
+Declaration -> ModuleDecl       : '$1'.
 Declaration -> DimDecl          : '$1'.
 Declaration -> VarDecl          : '$1'.
 Declaration -> FunDecl          : '$1'.
 Declaration -> ExtDecl          : '$1'.
+
+ModuleDecl -> 'module' Id                                            : {module,loc('$1'),'$2'}.
+ModuleDecl -> 'module' Id 'where' ModuleExpr 'end'                   : {module,loc('$1'),'$2','$4'}.
 
 DimDecl -> 'dim'     Id                                              : {dim_decl,loc('$1'),'$2'}.
 DimDecl -> 'dim'     Id                                    '<-' Expr : {dim_decl,loc('$1'),'$2','$4'}.
@@ -108,6 +113,16 @@ Declaration0 -> Declaration                     : '$1'.
 Declaration0 -> Declaration Separator           : '$1'.
 
 %%% Expressions
+
+ModuleExpr -> ModuleExpr WhereEnd             : rework_where_end('$1','$2').
+ModuleExpr -> 'export' Id                     : {export,loc('$1'),'$2'}.
+ModuleExpr -> 'export' '(' IdList ')'         : {export_all,loc('$1'),'$3'}.
+ModuleExpr -> 'import' Id                     : {import,loc('$1'),'$2'}.
+ModuleExpr -> 'import' Id 'as' Id             : {import_as,loc('$1'),'$2','$4'}.
+ModuleExpr -> 'import' Id '(' IdList ')'      : {import_only,loc('$1'),'$2','$5'}.
+
+IdList -> Id               : ['$1'].
+IdList -> Id ',' IdList    : ['$1'|'$3'].
 
 Expr -> Expr WhereEnd   : rework_where_end('$1','$2').
 Expr -> Expr10          : '$1'.
