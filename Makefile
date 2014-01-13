@@ -17,6 +17,20 @@ test: compile
 	./rebar skip_deps=true eunit
 .PHONY: test
 
+# Grammar compilation / debugging (Add ANTLRv4 to CLASSPATH)
+compile-grammar:
+	antlr4 ICE.g4
+	javac ICE*.java
+.PHONY: compile-grammar
+
+debug-grammar:
+	java org.antlr.v4.runtime.misc.TestRig ICE root -gui -encoding utf8
+.PHONY: debug-grammar
+
+clean-grammar:
+	rm -f *.tokens *.java *.class
+.PHONY: clean-grammar
+
 DIALYZER_PLT = .dialyzer_plt
 
 dialyze: $(DIALYZER_PLT) compile
