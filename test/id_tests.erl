@@ -384,10 +384,10 @@ s(S) ->
   ice_string:parse(S).
 
 t0(T) ->
-  ice_trans0:transform0(T).
+  ice_t0:transform(T).
 
 t1(T) ->
-  ice_trans1:transform1(T).
+  ice_t1:transform(T).
 
 eval(S) when is_list(S) ->
   T = ice_string:parse(S),
