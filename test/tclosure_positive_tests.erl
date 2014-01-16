@@ -187,12 +187,10 @@ cleanup(_) ->
   ice_cache:delete().
 
 s(S) ->
-  {ok, T} = ice:string(S),
-  T.
+  ice_string:parse(S).
 
 eval(S) when is_list(S) ->
-  {ok, T} = ice:string(S),
-  ice:eval(T);
+  ice:eval(ice_string:parse(S));
 eval(T) ->
   ice:eval(T).
 

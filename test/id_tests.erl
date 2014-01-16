@@ -31,7 +31,7 @@ regression_test_() ->
    ]}.
 
 dim_id_must_be_declared_before_being_queried_test_() ->
-  UndefIdD = {badmatch, {error, undefined_identifier, "d"}},
+  UndefIdD = {badmatch, {error, undefined_identifier, {id, "d"}}},
   {foreach, fun setup/0, fun cleanup/1,
    [
     ?_assertError(UndefIdD, eval("#.d")), %% Upstream TL returns spdim
@@ -170,7 +170,7 @@ transform1_rules_test_() ->
             {string,"ciao"}],
   ConstTests = lists:zip(Consts, Consts),
   WheredimTest = {WheredimTree, WheredimExpected} =
-    { {where,    {'#',            "t" }, [{ dim,       "t", {int,46}}]},
+    { {where,    {'#',            {id,"t"} }, [{ dim,       "t", {int,46}}]},
       {wheredim, {'#',{dim,{[],1},"t"}}, [{{dim,{[],1},"t"},{int,46}}]} },
   WheredimTreeF =
     fun(DimName) when is_list(DimName) ->
@@ -180,15 +180,15 @@ transform1_rules_test_() ->
     fun(DimName, Pos) when is_list(DimName), is_list(Pos) ->
         {wheredim, {'#',{dim,{Pos,1},DimName}}, [{{dim,{Pos,1},DimName},{int,46}}]}
     end,
-  WheredimTree     = WheredimTreeF(    "t"),
-  WheredimExpected = WheredimExpectedF("t", []),
+  WheredimTree     = WheredimTreeF(    {id,"t"}),
+  WheredimExpected = WheredimExpectedF({id,"t"}, []),
   WherevarTest =
     { {where,    WheredimTree,
        [{var,"X",WheredimTree              },
         {var,"Y",WheredimTree              }]},
-      {wherevar, WheredimExpectedF("t",[0]),
-       [{    "X",WheredimExpectedF("t",[1])},
-        {    "Y",WheredimExpectedF("t",[2])}]} },
+      {wherevar, WheredimExpectedF({id,"t"},[0]),
+       [{    "X",WheredimExpectedF({id,"t"},[1])},
+        {    "Y",WheredimExpectedF({id,"t"},[2])}]} },
   %% Testing expression in dimensional query, even if it does not make
   %% sense as dims are not ground values atm
   DimQueryTest =
@@ -199,8 +199,8 @@ transform1_rules_test_() ->
        {t, [{"lhs",{int,46}}]} },
      { {t, [{"lhs1",WheredimTree              },
             {"lhs2",WheredimTree              }]},
-       {t, [{"lhs1",WheredimExpectedF("t",[3])},
-            {"lhs2",WheredimExpectedF("t",[5])}]} }
+       {t, [{"lhs1",WheredimExpectedF({id,"t"},[3])},
+            {"lhs2",WheredimExpectedF({id,"t"},[5])}]} }
     ],
   %% TODO (not important) test perturbation, primop, if-then-else
   TreeExpectedTuples =
@@ -381,8 +381,7 @@ cleanup(_) ->
   ice_cache:delete().
 
 s(S) ->
-  {ok, T} = ice:string(S),
-  T.
+  ice_string:parse(S).
 
 t0(T) ->
   ice_trans0:transform0(T).
@@ -391,7 +390,7 @@ t1(T) ->
   ice_trans1:transform1(T).
 
 eval(S) when is_list(S) ->
-  {ok, T} = ice:string(S),
+  T = ice_string:parse(S),
   ice:eval(T).
 
 %% End of Module.

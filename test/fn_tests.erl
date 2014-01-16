@@ -264,8 +264,7 @@ cleanup(_) ->
   ice_cache:delete().
 
 s(S) ->
-  {ok, T} = ice:string(S),
-  T.
+  ice_string:parse(S).
 
 t0(T) ->
   ice_trans0:transform0(T).
@@ -280,7 +279,7 @@ ice_core_eval(T, K, D) ->
   ice_core:eval(T,[],[],K,D,{[],self()},0).
 
 eval(S) when is_list(S) ->
-  {ok, T} = ice:string(S),
+  T = ice_string:parse(S),
   ice:eval(T);
 eval(T) ->
   ice:eval(T).

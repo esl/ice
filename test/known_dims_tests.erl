@@ -93,20 +93,19 @@ tcache_stop(Pid) ->
   end.
 
 s(S) ->
-  {ok, T} = ice:string(S),
-  T.
+  ice_string:parse(S).
 
 t0(T) ->
-  ice_trans0:transform0(T).
+  ice_t0:transform(T).
 
 t1(T) ->
-  ice_trans1:transform1(T).
+  ice_t1:transform(T).
 
 ice_core_eval(T, K, D) ->
   ice_core:eval(T,[],[],K,D,{[],self()},0).
 
 eval(S) when is_list(S) ->
-  {ok, T} = ice:string(S),
+  T = ice_string:parse(S),
   ice:eval(T).
 
 %% End of Module.
