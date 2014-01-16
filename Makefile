@@ -20,7 +20,7 @@ test: compile
 DIALYZER_PLT = .dialyzer_plt
 
 dialyze: $(DIALYZER_PLT) compile
-	dialyzer -r src deps/tparser/src --src --plt $<
+	dialyzer -r src deps/iceparser/src --src --plt $<
 .PHONY: dialyzer
 
 $(DIALYZER_PLT):

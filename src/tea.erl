@@ -14,12 +14,12 @@
 
 -spec string(string()) -> {ok | error, ast()}.
 string(TeaCode) ->
-  {ok, Tree} = tparser:string(TeaCode),
+  {ok, Tree} = ice_parser:string(TeaCode),
   rework_tree(Tree).
 
 -spec file(string()) -> {ok | error, ast()}.
 file(Filename) ->
-  {ok, Tree} = tparser:file(Filename),
+  {ok, Tree} = ice_parser:file(Filename),
   rework_tree(Tree).
 
 -spec eval(ast()) -> term().
@@ -97,7 +97,7 @@ rework_tree (Tree) ->
 
         ({id,_,Name}) -> Name
       end,
-  case tvisitor:visit(V, Tree, bottom_up) of
+  case ice_visitor:visit(V, Tree, bottom_up) of
     [X] ->
       {ok, X};
     Y ->
