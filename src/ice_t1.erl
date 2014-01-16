@@ -1,9 +1,9 @@
 %%------------------------------------------------------------------------------
 %% AST Transformation - Pass 1
 %%------------------------------------------------------------------------------
--module(ice_trans1).
+-module(ice_t1).
 
--export([transform1/1]).
+-export([transform/1]).
 
 %%------------------------------------------------------------------------------
 %% This transformation module transforms local dimension identifiers
@@ -41,11 +41,11 @@
 %% redefined.
 %%------------------------------------------------------------------------------
 
-transform1(E) ->
-  transform1(E, root_expr_pos(), []).
+transform(E) ->
+  transform(E, root_expr_pos(), []).
 
 
--spec transform1(AstIn :: term(), P :: pos(), H) ->
+-spec transform(AstIn :: term(), P :: pos(), H) ->
                     AstOut :: term() when
     %% H is the set of hidden dimensions allocated
     H :: [D | V],
@@ -60,38 +60,38 @@ transform1(E) ->
 %%------------------------------------------------------------------------------
 %% Constants
 %%------------------------------------------------------------------------------
-transform1({bool, _} = Bool, _P, _H) ->
+transform({bool, _} = Bool, _P, _H) ->
   Bool;
 
-transform1({char, _} = Char, _P, _H) ->
+transform({char, _} = Char, _P, _H) ->
   Char;
 
-transform1({int, _} = Int, _P, _H) ->
+transform({int, _} = Int, _P, _H) ->
   Int;
 
-transform1({float, _} = Float, _P, _H) ->
+transform({float, _} = Float, _P, _H) ->
   Float;
 
-transform1({string, _} = String, _P, _H) ->
+transform({string, _} = String, _P, _H) ->
   String;
 
 %%------------------------------------------------------------------------------
 %% Sequence
 %%------------------------------------------------------------------------------
-transform1({seq, E0, E1}, P, H) ->
+transform({seq, E0, E1}, P, H) ->
   {seq, 
-   transform1(E0, subexpr_pos(0, P), H),
-   transform1(E1, subexpr_pos(1, P), H)};
+   transform(E0, subexpr_pos(0, P), H),
+   transform(E1, subexpr_pos(1, P), H)};
 
 %%------------------------------------------------------------------------------
 %% Primop
 %%------------------------------------------------------------------------------
-transform1({primop, F, Eis}, P, H) ->
+transform({primop, F, Eis}, P, H) ->
   Ns = lists:seq(1, length(Eis)), %% 1,2,...
   NewEis =
     lists:map(
       fun({Ei, N}) ->
-          transform1(Ei, subexpr_pos(N,P), H) %% Pos 1,2,...
+          transform(Ei, subexpr_pos(N,P), H) %% Pos 1,2,...
       end,
       lists:zip(Eis, Ns)),
   {primop, F, NewEis};
@@ -99,13 +99,13 @@ transform1({primop, F, Eis}, P, H) ->
 %%------------------------------------------------------------------------------
 %% Tuple Expression
 %%------------------------------------------------------------------------------
-transform1({t, E0E1is}, P, H) ->
+transform({t, E0E1is}, P, H) ->
   Ns = lists:seq(1, length(E0E1is)), %% 1,2,...
   NewE0E1is =
     lists:map(
       fun({{E0,E1}, N}) ->
-          {transform1(E0, subexpr_pos(N*2  ,P), H), %% Pos 2,4,...
-           transform1(E1, subexpr_pos(N*2+1,P), H)} %% Pos 3,5,...
+          {transform(E0, subexpr_pos(N*2  ,P), H), %% Pos 2,4,...
+           transform(E1, subexpr_pos(N*2+1,P), H)} %% Pos 3,5,...
       end,
       lists:zip(E0E1is, Ns)),
   {t, NewE0E1is};
@@ -113,114 +113,114 @@ transform1({t, E0E1is}, P, H) ->
 %%------------------------------------------------------------------------------
 %% Context Perturbation
 %%------------------------------------------------------------------------------
-transform1({'@', E0, E1}, P, H) ->
+transform({'@', E0, E1}, P, H) ->
   {'@',
-   transform1(E0, subexpr_pos(0,P), H),
-   transform1(E1, subexpr_pos(1,P), H)};
+   transform(E0, subexpr_pos(0,P), H),
+   transform(E1, subexpr_pos(1,P), H)};
 
 %%------------------------------------------------------------------------------
 %% Conditional
 %%------------------------------------------------------------------------------
-transform1({'if', E0, E1, E2}, P, H) ->
+transform({'if', E0, E1, E2}, P, H) ->
   {'if',
-   transform1(E0, subexpr_pos(0,P), H),
-   transform1(E1, subexpr_pos(1,P), H),
-   transform1(E2, subexpr_pos(2,P), H)};
+   transform(E0, subexpr_pos(0,P), H),
+   transform(E1, subexpr_pos(1,P), H),
+   transform(E2, subexpr_pos(2,P), H)};
 
 %%------------------------------------------------------------------------------
 %% Dimensional Query
 %%------------------------------------------------------------------------------
-transform1({'#', E0}, P, H) ->
+transform({'#', E0}, P, H) ->
   %% Changing the position in the evaluation tree is not needed as:
   %% * There is only one subexpression
   %% * No hidden dimensions are created in the current expression
-  {'#', transform1(E0, P, H)};
+  {'#', transform(E0, P, H)};
 
 %%------------------------------------------------------------------------------
 %% Base Abstraction
 %%------------------------------------------------------------------------------
-transform1({b_abs, Is, Params, E}, P, H) ->
+transform({b_abs, Is, Params, E}, P, H) ->
   Ps = lists:map(fun(N) -> subexpr_pos(N,P) end, %% Pos 1,2,...
                  lists:seq(1, length(Is))),
-  ParamsAsDims = lists:map(fun(Param) -> {phi, Param} end, Params),
-  {b_abs, transform1_frozen_dims(Is, Ps, H), ParamsAsDims,
-   transform1(E, subexpr_pos(0,P), h_store_formal_params(ParamsAsDims, H))};
+  ParamsAsDims = lists:map(fun({id, Param}) -> {phi, Param} end, Params),
+  {b_abs, transform_frozen_dims(Is, Ps, H), ParamsAsDims,
+   transform(E, subexpr_pos(0,P), h_store_formal_params(ParamsAsDims, H))};
 
-transform1({b_apply, E0, Eis}, P, H) ->
+transform({b_apply, E0, Eis}, P, H) ->
   Ps = lists:map(fun(N) -> subexpr_pos(N,P) end, %% Pos 1,2,...
                  lists:seq(1, length(Eis))),
-  {b_apply, transform1(E0, subexpr_pos(0,P), H),
-   transform1_actual_params(Eis, Ps, H)};
+  {b_apply, transform(E0, subexpr_pos(0,P), H),
+   transform_actual_params(Eis, Ps, H)};
 
 %%------------------------------------------------------------------------------
 %% Value Abstraction
 %%------------------------------------------------------------------------------
-transform1({v_abs, Is, Params, E}, P, H) ->
+transform({v_abs, Is, Params, E}, P, H) ->
   Ps = lists:map(fun(N) -> subexpr_pos(N,P) end, %% Pos 1,2,...
                  lists:seq(1, length(Is))),
-  ParamsAsDims = lists:map(fun(Param) -> {phi, Param} end, Params),
-  {v_abs, transform1_frozen_dims(Is, Ps, H), ParamsAsDims,
+  ParamsAsDims = lists:map(fun({id, Param}) -> {phi, Param} end, Params),
+  {v_abs, transform_frozen_dims(Is, Ps, H), ParamsAsDims,
    %% XXX Pos 0?
-   transform1(E, subexpr_pos(0,P), h_store_formal_params(ParamsAsDims, H))};
+   transform(E, subexpr_pos(0,P), h_store_formal_params(ParamsAsDims, H))};
 
-transform1({v_apply, E0, Eis}, P, H) ->
+transform({v_apply, E0, Eis}, P, H) ->
   Ps = lists:map(fun(N) -> subexpr_pos(N,P) end, %% Pos 1,2,...
                  lists:seq(1, length(Eis))),
-  {v_apply, transform1(E0, subexpr_pos(0,P), H),
+  {v_apply, transform(E0, subexpr_pos(0,P), H),
    %% XXX Shouldn't another context application be here somewhere?
-   transform1_actual_params(Eis, Ps, H)};
+   transform_actual_params(Eis, Ps, H)};
 
 %%------------------------------------------------------------------------------
 %% Intension Abstraction
 %%------------------------------------------------------------------------------
-transform1({i_abs, Is, E}, P, H) ->
+transform({i_abs, Is, E}, P, H) ->
   Ps = lists:map(fun(N) -> subexpr_pos(N,P) end, %% Pos 1,2,...
                  lists:seq(1, length(Is))),
-  {i_abs, transform1_frozen_dims(Is, Ps, H),
+  {i_abs, transform_frozen_dims(Is, Ps, H),
    %% XXX Pos 0?
-   transform1(E, subexpr_pos(0,P), H)};
+   transform(E, subexpr_pos(0,P), H)};
 
-transform1({i_apply, E}, P, H) ->
+transform({i_apply, E}, P, H) ->
   %% XXX Is subexpression with position really needed? And BTW -
   %% shouldn't another context application be here somewhere?
-  {i_apply, transform1(E, subexpr_pos(0,P), H)};
+  {i_apply, transform(E, subexpr_pos(0,P), H)};
 
 %%------------------------------------------------------------------------------
 %% Wherevar
 %%------------------------------------------------------------------------------
-transform1({wherevar, E0, XiEis}, P, H) ->
+transform({wherevar, E0, XiEis}, P, H) ->
   {Xis, _Eis} = lists:unzip(XiEis),
   HWoXis = h_delete_vars(Xis, H),
   Ns = lists:seq(1, length(XiEis)), %% 1,2,...
   NewXiEis =
-    [{Xi, transform1(Ei, subexpr_pos(N,P), HWoXis)} %% Pos 1,2,...
+    [{Xi, transform(Ei, subexpr_pos(N,P), HWoXis)} %% Pos 1,2,...
      || {{Xi, Ei}, N} <- lists:zip(XiEis, Ns)],
   %% XXX The way position is assigned here is completely different
   %% from literature.
-  {wherevar, transform1(E0, subexpr_pos(0,P), HWoXis), NewXiEis};
+  {wherevar, transform(E0, subexpr_pos(0,P), HWoXis), NewXiEis};
 
 %%------------------------------------------------------------------------------
 %% Wheredim
 %%------------------------------------------------------------------------------
-transform1({wheredim, E0, XiEis}, P, H) ->
+transform({wheredim, E0, XiEis}, P, H) ->
   Ns = lists:seq(1, length(XiEis)),
   DimsEis =
-    [{ {dim, hidden_dim(N,P), Xi},
-       transform1(Ei, subexpr_pos(N,P), H) }
-     || {{Xi, Ei}, N} <- lists:zip(XiEis, Ns)],
+    [{ {dim, hidden_dim(N,P), IdString},
+       transform(Ei, subexpr_pos(N,P), H) }
+     || {{{id,IdString}, Ei}, N} <- lists:zip(XiEis, Ns)],
   {Dims, _Eis} = lists:unzip(DimsEis),
-  {wheredim, transform1(E0, subexpr_pos(0,P), h_store_dims(Dims, H)), DimsEis};
+  {wheredim, transform(E0, subexpr_pos(0,P), h_store_dims(Dims, H)), DimsEis};
 
 %%-------------------------------------------------------------------------------------
 %% Identifiers
 %%-------------------------------------------------------------------------------------
-transform1(Xi, _P, H) when is_list(Xi) orelse is_atom(Xi) ->
-  case {lists:keyfind(Xi, 3, H), lists:keyfind(Xi, 2, H)} of
-    {{dim,_,Xi}=Dim, false} ->
+transform({id,IdString} = Xi, _P, H) ->
+  case {lists:keyfind(IdString, 3, H), lists:keyfind(IdString, 2, H)} of
+    {{dim,_,IdString}=Dim, false} ->
       %% Replace reference to local dimension of wheredim clause with
       %% previously allocated hidden dimension.
       Dim;
-    {false, {phi,Xi}=Phi} ->
+    {false,{phi,IdString}=Phi} ->
       %% Replace reference to formal parameter of abstraction with
       %% context query of previously allocated hidden dimension.
       {'?', Phi};
@@ -233,11 +233,12 @@ transform1(Xi, _P, H) when is_list(Xi) orelse is_atom(Xi) ->
 %%-------------------------------------------------------------------------------------
 %% Internal - Helpers for transforming abstractions and applications
 %%-------------------------------------------------------------------------------------
-transform1_frozen_dims(Is, Ps, H) ->
-  ice_sets:union([D || D={phi,_} <- H], [transform1(I, P, H) || {I, P} <- lists:zip(Is, Ps)]).
+transform_frozen_dims(Is, Ps, H) ->
+  ice_sets:union([D || D = {phi,_} <- H], 
+		 [transform(I, P, H) || {I, P} <- lists:zip(Is, Ps)]).
 
-transform1_actual_params(Eis, Ps, H) ->
-  lists:map(fun({Ei, P}) -> transform1(Ei, P, H) end, lists:zip(Eis, Ps)).
+transform_actual_params(Eis, Ps, H) ->
+  lists:map(fun({Ei, P}) -> transform(Ei, P, H) end, lists:zip(Eis, Ps)).
 
 
 %%-------------------------------------------------------------------------------------
