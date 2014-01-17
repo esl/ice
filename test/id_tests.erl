@@ -31,7 +31,7 @@ regression_test_() ->
    ]}.
 
 dim_id_must_be_declared_before_being_queried_test_() ->
-  UndefIdD = {badmatch, {error, undefined_identifier, "d"}},
+  UndefIdD = {badmatch, {error, undefined_identifier, {id, "d"}}},
   {foreach, fun setup/0, fun cleanup/1,
    [
     ?_assertError(UndefIdD, eval("#.d")), %% Upstream TL returns spdim
@@ -170,37 +170,37 @@ transform1_rules_test_() ->
             {string,"ciao"}],
   ConstTests = lists:zip(Consts, Consts),
   WheredimTest = {WheredimTree, WheredimExpected} =
-    { {where,    {'#',            "t" }, [{ dim,       "t", {int,46}}]},
-      {wheredim, {'#',{dim,{[],1},"t"}}, [{{dim,{[],1},"t"},{int,46}}]} },
+    { {where,    {'#',            {id,"t"}}, [{ dim,       {id,"t"} ,{int,46}}]},
+      {wheredim, {'#',{dim,{[],1},    "t"}}, [{{dim,{[],1},    "t" },{int,46}}]} },
   WheredimTreeF =
     fun(DimName) when is_list(DimName) ->
-        {where,    {'#',             DimName }, [ {dim,        DimName,{int,46}}]}
+        {where,    {'#',             {id,DimName}}, [ {dim,        {id,DimName} ,{int,46}}]}
     end,
   WheredimExpectedF =
     fun(DimName, Pos) when is_list(DimName), is_list(Pos) ->
-        {wheredim, {'#',{dim,{Pos,1},DimName}}, [{{dim,{Pos,1},DimName},{int,46}}]}
+        {wheredim, {'#',{dim,{Pos,1},    DimName}}, [{{dim,{Pos,1},    DimName },{int,46}}]}
     end,
   WheredimTree     = WheredimTreeF(    "t"),
   WheredimExpected = WheredimExpectedF("t", []),
   WherevarTest =
     { {where,    WheredimTree,
-       [{var,"X",WheredimTree              },
-        {var,"Y",WheredimTree              }]},
+       [{var,{id,"X"},WheredimTree              },
+        {var,{id,"Y"},WheredimTree              }]},
       {wherevar, WheredimExpectedF("t",[0]),
-       [{    "X",WheredimExpectedF("t",[1])},
-        {    "Y",WheredimExpectedF("t",[2])}]} },
+       [{    {id,"X"},WheredimExpectedF("t",[1])},
+        {    {id,"Y"},WheredimExpectedF("t",[2])}]} },
   %% Testing expression in dimensional query, even if it does not make
   %% sense as dims are not ground values atm
   DimQueryTest =
     { {'#', WheredimTree    },
       {'#', WheredimExpected} },
   TupleTests =
-    [{ {t, [{"lhs",{int,46}}]},
-       {t, [{"lhs",{int,46}}]} },
-     { {t, [{"lhs1",WheredimTree              },
-            {"lhs2",WheredimTree              }]},
-       {t, [{"lhs1",WheredimExpectedF("t",[3])},
-            {"lhs2",WheredimExpectedF("t",[5])}]} }
+    [{ {t, [{{id,"lhs"},{int,46}}]},
+       {t, [{{id,"lhs"},{int,46}}]} },
+     { {t, [{{id,"lhs1"},WheredimTree              },
+            {{id,"lhs2"},WheredimTree              }]},
+       {t, [{{id,"lhs1"},WheredimExpectedF("t",[3])},
+            {{id,"lhs2"},WheredimExpectedF("t",[5])}]} }
     ],
   %% TODO (not important) test perturbation, primop, if-then-else
   TreeExpectedTuples =
@@ -381,17 +381,16 @@ cleanup(_) ->
   ice_cache:delete().
 
 s(S) ->
-  {ok, T} = ice:string(S),
-  T.
+  ice_string:parse(S).
 
 t0(T) ->
-  ice_trans0:transform0(T).
+  ice_t0:transform(T).
 
 t1(T) ->
-  ice_trans1:transform1(T).
+  ice_t1:transform(T).
 
 eval(S) when is_list(S) ->
-  {ok, T} = ice:string(S),
+  T = ice_string:parse(S),
   ice:eval(T).
 
 %% End of Module.

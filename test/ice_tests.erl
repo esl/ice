@@ -92,11 +92,10 @@ primop_test_() ->
 %% Internals
 
 s(S) ->
-  {ok, T} = ice:string(S),
-  T.
+  ice_string:parse(S).
 
 eval(S) when is_list(S) ->
-  {ok, T} = ice:string(S),
+  T = ice_string:parse(S),
   ice:eval(T).
 
 %% End of Module.

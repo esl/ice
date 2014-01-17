@@ -119,12 +119,12 @@ eval({b_abs, _Is, _Params, _E0}=Abs, I, E, K, D, W, T) ->
   freeze_closure(ice_closure:close_abs(Abs, I, E), I, E, K, D, W, T);
 
 eval({b_apply, E0, Eis}, I, E, K, D, W, T) ->
-  {D0is, MaxT} = ice_par:eval([E0 | Eis], I, E, K, D, W, T),
+  {D0is, MaxT} = ice_par:eval([E0|Eis], I, E, K, D, W, T),
   case ice_sets:union_d(D0is) of
     {true, Dims} ->
       {Dims, MaxT};
     {false, D0is1} -> %% XXX Why Dis1 even if equal to Dis?
-      [D0 | Dis] = D0is1,
+      [D0|Dis] = D0is1,
       {frozen_closed_b_abs, ClI, ClE, FrozenK, AbsParams, AbsBody} = D0,
       AbsParamsK = lists:zip(AbsParams, Dis),
       FPK = ice_sets:perturb(FrozenK, AbsParamsK),
@@ -214,19 +214,19 @@ eval({wheredim, E0, XiEis}, I, E, K, D, W, T) ->
 %%-------------------------------------------------------------------------------------
 %% Dimension Identifiers replacing local dimensions in wheredim clauses
 %%-------------------------------------------------------------------------------------
-eval({dim,{_Pos,_Idx},Xi}=Di, _I, _E, _K, _D, _W, T) when is_list(Xi) orelse is_atom(Xi) ->
+eval({dim,{_Pos,_Idx},Xi}=Di, _I, _E, _K, _D, _W, T) ->
   {Di, T};
 
 %%-------------------------------------------------------------------------------------
 %% Dimension Identifiers replacing formal parameters in abstractions
 %%-------------------------------------------------------------------------------------
-eval({phi,Xi}=Di, _I, _E, _K, _D, _W, T) when is_list(Xi) orelse is_atom(Xi) ->
+eval({phi,Xi}=Di, _I, _E, _K, _D, _W, T) ->
   {Di, T};
 
 %%-------------------------------------------------------------------------------------
 %% Variable Identifiers
 %%-------------------------------------------------------------------------------------
-eval(Xi, I, E, K, D, W, T) when is_list(Xi) orelse is_atom(Xi) ->
+eval({id,_} = Xi, I, E, K, D, W, T) ->
   %% This rule differs from the one described in the Feb 2013 cache
   %% semantics paper in order to avooid to return a calc value in case
   %% of GC concurrent with the invocation of beta.find().

@@ -76,7 +76,7 @@ var_can_refer_to_var_defined_after_in_same_where() ->
 
 dim_cannot_use_var_in_same_where() ->
   S = "#.t where var X = 46;; dim t <- X end",
-  ?assertError({badmatch, {error, undefined_identifier, "X"}}, eval(S)).
+  ?assertError({badmatch, {error, undefined_identifier, {id,"X"}}}, eval(S)).
 
 
 %% Internals - Mocking
@@ -99,14 +99,14 @@ cleanup(_) ->
   ice_cache:delete().
 
 s(S) ->
-  {ok, T} = ice:string(S),
-  T.
+  ice_string:parse(S).
+  
 
 t0(T) ->
-  ice_trans0:transform0(T).
+  ice_t0:transform(T).
 
 eval(S) when is_list(S) ->
-  {ok, T} = ice:string(S),
+  T = ice_string:parse(S),
   ice:eval(T).
 
 %% End of Module.

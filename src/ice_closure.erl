@@ -44,8 +44,6 @@ close_abs({i_abs, _Is,          _E0}=Abs, I, E) ->
 %% Internal
 %%------------------------------------------------------------------------------
 
--define(IS_VAR_ID(Xi), is_list(Xi) orelse is_atom(Xi)).
-
 %%------------------------------------------------------------------------------
 %% @doc Close all AST nodes until the shallowest abstraction.
 %%
@@ -106,9 +104,9 @@ close_shallowest_abs({wherevar, E0, XiEis}, I, E) ->
 close_shallowest_abs({wheredim, E0, XiEis}, I, E) ->
   {wheredim, close_shallowest_abs(E0, I, E),
    lists:keymap(fun(Ei) -> close_shallowest_abs(Ei, I, E) end, 2, XiEis)};
-close_shallowest_abs({dim,{_Pos,_Idx},Xi}=Di, _I, _E) when ?IS_VAR_ID(Xi) ->
+close_shallowest_abs({dim,{_Pos,_Idx},_}=Di, _I, _E) ->
   Di;
-close_shallowest_abs({phi,Xi}=Di, _I, _E) when ?IS_VAR_ID(Xi) ->
+close_shallowest_abs({phi,_}=Di, _I, _E) ->
   Di;
-close_shallowest_abs(Xi, _I, _E) when ?IS_VAR_ID(Xi) ->
+close_shallowest_abs({id,_}=Xi, _I, _E) ->
   Xi.

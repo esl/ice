@@ -8,7 +8,7 @@
 
 -define(_assertUndefVarId(VarId, SOrT),
         ?_assertError(
-           {badmatch, {error, undefined_identifier, VarId}},
+           {badmatch, {error, undefined_identifier, {id, VarId}}},
            eval(SOrT))).
 -define(_assertUndefVarIdMockingIcePar(VarId, SOrT),
         {setup, fun mock_ice_par/0, fun(_) -> unmock_ice_par() end,
@@ -149,11 +149,10 @@ cleanup(Pid) ->
   ice_cache:delete().
 
 s(S) ->
-  {ok, T} = ice:string(S),
-  T.
+  ice_string:parse(S).
 
 eval(S) when is_list(S) ->
-  {ok, T} = ice:string(S),
+  T = ice_string:parse(S),
   ice:eval(T);
 eval(T) ->
   ice:eval(T).

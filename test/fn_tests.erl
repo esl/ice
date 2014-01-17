@@ -20,7 +20,8 @@ phi_is_recognized_as_a_dim_test_() ->
   %% ... then check that such dimensions are treated in evaluator as
   %% all other dimensions as far as missing dimensions are concerned.
   {setup, fun setup/0, fun cleanup/1,
-   ?_assertMatch({[BAbsX],_}, ice_core_eval({'if',{'?',BAbsX},46,58}))}.
+   ?_assertMatch({[BAbsX],_},
+                 ice_core_eval({'if',{'?',BAbsX},{int,46},{int,58}}))}.
 
 b_test_() ->
   {foreach, fun setup/0, fun cleanup/1,
@@ -117,15 +118,19 @@ dims_frozen_in_abs_by_transform1_test_() ->
 
 basic_b_abs() ->
   S = "F where fun F.argAsVarId = argAsVarId end",
-  ?assertEqual({where, "F",
-                [{var, "F", {fn, [], [{b_param,"argAsVarId"}], "argAsVarId"}}]},
+  ?assertEqual({where, {id,"F"},
+                [{var, {id,"F"}, 
+		  {fn, [], [{b_param,{id,"argAsVarId"}}], 
+		   {id,"argAsVarId"}}}]},
                s(S)),
-  ?assertEqual({wherevar, "F",
-                [{"F", {b_abs, [], ["argAsVarId"], "argAsVarId"}}]},
+  ?assertEqual({wherevar, {id,"F"},
+                [{{id,"F"}, 
+		  {b_abs, [], [{id,"argAsVarId"}], {id,"argAsVarId"}}}]},
                t0(s(S))),
   ArgAsPhiDim = {phi,"argAsVarId"},
-  ?assertEqual({wherevar, "F",
-                [{"F", {b_abs, [], [ArgAsPhiDim], {'?',ArgAsPhiDim}}}]},
+  ?assertEqual({wherevar, {id,"F"},
+                [{{id,"F"}, 
+		  {b_abs, [], [ArgAsPhiDim], {'?',ArgAsPhiDim}}}]},
                t1(t0(s(S)))),
   ?assertMatch(
      { {frozen_closed_b_abs, _I, _E, [], [ArgAsPhiDim], {'?',ArgAsPhiDim}}, _},
@@ -137,9 +142,10 @@ toplevel_base_fun() ->
 
 b_fun_w_two_formal_params_is_represented_as_one_b_abs_and_b_apply() ->
   S = "F.46.1 where fun F.x.y = x - y end", %% Minus is not commutative
-  ?assertMatch({wherevar, {b_apply, "F", [{int,46}, {int,1}]},
-                [{"F", {b_abs, [], ["x", "y"],
-                        {primop, _, ["x", "y"]}}}]},
+  ?assertMatch({wherevar, {b_apply, {id,"F"}, [{int,46}, {int,1}]},
+                [{{id,"F"}, 
+		  {b_abs, [], [{id,"x"}, {id,"y"}],
+		   {primop, _, [{id,"x"}, {id,"y"}]}}}]},
                _BAbsT0 = t0(s(S))),
   ?assertMatch({45,_}, eval(S)).
 
@@ -189,11 +195,12 @@ v_fun_w_two_formal_params_is_represented_as_nested_v_abs_and_v_apply() ->
   S = "F!46!1 where fun F!x!y = x - y end", %% Minus is not commutative
   ?assertMatch({wherevar,
                 {v_apply,
-                 {v_apply, "F", [{int,46}]},
+                 {v_apply, {id,"F"}, [{int,46}]},
                  [{int,1}]},
-                [{"F", {v_abs, [], ["x"],
-                        {v_abs, [], ["y"],
-                         {primop, _, ["x", "y"]}}}}]},
+                [{{id,"F"}, 
+		  {v_abs, [], [{id,"x"}],
+		   {v_abs, [], [{id,"y"}],
+		    {primop, _, [{id,"x"}, {id,"y"}]}}}}]},
                t0(s(S))),
   ?assertMatch({45,_}, eval(S)).
 
@@ -205,9 +212,9 @@ n_fun_is_represented_as_v_fun() ->
   SN = "F      46  where fun F x =  x end",
   SV = "F!(↑{} 46) where fun F!x = ↓x end",
   ?assertMatch({wherevar,
-                {v_apply, "F", [{i_abs, [], {int,46}}]},
-                [{"F", {v_abs, [], ["x"],
-                        {i_apply, "x"}}}]},
+                {v_apply, {id,"F"}, [{i_abs, [], {int,46}}]},
+                [{{id,"F"}, {v_abs, [], [{id,"x"}],
+			     {i_apply, {id,"x"}}}}]},
                t0(s(SN))),
   ?assertEqual(t0(s(SN)), t0(s(SV))),
   ?assertMatch({46,_}, eval(SN)).
@@ -264,14 +271,13 @@ cleanup(_) ->
   ice_cache:delete().
 
 s(S) ->
-  {ok, T} = ice:string(S),
-  T.
+  ice_string:parse(S).
 
 t0(T) ->
-  ice_trans0:transform0(T).
+  ice_t0:transform(T).
 
 t1(T) ->
-  ice_trans1:transform1(T).
+  ice_t1:transform(T).
 
 ice_core_eval(T) ->
   ice_core_eval(T, [], []).
@@ -280,7 +286,7 @@ ice_core_eval(T, K, D) ->
   ice_core:eval(T,[],[],K,D,{[],self()},0).
 
 eval(S) when is_list(S) ->
-  {ok, T} = ice:string(S),
+  T = ice_string:parse(S),
   ice:eval(T);
 eval(T) ->
   ice:eval(T).

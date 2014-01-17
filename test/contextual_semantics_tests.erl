@@ -171,9 +171,9 @@ wheredim_recursing_on_local_wheredim_and_wrapped_in_fun() ->
         end
       end",
   {wherevar, _,
-   [{"fact", {b_abs, [], [{phi,"n"}],
-              {wherevar, "F",
-               [{"F", {wheredim, _,
+   [{{id,"fact"}, {b_abs, [], [{phi,"n"}],
+              {wherevar, {id,"F"},
+               [{{id,"F"}, {wheredim, _,
                        %% Dim d is defined inside recursive wheredim F
                        [{{dim,_,"d"}, {'?', {phi,"n"}}}]}}]}}}]} =
     t1(t0(s(S))),
@@ -199,11 +199,12 @@ var_recursing_on_input_outer_dim() ->
         end
       end",
   {wherevar, _,
-   [{"fact", {b_abs, [], [{phi,"n"}],
-              {wheredim, {wherevar, "F",
-                          [{"F", _}]},
-               %% Dim d is defined outside recursive wheredim F
-               [{{dim,_,"d"}, {'?',{phi,"n"}}}]}}}]} =
+   [{{id,"fact"}, 
+     {b_abs, [], [{phi,"n"}],
+      {wheredim, {wherevar, {id,"F"},
+		  [{{id,"F"}, _}]},
+       %% Dim d is defined outside recursive wheredim F
+       [{{dim,_,"d"}, {'?',{phi,"n"}}}]}}}]} =
     t1(t0(s(S))),
   ?assertMatch({6,_}, eval(S)). %% Upstream TL returns 6
 
@@ -229,17 +230,16 @@ cleanup(_) ->
   ice_cache:delete().
 
 s(S) ->
-  {ok, T} = ice:string(S),
-  T.
+  ice_string:parse(S).
 
 t0(T) ->
-  ice_trans0:transform0(T).
+  ice_t0:transform(T).
 
 t1(T) ->
-  ice_trans1:transform1(T).
+  ice_t1:transform(T).
 
 eval(S) when is_list(S) ->
-  {ok, T} = ice:string(S),
+  T = ice_string:parse(S),
   ice:eval(T).
 
 %% End of Module.

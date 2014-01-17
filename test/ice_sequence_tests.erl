@@ -16,11 +16,10 @@ ice_sequence_test_() ->
 %%------------------------------------------------------------------------------
 sequence_parses() ->
   Case1 = "1 + 2; 2 - 1",
-  ?assertMatch({ok,
-		{seq, 
-		 {primop, '+', [{int, 1}, {int, 2}]},
-		 {primop, '-', [{int, 2}, {int, 1}]}}},
-	       ice:string(Case1)).
+  ?assertMatch({seq, 
+		{primop, '+', [{int, 1}, {int, 2}]},
+		{primop, '-', [{int, 2}, {int, 1}]}},
+	       ice_string:parse(Case1)).
 
 sequence_evaluates() ->
   Case1 = "1 + 2; 2 - 1",
