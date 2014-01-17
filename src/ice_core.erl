@@ -226,7 +226,7 @@ eval({phi,Xi}=Di, _I, _E, _K, _D, _W, T) ->
 %%-------------------------------------------------------------------------------------
 %% Variable Identifiers
 %%-------------------------------------------------------------------------------------
-eval({id, _} = Xi, I, E, K, D, W, T) ->
+eval({id,_} = Xi, I, E, K, D, W, T) ->
   %% This rule differs from the one described in the Feb 2013 cache
   %% semantics paper in order to avooid to return a calc value in case
   %% of GC concurrent with the invocation of beta.find().
