@@ -259,10 +259,11 @@ h_store_formal_params([{phi,Xi}=Phi | OtherPhis], H) ->
   h_store_formal_params(OtherPhis, lists:keystore(Xi, 3, H, Phi)).
 
 h_delete_vars(Xis, H) ->
+  {_, IdStrings} = lists:unzip(Xis),
   %% New local var shadows homonymous outer local dim or formal param - if any.
   lists:filter(fun
-                 ({phi,  Xi}) -> not lists:member(Xi, Xis);
-                 ({dim,_,Xi}) -> not lists:member(Xi, Xis)
+                 ({phi,  IdString}) -> not lists:member(IdString, IdStrings);
+                 ({dim,_,IdString}) -> not lists:member(IdString, IdStrings)
                end, H).
 
 
