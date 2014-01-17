@@ -171,9 +171,9 @@ wheredim_recursing_on_local_wheredim_and_wrapped_in_fun() ->
         end
       end",
   {wherevar, _,
-   [{"fact", {b_abs, [], [{phi,"n"}],
-              {wherevar, "F",
-               [{"F", {wheredim, _,
+   [{{id,"fact"}, {b_abs, [], [{phi,"n"}],
+              {wherevar, {id,"F"},
+               [{{id,"F"}, {wheredim, _,
                        %% Dim d is defined inside recursive wheredim F
                        [{{dim,_,"d"}, {'?', {phi,"n"}}}]}}]}}}]} =
     t1(t0(s(S))),
@@ -199,11 +199,12 @@ var_recursing_on_input_outer_dim() ->
         end
       end",
   {wherevar, _,
-   [{"fact", {b_abs, [], [{phi,"n"}],
-              {wheredim, {wherevar, "F",
-                          [{"F", _}]},
-               %% Dim d is defined outside recursive wheredim F
-               [{{dim,_,"d"}, {'?',{phi,"n"}}}]}}}]} =
+   [{{id,"fact"}, 
+     {b_abs, [], [{phi,"n"}],
+      {wheredim, {wherevar, {id,"F"},
+		  [{{id,"F"}, _}]},
+       %% Dim d is defined outside recursive wheredim F
+       [{{dim,_,"d"}, {'?',{phi,"n"}}}]}}}]} =
     t1(t0(s(S))),
   ?assertMatch({6,_}, eval(S)). %% Upstream TL returns 6
 

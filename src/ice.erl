@@ -15,7 +15,7 @@ eval(T) ->
 
 -spec i(string()) -> term().
 i(String) ->
-  {ok, Tree} = ice_string:parse(String),
+  Tree = ice_string:parse(String),
   ice_cache:create(),
   Res = eval(Tree),
   ice_cache:delete(),
