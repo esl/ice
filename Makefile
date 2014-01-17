@@ -17,14 +17,23 @@ test: compile
 	./rebar skip_deps=true eunit
 .PHONY: test
 
-# Grammar compilation / debugging (Add ANTLRv4 to CLASSPATH)
-compile-grammar:
-	antlr4 ICE.g4
-	javac ICE*.java
+# Grammar compilation / debugging
+ANTLR4_JAR=antlr-4.1-complete.jar
+ANTLR4_CLASSPATH=".:$(ANTLR4_JAR):$(CLASSPATH)" # Add ANTLRv4 to CLASSPATH
+ANTLR4=java -jar $(ANTLR4_JAR)
+GRUN=java org.antlr.v4.runtime.misc.TestRig
+
+$(ANTLR4_JAR):
+	curl -O http://antlr4.org/download/$(ANTLR4_JAR)
+
+compile-grammar: $(ANTLR4_JAR)
+	$(ANTLR4) ICE.g4
+	CLASSPATH=$(ANTLR4_CLASSPATH) javac ICE*.java
 .PHONY: compile-grammar
 
-debug-grammar:
-	java org.antlr.v4.runtime.misc.TestRig ICE root -gui -encoding utf8
+debug-grammar: $(ANTLR4_JAR)
+	CLASSPATH=$(ANTLR4_CLASSPATH) $(GRUN) ICE root -gui -encoding utf8
+	# Insert string to be parsed, followed by newline and ^D, on standard input
 .PHONY: debug-grammar
 
 clean-grammar:
