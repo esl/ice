@@ -170,37 +170,37 @@ transform1_rules_test_() ->
             {string,"ciao"}],
   ConstTests = lists:zip(Consts, Consts),
   WheredimTest = {WheredimTree, WheredimExpected} =
-    { {where,    {'#',            {id,"t"} }, [{ dim,       "t", {int,46}}]},
-      {wheredim, {'#',{dim,{[],1},"t"}}, [{{dim,{[],1},"t"},{int,46}}]} },
+    { {where,    {'#',            {id,"t"}}, [{ dim,       {id,"t"} ,{int,46}}]},
+      {wheredim, {'#',{dim,{[],1},    "t"}}, [{{dim,{[],1},    "t" },{int,46}}]} },
   WheredimTreeF =
     fun(DimName) when is_list(DimName) ->
-        {where,    {'#',             DimName }, [ {dim,        DimName,{int,46}}]}
+        {where,    {'#',             {id,DimName}}, [ {dim,        {id,DimName} ,{int,46}}]}
     end,
   WheredimExpectedF =
     fun(DimName, Pos) when is_list(DimName), is_list(Pos) ->
-        {wheredim, {'#',{dim,{Pos,1},DimName}}, [{{dim,{Pos,1},DimName},{int,46}}]}
+        {wheredim, {'#',{dim,{Pos,1},    DimName}}, [{{dim,{Pos,1},    DimName },{int,46}}]}
     end,
-  WheredimTree     = WheredimTreeF(    {id,"t"}),
-  WheredimExpected = WheredimExpectedF({id,"t"}, []),
+  WheredimTree     = WheredimTreeF(    "t"),
+  WheredimExpected = WheredimExpectedF("t", []),
   WherevarTest =
     { {where,    WheredimTree,
-       [{var,"X",WheredimTree              },
-        {var,"Y",WheredimTree              }]},
-      {wherevar, WheredimExpectedF({id,"t"},[0]),
-       [{    "X",WheredimExpectedF({id,"t"},[1])},
-        {    "Y",WheredimExpectedF({id,"t"},[2])}]} },
+       [{var,{id,"X"},WheredimTree              },
+        {var,{id,"Y"},WheredimTree              }]},
+      {wherevar, WheredimExpectedF("t",[0]),
+       [{    {id,"X"},WheredimExpectedF("t",[1])},
+        {    {id,"Y"},WheredimExpectedF("t",[2])}]} },
   %% Testing expression in dimensional query, even if it does not make
   %% sense as dims are not ground values atm
   DimQueryTest =
     { {'#', WheredimTree    },
       {'#', WheredimExpected} },
   TupleTests =
-    [{ {t, [{"lhs",{int,46}}]},
-       {t, [{"lhs",{int,46}}]} },
-     { {t, [{"lhs1",WheredimTree              },
-            {"lhs2",WheredimTree              }]},
-       {t, [{"lhs1",WheredimExpectedF({id,"t"},[3])},
-            {"lhs2",WheredimExpectedF({id,"t"},[5])}]} }
+    [{ {t, [{{id,"lhs"},{int,46}}]},
+       {t, [{{id,"lhs"},{int,46}}]} },
+     { {t, [{{id,"lhs1"},WheredimTree              },
+            {{id,"lhs2"},WheredimTree              }]},
+       {t, [{{id,"lhs1"},WheredimExpectedF("t",[3])},
+            {{id,"lhs2"},WheredimExpectedF("t",[5])}]} }
     ],
   %% TODO (not important) test perturbation, primop, if-then-else
   TreeExpectedTuples =
