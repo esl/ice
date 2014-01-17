@@ -538,7 +538,7 @@ cleanup(_) ->
   ice_cache:delete().
 
 eval(S) when is_list(S) ->
-  {ok, T} = ice:string(S),
+  T = ice_string:parse(S),
   ice:eval(T).
 
 %% End of Module.
