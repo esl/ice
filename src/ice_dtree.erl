@@ -9,6 +9,14 @@
 
 -define(TABLE_NAME, ice_cache).
 
+-ifdef(ICE_DEBUG).
+-define(MNESIA_TRANSACTION(Fun, DebugMsg),
+        mnesia_transaction2(Fun, DebugMsg)).
+-else.
+-define(MNESIA_TRANSACTION(Fun, DebugMsg),
+        mnesia_transaction(Fun)).
+-endif.
+
 -type id() :: nonempty_string().
 -type dim() :: term().
 -type ground_value() :: term().
@@ -53,7 +61,7 @@ delete() ->
 %%------------------------------------------------------------------------------
 -spec lookup(k()) -> calc() | missing_dims() | ground_value().
 lookup({Xi,Key} = XiKey) ->
-  case mnesia:async_dirty(fun() -> mnesia:read(?TABLE_NAME, XiKey) end) of
+  case mnesia_non_transaction(fun() -> mnesia:read(?TABLE_NAME, XiKey) end) of
     [] ->
       lookup({Xi,[]}, Key);
     [#?TABLE_NAME{v={i,Dims}}] ->
@@ -63,7 +71,7 @@ lookup({Xi,Key} = XiKey) ->
   end.
 
 lookup({Xi,Key} = XiKey, K) ->
-  case mnesia:async_dirty(fun() -> mnesia:read(?TABLE_NAME, XiKey) end) of
+  case mnesia_non_transaction(fun() -> mnesia:read(?TABLE_NAME, XiKey) end) of
     [] ->
       [];
     [#?TABLE_NAME{v={calc,_W}=Value}] ->
@@ -88,12 +96,9 @@ lookup({Xi,Key} = XiKey, K) ->
 -spec insert(k(), missing_dims() | ground_value()) -> true.
 insert({_,_} = XiKey, Dims) when is_list(Dims) andalso length(Dims) > 0 ->
   insert(XiKey, {i,sort_dims(Dims)});
-insert({_,_} = XiKey, V) ->
-  {atomic, ok} =
-    mnesia:transaction(
-      fun() ->
-          ok = mnesia:write(#?TABLE_NAME{k=XiKey, v=V})
-      end),
+insert({Xi,Key} = XiKey, V) ->
+  Fun = fun() -> ok = mnesia:write(#?TABLE_NAME{k=XiKey, v=V}) end,
+  ok = ?MNESIA_TRANSACTION(Fun, {"insert (i.e. add) Xi = ~p, Key = ~1000p", [Xi,Key]}),
   true.
 
 %%------------------------------------------------------------------------------
@@ -104,21 +109,19 @@ insert({_,_} = XiKey, V) ->
 -spec insert_new(k(), calc()) ->
                     {true, calc()} |
                     {false, calc() | missing_dims() | ground_value()}.
-insert_new({_,_} = XiKey, {calc,_} = V) ->
-  {atomic, {B, V2}} =
-    mnesia:transaction(
-      fun() ->
-          case mnesia:read(?TABLE_NAME, XiKey) of
-            [] ->
-              ok = mnesia:write(#?TABLE_NAME{k=XiKey, v=V}),
-              {true, V};
-            [#?TABLE_NAME{v={i,Dims}}] ->
-              {false, Dims};
-            [#?TABLE_NAME{v=V1}] ->
-              {false, V1}
-          end
-      end),
-  {B, V2}.
+insert_new({Xi,Key} = XiKey, {calc,_} = V) ->
+  Fun = fun() ->
+            case mnesia:read(?TABLE_NAME, XiKey) of
+              [] ->
+                ok = mnesia:write(#?TABLE_NAME{k=XiKey, v=V}),
+                {true, V};
+              [#?TABLE_NAME{v={i,Dims}}] ->
+                {false, Dims};
+              [#?TABLE_NAME{v=V1}] ->
+                {false, V1}
+            end
+        end,
+  {_B, _V2} = ?MNESIA_TRANSACTION(Fun, {"insert_new (i.e. find) Xi = ~p, Key = ~1000p", [Xi,Key]}).
 
 %%------------------------------------------------------------------------------
 %% @doc Sort the specified context by dimension
@@ -130,6 +133,86 @@ sort_context(Key) -> lists:keysort(1, Key).
 %% @private
 %%------------------------------------------------------------------------------
 sort_dims(Dims) -> lists:sort(Dims).
+
+%%------------------------------------------------------------------------------
+%% Mnesia helpers
+%%------------------------------------------------------------------------------
+mnesia_non_transaction(Fun) ->
+  mnesia:async_dirty(Fun).
+
+mnesia_transaction(Fun) ->
+  {atomic, ResultOfFun} = mnesia:transaction(Fun),
+  ResultOfFun.
+
+%%------------------------------------------------------------------------------
+%% Mnesia transaction restarts tracing
+%%------------------------------------------------------------------------------
+mnesia_transaction2(Fun, {Format, Data}) ->
+  TxFun = fun() -> mnesia_transaction(Fun) end,
+  trace_mnesia_transaction_restarts(TxFun, {Format, Data}).
+
+trace_mnesia_transaction_restarts(TxFun, {Format, Data}) ->
+  TracerClient = Tracee = self(),
+  {ok, TraceFlags, Tracer} = setup_trace(Tracee, TracerClient),
+  TxResult = TxFun(),
+  Restarts = tracer_client(Tracer, TracerClient),
+  ok = cleanup_trace(Tracee, TraceFlags, Tracer),
+  case Restarts of
+    0 -> %% No contention
+      %% Do not log in order to avoid excessive and irrelevant logging
+      nothing;
+    R when R > 0 ->
+      io:format(
+        user, "Tx restarted ~p times by pid ~p for " ++ Format ++ "~n",
+        [R, self() | Data])
+  end,
+  TxResult.
+
+tracer_server(MFA, Tracee, TracerClient) ->
+  receive
+    {TracerClient, restarts} ->
+      Msg = {trace, Tracee, call, MFA},
+      R = count_message_in_mailbox(Msg),
+      Tracee ! {self(), {restarts,R}},
+      receive
+        {TracerClient, stop} ->
+          stopping
+      end
+  end.
+
+tracer_client(TracerServer, TracerClient) when TracerClient == self() ->
+  TracerServer ! {TracerClient, restarts},
+  receive
+    {TracerServer, {restarts,R}} when is_integer(R) andalso R >= 0 ->
+      R
+  end.
+
+setup_trace(Tracee, TracerClient) ->
+  %% mnesia_tm increases the trans_restarts counter before restarting
+  %% the Mnesia transaction. See mnesia_tm:restart.
+  MFA = {M,F,A} = {mnesia_lib, incr_counter, [trans_restarts]},
+  Tracer = spawn_link(fun() -> tracer_server(MFA, Tracee, TracerClient) end),
+  TraceFlags = [call, return_to, %% Needed by erlang:trace_pattern
+                {tracer, Tracer}], %% The tracer cannot be equal to the tracee
+  1 = erlang:trace(Tracee, true, TraceFlags),
+  1 = erlang:trace_pattern({M, F, length(A)}, [{A,[],[]}]),
+  {ok, TraceFlags, Tracer}.
+
+count_message_in_mailbox(Msg) ->
+  count_message_in_mailbox(Msg, 0).
+count_message_in_mailbox(Msg, Count) ->
+  receive
+    Msg ->
+      count_message_in_mailbox(Msg, 1 + Count)
+  after
+    0 ->
+      Count
+  end.
+
+cleanup_trace(Tracee, TraceFlags, Tracer) ->
+  1 = erlang:trace(Tracee, false, TraceFlags),
+  Tracer ! stop,
+  ok.
 
 
 insert_correct_tree() ->
