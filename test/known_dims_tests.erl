@@ -80,17 +80,8 @@ primop_returns_as_missing_only_needed_unknown_dims() ->
 setup() ->
   ice_cache:create().
 
-cleanup(Pid) ->
+cleanup(_) ->
   ice_cache:delete().
-
-tcache_stop(Pid) ->
-  catch tcache:stop(),
-  case is_process_alive(Pid) of
-    false ->
-      ok;
-    true ->
-      tcache_stop(Pid)
-  end.
 
 s(S) ->
   ice_string:parse(S).

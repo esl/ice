@@ -44,7 +44,7 @@ eval({primop, Primop, Eis}, I, E, K, D, W, T) ->
 %%-------------------------------------------------------------------------------------
 %% Tuple Expressions
 %%-------------------------------------------------------------------------------------
-eval({t, Es}, I, E, K, D, W, T) ->
+eval({tuple, Es}, I, E, K, D, W, T) ->
   XiEis = lists:flatmap(fun({Xi,Ei}) -> [Xi,Ei] end, Es),
   {Dis, MaxT} = ice_par:eval(XiEis, I, E, K, D, W, T), %% XXX Does evaluating lhs make sense if dims are not ground values?
   case ice_sets:union_d(Dis) of

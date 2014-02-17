@@ -145,7 +145,7 @@ unmock_ice_primop_eval() ->
 setup() ->
   ice_cache:create().
 
-cleanup(Pid) ->
+cleanup(_) ->
   ice_cache:delete().
 
 s(S) ->

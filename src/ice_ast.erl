@@ -39,7 +39,7 @@ transform(Tree) ->
 	({';', _, X, Y}) ->
 	  {seq, X, Y};
 
-        ({tuple, _, Assocs}) -> {t, Assocs};
+        ({tuple, _, Assocs}) -> {tuple, Assocs};
         ({tuple_element, _, Lhs, Rhs}) -> {Lhs, Rhs};
 
         ({'==',  _, A, B}) -> ice_primop:eq(A, B);
