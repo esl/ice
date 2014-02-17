@@ -195,12 +195,12 @@ transform1_rules_test_() ->
     { {'#', WheredimTree    },
       {'#', WheredimExpected} },
   TupleTests =
-    [{ {t, [{{id,"lhs"},{int,46}}]},
-       {t, [{{id,"lhs"},{int,46}}]} },
-     { {t, [{{id,"lhs1"},WheredimTree              },
-            {{id,"lhs2"},WheredimTree              }]},
-       {t, [{{id,"lhs1"},WheredimExpectedF("t",[3])},
-            {{id,"lhs2"},WheredimExpectedF("t",[5])}]} }
+    [{ {tuple, [{{id,"lhs"},{int,46}}]},
+       {tuple, [{{id,"lhs"},{int,46}}]} },
+     { {tuple, [{{id,"lhs1"},WheredimTree              },
+                {{id,"lhs2"},WheredimTree              }]},
+       {tuple, [{{id,"lhs1"},WheredimExpectedF("t",[3])},
+                {{id,"lhs2"},WheredimExpectedF("t",[5])}]} }
     ],
   %% TODO (not important) test perturbation, primop, if-then-else
   TreeExpectedTuples =

@@ -99,7 +99,7 @@ transform({primop, F, Eis}, P, H) ->
 %%------------------------------------------------------------------------------
 %% Tuple Expression
 %%------------------------------------------------------------------------------
-transform({t, E0E1is}, P, H) ->
+transform({tuple, E0E1is}, P, H) ->
   Ns = lists:seq(1, length(E0E1is)), %% 1,2,...
   NewE0E1is =
     lists:map(
@@ -108,7 +108,7 @@ transform({t, E0E1is}, P, H) ->
            transform(E1, subexpr_pos(N*2+1,P), H)} %% Pos 3,5,...
       end,
       lists:zip(E0E1is, Ns)),
-  {t, NewE0E1is};
+  {tuple, NewE0E1is};
 
 %%------------------------------------------------------------------------------
 %% Context Perturbation
