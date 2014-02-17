@@ -11,7 +11,7 @@
 eval(T) ->
   T0 = ice_t0:transform(T),
   T1 = ice_t1:transform(T0),
-  ice_core:eval(T1,[],[],[],[],{[],self()},0).
+  {ice_core:eval(T1,[],[],[],[],{[],self()}), fake_clock}.
 
 -spec i(string()) -> term().
 i(String) ->

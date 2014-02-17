@@ -126,8 +126,8 @@ tests_w_b_abs_from_various_expressions(A=_UndefVarIdA, T=_ASTGenF) ->
 mock_ice_par() ->
   ok = meck:new(ice_par, [passthrough]),
   ok = meck:expect(ice_par, eval,
-                   fun(Xs, I, E, K, D, W, T) ->
-                       ice_par:eval_seq(Xs, I, E, K, D, W, T)
+                   fun(Xs, I, E, K, D, W) ->
+                       ice_par:eval_seq(Xs, I, E, K, D, W)
                    end).
 
 unmock_ice_par() ->
