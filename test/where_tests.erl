@@ -100,7 +100,6 @@ cleanup(_) ->
 
 s(S) ->
   ice_string:parse(S).
-  
 
 t0(T) ->
   ice_t0:transform(T).

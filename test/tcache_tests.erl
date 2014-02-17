@@ -68,7 +68,7 @@ try_to_find_wo_knowing_enough_needed_dims() ->
 setup() ->
   ice_cache:create().
 
-cleanup(Pid) ->
+cleanup(_) ->
   ice_cache:delete().
 
 eval(S) when is_list(S) ->
