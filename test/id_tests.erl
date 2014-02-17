@@ -365,8 +365,8 @@ var_redefined_in_nested_wherevar_is_shadowed_by_outer_if_outer_already_queried()
 mock_ice_par() ->
   ok = meck:new(ice_par, [passthrough]),
   ok = meck:expect(ice_par, eval,
-                   fun(Xs, I, E, K, D, W, T) ->
-                       ice_par:eval_seq(Xs, I, E, K, D, W, T)
+                   fun(Xs, I, E, K, D, W) ->
+                       ice_par:eval_seq(Xs, I, E, K, D, W)
                    end).
 
 unmock_ice_par() ->
