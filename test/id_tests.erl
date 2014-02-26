@@ -342,6 +342,12 @@ var_redefined_in_nested_wherevar_hangs_cache3() ->
   ?assertError({badmatch, hang}, eval(S)). %% Upstream TL returns 46 %% XXX Probably same var name in different wherevar clauses shall belong to distinct namespaces, therefore being different variables
 
 var_redefined_in_nested_wherevar_is_shadowed_by_outer_if_outer_already_queried() ->
+  %% This test documents an unwanted behaviour currently present.
+  %%
+  %% XXX This should maybe be solved transforming each variable in the
+  %% AST to a unique identifier containing the position of the
+  %% variable in the AST, and resolving variables in rhs expressions
+  %% by lexical scoping.
   S = "A
       where
         var B = 58
