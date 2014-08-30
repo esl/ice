@@ -23,96 +23,64 @@ phi_is_recognized_as_a_dim_test_() ->
    ?_assertMatch({[BAbsX],_},
                  ice_core_eval({'if',{'?',BAbsX},{int,46},{int,58}}))}.
 
+query_application_context_for_dim_passed_as_arg_test_() ->
+  {foreach, fun setup/0, fun cleanup/1,
+   [
+    ?_assertMatch({[{dim,_,"t"}],_}, eval("F.t where fun F.x = #.x;; dim t <- 46 end")), %% Upstream TL returns spdim.
+    ?_assertMatch({46           ,_}, eval("F!t where fun F!x = #.x;; dim t <- 46 end")),
+    ?_assertMatch({46           ,_}, eval("F t where fun F x = #.x;; dim t <- 46 end")),
+    %%
+    ?_assertMatch({[{dim,_,"t"}],_}, eval("(F.t where dim t <- 46 end) where fun F.x = #.x end")), %% Upstream TL returns spdim.
+    ?_assertMatch({46           ,_}, eval("(F!t where dim t <- 46 end) where fun F!x = #.x end")),
+    ?_assertMatch({46           ,_}, eval("(F t where dim t <- 46 end) where fun F x = #.x end")),
+    %%
+    ?_assertMatch({[{dim,_,"t"}],_}, eval("F.(t where dim t <- 46 end) where fun F.x = #.x end")), %% Upstream TL returns spdim.
+    ?_assertMatch({[{dim,_,"t"}],_}, eval("F!(t where dim t <- 46 end) where fun F!x = #.x end")), %% Upstream TL returns spdim.
+    ?_assertMatch({[{dim,_,"t"}],_}, eval("F (t where dim t <- 46 end) where fun F x = #.x end")) %% Upstream TL returns spdim.
+   ]}.
+
+query_application_context_for_dim_hardcoded_in_body_test_() ->
+  UndefIdT = {badmatch, {error, undefined_identifier, {id,"t"}}},
+  {foreach, fun setup/0, fun cleanup/1,
+   [
+    ?_assertMatch({[{dim,_,"t"}],_}, eval("F.1 where dim t <- 46;; fun F.x = #.t end")), %% Upstream TL returns spdim.
+    ?_assertMatch({46           ,_}, eval("F!1 where dim t <- 46;; fun F!x = #.t end")),
+    ?_assertMatch({46           ,_}, eval("F 1 where dim t <- 46;; fun F x = #.t end")),
+    %%
+    ?_assertError(UndefIdT, eval("(F.1 where dim t <- 46 end) where fun F.x = #.t end")), %% Upstream TL returns spdim.
+    ?_assertError(UndefIdT, eval("(F!1 where dim t <- 46 end) where fun F!x = #.t end")), %% Upstream TL returns spdim.
+    ?_assertError(UndefIdT, eval("(F 1 where dim t <- 46 end) where fun F x = #.t end")), %% Upstream TL returns spdim.
+    %%
+    ?_assertError(UndefIdT, eval("(F where dim t <- 46 end).1 where fun F.x = #.t end")), %% Upstream TL returns spdim.
+    ?_assertError(UndefIdT, eval("(F where dim t <- 46 end)!1 where fun F!x = #.t end")), %% Upstream TL returns spdim.
+    ?_assertError(UndefIdT, eval("(F where dim t <- 46 end) 1 where fun F x = #.t end")) %% Upstream TL returns spdim.
+   ]}.
+
 b_test_() ->
   {foreach, fun setup/0, fun cleanup/1,
    [
     ?_test(basic_b_abs()),
-    ?_test(toplevel_base_fun()),
-    %%
     ?_test(b_fun_w_two_formal_params_is_represented_as_one_b_abs_and_b_apply()),
     %%
     ?_test(b_abs_can_return_b_abs_and_formal_params_w_same_name_are_not_confused()),
     %%
     ?_test(b_abs_can_access_formal_params_of_outer_b_abs()),
-    ?_test(b_abs_cannot_access_local_dims_of_outer_wheredim()),
     %%
-    ?_test(b_abs_cannot_use_argument_for_querying_creation_context()),
-    %%
-    ?_test(b_abs_cannot_access_dims_in_application_context())
+    ?_test(toplevel_base_fun())
    ]}.
 
 v_test_() ->
   {foreach, fun setup/0, fun cleanup/1,
    [
-    ?_test(v_fun_w_two_formal_params_is_represented_as_nested_v_abs_and_v_apply()),
-    %%
-    ?_test(v_abs_can_access_dims_in_application_context())
+    ?_test(basic_v_abs()),
+    ?_test(v_fun_w_two_formal_params_is_represented_as_nested_v_abs_and_v_apply())
    ]}.
 
 n_test_() ->
   {foreach, fun setup/0, fun cleanup/1,
    [
     ?_test(n_fun_is_represented_as_v_fun()),
-    ?_test(n_fun_w_two_formal_params_is_represented_as_v_fun()),
-    %%
-    ?_test(n_fun_is_represented_as_v_fun_complex1()),
-    ?_test(n_fun_is_represented_as_v_fun_complex2()),
-    %%
-    ?_test(n_abs_can_access_dims_in_application_context())
-   ]}.
-
-dims_frozen_in_abs_by_transform1_test_() ->
-  {foreach, fun setup/0, fun cleanup/1,
-   [
-    ?_assertError(
-       {badmatch,
-        {error, loop_detected,
-         {already_known_dimensions, [{dim,_,"t"}]}}}, %% BTW upstream TL returns spundef.
-       eval("X where var X = (F where fun F.x = x - #.t              end).46 @ [t <- 1];; dim t <- 0 end")),
-    ?_assertMatch(
-       {45,_},
-       eval("X where var X = (F where fun F!x = x - #.t              end)!46 @ [t <- 1];; dim t <- 0 end")),
-    %%
-    ?_assertMatch(
-       {[{dim,_,"t"}],_},
-       eval("X where var X = (F where fun F.x = x - #.t;; dim t <- 3 end).46 @ [t <- 1];; dim t <- 0 end")),
-    ?_assertMatch(
-       {[{dim,_,"t"}],_},
-       eval("X where var X = (F where fun F!x = x - #.t;; dim t <- 3 end)!46 @ [t <- 1];; dim t <- 0 end")),
-    %%
-    %%
-    ?_assertError(
-       {badmatch,
-        {error, loop_detected,
-         {already_known_dimensions, [{dim,_,"t"}]}}}, %% BTW upstream TL returns spundef.
-       eval("X where var X = (F.46 where fun F.x = x - #.t              end) @ [t <- 1];; dim t <- 0 end")),
-    ?_assertMatch(
-       {45,_},
-       eval("X where var X = (F!46 where fun F!x = x - #.t              end) @ [t <- 1];; dim t <- 0 end")),
-    %%
-    ?_assertMatch(
-       {[{dim,_,"t"}],_},
-       eval("X where var X = (F.46 where fun F.x = x - #.t;; dim t <- 3 end) @ [t <- 1];; dim t <- 0 end")),
-    ?_assertMatch(
-       {43,_},
-       eval("X where var X = (F!46 where fun F!x = x - #.t;; dim t <- 3 end) @ [t <- 1];; dim t <- 0 end")),
-    %%
-    %%
-    ?_assertError(
-       {badmatch,
-        {error, loop_detected,
-         {already_known_dimensions, [{dim,_,"t"}]}}}, %% BTW upstream TL returns spundef.
-       eval("X where var X = (F.46 @ [t <- 1] where fun F.x = x - #.t              end);; dim t <- 0 end")),
-    ?_assertMatch(
-       {45,_},
-       eval("X where var X = (F!46 @ [t <- 1] where fun F!x = x - #.t              end);; dim t <- 0 end")),
-    %%
-    ?_assertMatch(
-       {[{dim,_,"t"}],_},
-       eval("X where var X = (F.46 @ [t <- 1] where fun F.x = x - #.t;; dim t <- 3 end);; dim t <- 0 end")),
-    ?_assertMatch(
-       {45,_},
-       eval("X where var X = (F!46 @ [t <- 1] where fun F!x = x - #.t;; dim t <- 3 end);; dim t <- 0 end"))
+    ?_test(n_fun_w_two_formal_params_is_represented_as_v_fun())
    ]}.
 
 
@@ -135,10 +103,6 @@ basic_b_abs() ->
   ?assertMatch(
      { {frozen_closed_b_abs, _I, _E, [], [ArgAsPhiDim], {'?',ArgAsPhiDim}}, _},
      eval(S)).
-
-toplevel_base_fun() ->
-  S = "square.3 where fun square.x = x * x end",
-  ?assertMatch({9,_}, eval(S)).
 
 b_fun_w_two_formal_params_is_represented_as_one_b_abs_and_b_apply() ->
   S = "F.46.1 where fun F.x.y = x - y end", %% Minus is not commutative
@@ -169,27 +133,26 @@ b_abs_can_access_formal_params_of_outer_b_abs() ->
     end",
    ?assertMatch({45,_}, eval(S)).
 
-b_abs_cannot_access_local_dims_of_outer_wheredim() ->
-  S =
-    "F.46
-    where
-      dim t <- 3
-      fun F.x = x + #.t
-    end",
-  ?assertMatch({[{dim,_,"t"}],_}, eval(S)).
+basic_v_abs() ->
+  S = "F where fun F!argAsVarId = argAsVarId end",
+  ?assertEqual({where, {id,"F"},
+                [{var, {id,"F"},
+                  {fn, [], [{v_param,{id,"argAsVarId"}}], {id,"argAsVarId"}}}]},
+               s(S)),
+  ?assertEqual({wherevar, {id,"F"},
+                [{{id,"F"}, {v_abs, [], [{id,"argAsVarId"}], {id,"argAsVarId"}}}]},
+               t0(s(S))),
+  ArgAsPhiDim = {phi,"argAsVarId"},
+  ?assertEqual({wherevar, {id,"F"},
+                [{{id,"F"}, {v_abs, [], [ArgAsPhiDim], {'?',ArgAsPhiDim}}}]},
+               t1(t0(s(S)))),
+  ?assertMatch(
+     { {frozen_closed_v_abs, _I, _E, [], [ArgAsPhiDim], {'?',ArgAsPhiDim}}, _},
+     eval(S)).
 
-b_abs_cannot_use_argument_for_querying_creation_context() ->
-  S =
-    "(F @ [t <- 46]).t
-    where
-      fun F.x = #.x
-      dim t <- 0
-    end",
-  ?assertMatch({[{dim,_,"t"}],_}, eval(S)).
-
-b_abs_cannot_access_dims_in_application_context() ->
-  S = "(F.t where dim t <- 0 end) where fun F.x = #.x end",
-  ?assertMatch({[{dim,_,"t"}],_}, eval(S)). %% BTW upstream TL returns spdim
+toplevel_base_fun() ->
+  S = "square.3 where fun square.x = x * x end",
+  ?assertMatch({9,_}, eval(S)).
 
 v_fun_w_two_formal_params_is_represented_as_nested_v_abs_and_v_apply() ->
   S = "F!46!1 where fun F!x!y = x - y end", %% Minus is not commutative
@@ -203,10 +166,6 @@ v_fun_w_two_formal_params_is_represented_as_nested_v_abs_and_v_apply() ->
 		    {primop, _, [{id,"x"}, {id,"y"}]}}}}]},
                t0(s(S))),
   ?assertMatch({45,_}, eval(S)).
-
-v_abs_can_access_dims_in_application_context() ->
-  S = "(F!t where dim t <- 46 end) where fun F!x = #.x end",
-  ?assertMatch({46,_}, eval(S)). %% BTW upstream TL returns 46
 
 n_fun_is_represented_as_v_fun() ->
   SN = "F      46  where fun F x =  x end",
@@ -222,21 +181,8 @@ n_fun_is_represented_as_v_fun() ->
 n_fun_w_two_formal_params_is_represented_as_v_fun() ->
   SN = "F     46       1  where fun F x y =  x -  y end",
   SV = "F!(↑{}46)!(↑{} 1) where fun F!x!y = ↓x - ↓y end",
-  ?assertEqual(t0(s(SN)), t0(s(SV))).
-
-n_fun_is_represented_as_v_fun_complex1() ->
-  SN = "B @ [t <- 2] where var A = #.t;; var B = next.t     A ;; dim t <- 0;; fun next.d X =   X  @ [d <- #.d + 1];; end;;",
-  SV = "B @ [t <- 2] where var A = #.t;; var B = next.t!(↑{}A);; dim t <- 0;; fun next.d!X = (↓X) @ [d <- #.d + 1];; end;;",
-  ?assertEqual(t0(s(SN)), t0(s(SV))).
-
-n_fun_is_represented_as_v_fun_complex2() ->
-  SN = "(B @ [t <- 2] where var A = #.t;; var B = next.t     A ;; dim t <- 0;; end) where fun next.d X =   X  @ [d <- #.d + 1];; end;;",
-  SV = "(B @ [t <- 2] where var A = #.t;; var B = next.t!(↑{}A);; dim t <- 0;; end) where fun next.d!X = (↓X) @ [d <- #.d + 1];; end;;",
-  ?assertEqual(t0(s(SN)), t0(s(SV))).
-
-n_abs_can_access_dims_in_application_context() ->
-  S = "(F t where dim t <- 46 end) where fun F x = #.x end",
-  ?assertMatch({46,_}, eval(S)). %% BTW upstream TL returns 46
+  ?assertEqual(t0(s(SN)), t0(s(SV))),
+  ?assertMatch({45,_}, eval(SN)).
 
 
 %% Interesting draft tests. TODO Integrate them better in the test suite

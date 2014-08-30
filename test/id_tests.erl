@@ -113,7 +113,9 @@ lexical_scoping_between_dim_id_and_var_id_test_() ->
    wheredim_nested_in_wherevar(),
    %%
    wheredim_nested_in_wheredim(),
-   wherevar_nested_in_wherevar()
+   wherevar_nested_in_wherevar(),
+   %%
+   wheredim_nested_in_abs_nested_in_wheredim()
   ].
 
 lexical_scoping_between_dim_id_and_formal_param_test_() ->
@@ -163,55 +165,6 @@ complex_ids_test_() ->
     end",
   {setup, fun setup/0, fun cleanup/1,
    ?_assertMatch({31,_}, eval(S))}. %% Upstream TL returns 31
-
-transform1_rules_test_() ->
-  Consts = [{int, 46},
-            {bool, false},
-            {string,"ciao"}],
-  ConstTests = lists:zip(Consts, Consts),
-  WheredimTest = {WheredimTree, WheredimExpected} =
-    { {where,    {'#',            {id,"t"}}, [{ dim,       {id,"t"} ,{int,46}}]},
-      {wheredim, {'#',{dim,{[],1},    "t"}}, [{{dim,{[],1},    "t" },{int,46}}]} },
-  WheredimTreeF =
-    fun(DimName) when is_list(DimName) ->
-        {where,    {'#',             {id,DimName}}, [ {dim,        {id,DimName} ,{int,46}}]}
-    end,
-  WheredimExpectedF =
-    fun(DimName, Pos) when is_list(DimName), is_list(Pos) ->
-        {wheredim, {'#',{dim,{Pos,1},    DimName}}, [{{dim,{Pos,1},    DimName },{int,46}}]}
-    end,
-  WheredimTree     = WheredimTreeF(    "t"),
-  WheredimExpected = WheredimExpectedF("t", []),
-  WherevarTest =
-    { {where,    WheredimTree,
-       [{var,{id,"X"},WheredimTree              },
-        {var,{id,"Y"},WheredimTree              }]},
-      {wherevar, WheredimExpectedF("t",[0]),
-       [{    {id,"X"},WheredimExpectedF("t",[1])},
-        {    {id,"Y"},WheredimExpectedF("t",[2])}]} },
-  %% Testing expression in dimensional query, even if it does not make
-  %% sense as dims are not ground values atm
-  DimQueryTest =
-    { {'#', WheredimTree    },
-      {'#', WheredimExpected} },
-  TupleTests =
-    [{ {t, [{{id,"lhs"},{int,46}}]},
-       {t, [{{id,"lhs"},{int,46}}]} },
-     { {t, [{{id,"lhs1"},WheredimTree              },
-            {{id,"lhs2"},WheredimTree              }]},
-       {t, [{{id,"lhs1"},WheredimExpectedF("t",[3])},
-            {{id,"lhs2"},WheredimExpectedF("t",[5])}]} }
-    ],
-  %% TODO (not important) test perturbation, primop, if-then-else
-  TreeExpectedTuples =
-    ConstTests ++ [WheredimTest, WherevarTest, DimQueryTest] ++ TupleTests,
-  [?_test(begin
-            AstAfterT0 = t0(Tree),
-            Actual = t1(AstAfterT0),
-            %io:format(user, "AstAfterT0: ~1000p~nActual: ~1000p~n", [AstAfterT0, Actual]),
-            ?assertEqual(Expected, Actual)
-          end)
-   || {Tree, Expected} <- TreeExpectedTuples].
 
 
 dim_id_can_be_assigned_to_var() ->
@@ -296,6 +249,38 @@ wherevar_nested_in_wherevar() ->
     ?_test(var_redefined_in_nested_wherevar_is_shadowed_by_outer_if_outer_already_queried())
    ]}.
 
+-define(LOOP(Dim),
+        {badmatch, {error, loop_detected, {already_known_dimensions, [Dim]}}}).
+wheredim_nested_in_abs_nested_in_wheredim() ->
+  {foreach, fun setup/0, fun cleanup/1,
+   [
+    ?_assertError(?LOOP({dim,_,"t"}), eval("X where var X = (F where fun F.x = #.t              end).0 @ [t <- 2];; dim t <- 1 end")), %% Upstream TL returns spdim.
+    ?_assertMatch({2,_},              eval("X where var X = (F where fun F!x = #.t              end)!0 @ [t <- 2];; dim t <- 1 end")),
+    ?_assertMatch({2,_},              eval("X where var X = (F where fun F x = #.t              end) 0 @ [t <- 2];; dim t <- 1 end")),
+    %%
+    ?_assertMatch({[{dim,_,"t"}],_},  eval("X where var X = (F where fun F.x = #.t;; dim t <- 3 end).0 @ [t <- 2];; dim t <- 1 end")), %% Upstream TL returns spdim.
+    ?_assertMatch({[{dim,_,"t"}],_},  eval("X where var X = (F where fun F!x = #.t;; dim t <- 3 end)!0 @ [t <- 2];; dim t <- 1 end")), %% Upstream TL returns spdim.
+    ?_assertMatch({[{dim,_,"t"}],_},  eval("X where var X = (F where fun F x = #.t;; dim t <- 3 end) 0 @ [t <- 2];; dim t <- 1 end")), %% Upstream TL returns spdim.
+    %%
+    %%
+    ?_assertError(?LOOP({dim,_,"t"}), eval("X where var X = (F.0 where fun F.x = #.t              end) @ [t <- 2];; dim t <- 1 end")), %% Upstream TL returns spdim.
+    ?_assertMatch({2,_},              eval("X where var X = (F!0 where fun F!x = #.t              end) @ [t <- 2];; dim t <- 1 end")),
+    ?_assertMatch({2,_},              eval("X where var X = (F 0 where fun F x = #.t              end) @ [t <- 2];; dim t <- 1 end")),
+    %%
+    ?_assertMatch({[{dim,_,"t"}],_},  eval("X where var X = (F.0 where fun F.x = #.t;; dim t <- 3 end) @ [t <- 2];; dim t <- 1 end")), %% Upstream TL returns spdim.
+    ?_assertMatch({3,_},              eval("X where var X = (F!0 where fun F!x = #.t;; dim t <- 3 end) @ [t <- 2];; dim t <- 1 end")),
+    ?_assertMatch({3,_},              eval("X where var X = (F 0 where fun F x = #.t;; dim t <- 3 end) @ [t <- 2];; dim t <- 1 end")),
+    %%
+    %%
+    ?_assertError(?LOOP({dim,_,"t"}), eval("X where var X = (F.0 @ [t <- 2] where fun F.x = #.t              end);; dim t <- 1 end")), %% Upstream TL returns spdim.
+    ?_assertMatch({2,_},              eval("X where var X = (F!0 @ [t <- 2] where fun F!x = #.t              end);; dim t <- 1 end")),
+    ?_assertMatch({2,_},              eval("X where var X = (F 0 @ [t <- 2] where fun F x = #.t              end);; dim t <- 1 end")),
+    %%
+    ?_assertMatch({[{dim,_,"t"}],_},  eval("X where var X = (F.0 @ [t <- 2] where fun F.x = #.t;; dim t <- 3 end);; dim t <- 1 end")), %% Upstream TL returns spdim.
+    ?_assertMatch({2,_},              eval("X where var X = (F!0 @ [t <- 2] where fun F!x = #.t;; dim t <- 3 end);; dim t <- 1 end")),
+    ?_assertMatch({2,_},              eval("X where var X = (F 0 @ [t <- 2] where fun F x = #.t;; dim t <- 3 end);; dim t <- 1 end"))
+   ]}.
+
 var_redefined_in_nested_wherevar_hangs_cache() ->
   S = "A
       where
@@ -342,6 +327,12 @@ var_redefined_in_nested_wherevar_hangs_cache3() ->
   ?assertError({badmatch, hang}, eval(S)). %% Upstream TL returns 46 %% XXX Probably same var name in different wherevar clauses shall belong to distinct namespaces, therefore being different variables
 
 var_redefined_in_nested_wherevar_is_shadowed_by_outer_if_outer_already_queried() ->
+  %% This test documents an unwanted behaviour currently present.
+  %%
+  %% XXX This should maybe be solved transforming each variable in the
+  %% AST to a unique identifier containing the position of the
+  %% variable in the AST, and resolving variables in rhs expressions
+  %% by lexical scoping.
   S = "A
       where
         var B = 58
