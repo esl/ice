@@ -35,7 +35,7 @@ DIALYZER_PLT = .dialyzer_plt
 
 dialyze: $(DIALYZER_PLT) compile
 	dialyzer -r src deps/*/src --src --plt $<
-.PHONY: dialyzer
+.PHONY: dialyze
 
 $(DIALYZER_PLT):
 	dialyzer --build_plt --output_plt $@ --apps erts kernel stdlib mnesia
