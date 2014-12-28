@@ -24,7 +24,7 @@ ANTLR4=java -jar $(ANTLR4_JAR)
 GRUN=java org.antlr.v4.runtime.misc.TestRig
 
 $(ANTLR4_JAR):
-	curl -O http://antlr4.org/download/$(ANTLR4_JAR)
+	curl -O http://www.antlr.org/download/$(ANTLR4_JAR)
 
 compile-grammar: $(ANTLR4_JAR)
 	$(ANTLR4) ICE.g4
