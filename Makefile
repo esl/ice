@@ -13,6 +13,10 @@ debug: compile
 	erl -pa ebin -pa deps/*/ebin -env ERL_MAX_ETS_TABLES 256000
 .PHONY: debug
 
+shell: compile
+	./bin/icesh
+.PHONY: shell
+
 test: compile
 	./rebar skip_deps=true eunit
 .PHONY: test
