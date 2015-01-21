@@ -23,7 +23,7 @@ i(String) ->
 
 -spec f(string()) -> term().
 f(Filename) ->
-  {ok, Tree} = ice_file:parse(Filename),
+  Tree = ice_file:parse(Filename),
   ice_cache:create(),
   Res = eval(Tree),
   ice_cache:delete(),
