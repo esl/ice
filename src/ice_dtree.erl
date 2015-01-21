@@ -7,6 +7,12 @@
 
 -define(TABLE_NAME, ice_cache).
 
+-behaviour(gen_server).
+
+%% gen_server callbacks
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2,
+         code_change/3]).
+
 %%------------------------------------------------------------------------------
 %% @doc Create a new ets table for the cache
 %%------------------------------------------------------------------------------
@@ -16,12 +22,14 @@ new() ->
 			      {write_concurrency, false},
 			      {keypos, 1}]),
   ets:delete_all_objects(Tab),
+  {ok, _Pid} = gen_server:start({local, ?MODULE}, ?MODULE, [], []),
   Tab.
 
 %%------------------------------------------------------------------------------
 %% @doc Delete the ets table
 %%------------------------------------------------------------------------------
 delete() ->
+  catch exit(whereis(?MODULE), shutdown),
   ets:delete(?TABLE_NAME).
 
 %%------------------------------------------------------------------------------
@@ -58,12 +66,18 @@ lookup({Xi,Key} = XiKey, K) ->
 %%------------------------------------------------------------------------------
 %% @doc Insert a value at {Xi, Key} into the cache
 %%------------------------------------------------------------------------------
-insert({_,_} = XiKey, Dims) when is_list(Dims) andalso length(Dims) > 0 ->
-  insert(XiKey, {i,sort_dims(Dims)});
-insert({Xi,Key},V) ->
+insert(Key, Value) ->
+	gen_server:call(?MODULE, {insert, Key, Value}).
+
+insert_new(Key, Value) ->
+	gen_server:call(?MODULE, {insert_new, Key, Value}).
+
+insert_seq({_,_} = XiKey, Dims) when is_list(Dims) andalso length(Dims) > 0 ->
+  insert_seq(XiKey, {i,sort_dims(Dims)});
+insert_seq({Xi,Key},V) ->
   ets:insert(?TABLE_NAME, {{Xi,Key},V}).
 
-insert_new({_,_} = XiKey, {calc,_} = V) ->
+insert_new_seq({_,_} = XiKey, {calc,_} = V) ->
       case ets:lookup(?TABLE_NAME, XiKey) of
             [] ->
                ets:insert(?TABLE_NAME, {XiKey,V}),
@@ -77,3 +91,22 @@ insert_new({_,_} = XiKey, {calc,_} = V) ->
 sort_context(Key) -> lists:keysort(1, Key).
 
 sort_dims(Dims) -> lists:sort(Dims).
+
+init([]) ->
+	{ok, empty_state}.
+
+handle_call({insert, Key, Value}, _From, S) ->
+        Reply =  insert_seq(Key, Value),
+	%%io:format("~p <- ~p (~p)\n", [Key, Value, Reply]),
+	{reply, Reply, S};
+handle_call({insert_new, Key, Value}, _From, S) ->
+       Reply =  insert_new_seq(Key, Value),
+	%%io:format("~p <- ~p (~p)\n", [Key, Value, Reply]),
+	{reply, Reply, S}.
+
+handle_cast(_, S) -> {noreply, S}.
+handle_info(_, S) -> {noreply, S}.
+code_change(_OldVsn, State, _Extra) -> {ok, State}.
+terminate(_Reason, _State) -> ok.
+
+
