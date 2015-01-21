@@ -1,63 +1,135 @@
 -module(ice_shell).
 -export([start/0]).
 
--record(state, {prompt= "", cache = clear, defs = []}).
+-record(state, {prompt= "",
+                prompt2 = "",
+                cache = clear,
+                defs = []}).
 
 start() ->
+    Args = init:get_plain_arguments(),
+    {Lines, Files} = arg_parse(Args, [], []),
+    S0 = load_files(Files, #state{}),
     error_logger:tty(false),
-    Prompt = case io:columns() of
-       {ok, _} -> "ICE> ";
-       {error, enotsup} -> ""
+    case Lines of
+        [] ->
+            interactive(S0);
+        _ ->
+            do_script(Lines, S0)
     end,
-    loop(#state{prompt = Prompt}).
+    init:stop().
 
+arg_parse([], Inputs, Files) ->
+    {lists:reverse(Inputs), lists:reverse(Files)};
+arg_parse(["-l", File | Rest], Is, Fs) ->
+    arg_parse(Rest, Is, [File | Fs]);
+arg_parse(["-e", Input | Rest], Is, Fs) ->
+    arg_parse(Rest, [Input ++ "\n" | Is], Fs);
+arg_parse([Input | Rest], Is, Fs) ->
+    NewIs = cons_file_lines(Input, Is),
+    arg_parse(Rest, NewIs, Fs).
+
+cons_file_lines(File, Acc0) ->
+    {ok, Bin} = file:read_file(File),
+    lists:foldl(fun(L, A) -> [L ++ "\n" | A] end, Acc0,
+                string:tokens(binary_to_list(Bin), "\n")).
+
+load_files(Files, S0) ->
+    lists:foldl(fun(F, #state{defs = Ds} = S) ->
+                        S#state{defs = load(F, Ds)}
+                end, S0, Files).
+
+do_script([], S) ->
+    {quit, S};
+do_script([L | Lines], S0) ->
+    case do_line(L, S0) of
+        {need_more, L2, S1} ->
+            [Next | Rest] = Lines,
+            do_script([L2 ++ "\n" ++ Next | Rest], S1);
+        S2 ->
+            do_script(Lines, S2)
+    end.
+		
+interactive(S0) ->
+    {Prompt, P2} = case io:columns() of
+                       {ok, _} ->
+                           {"ICE> ", "ICE? "};
+                       {error, enotsup} ->
+                           {"", ""}
+                   end,
+    loop(S0#state{prompt = Prompt, prompt2 = P2}).
+
+loop({quit, S}) ->
+	{quit, S};
+loop({need_more, L0, #state{} = S}) ->
+    S1 = do_cont(L0, S),
+    loop(S1);
 loop(#state{prompt = P} = S) ->
     case io:get_line(P) of
-        eof -> init:stop();
-        {error, _} -> init:stop();
+        eof ->
+            {quit, S};
+        {error, _} ->
+            {quit, S};
         Line ->
-            do_line(Line, S)
+            S2 = do_line(Line, S),
+            loop(S2)
+    end.
+
+do_cont(L, #state{prompt2 = P} = S) -> %% FIXME!
+    case io:get_line(P) of
+        eof -> {quit, S};
+        {error, _} -> {quit, S};
+        "\n" -> S;
+        Line ->
+            do_line(L ++ Line, S)
     end.
 
 do_line(L, #state{defs = Defs, cache = C} = S) ->
-    case check_line(L) of
+    try check_line(L) of
         empty ->
-            loop(S);
+            S;
         {def, {Name, _} = D} ->
             NewDefs = lists:keystore(Name, 1, Defs, D),
-            loop(#state{defs = NewDefs});
+            S#state{defs = NewDefs};
         {query, Q} ->
-            Query = Q ++ where_defs(Defs),
             try
-		{Res, _} = eval(Query, C),
+		QQ = expr_where_defs(Q, Defs),
+		{Res, _} = eval(QQ,C),
                 io:format("~p\n", [Res]),
-                loop(S)
+                S
             catch Class:Err ->
-                io:format("*** ~p:~p in ~s\n~p\n", [Class,Err, Query, erlang:get_stacktrace()]),
+                io:format("*** ~p:~p in ~p\n~p\n",
+                          [Class, Err, Q, erlang:get_stacktrace()]),
                 catch ice_cache:delete(),
-                loop(S#state{cache = clear})
+                S#state{cache = clear}
             end;
         {command, d} ->
-            loop(S#state{defs = []});
+            S#state{defs = []};
         {command, q} ->
             init:stop();
         {command, p} ->
             print(Defs),
-            loop(S);
+            S;
         {command, {l, Name}} ->
-            loop(S#state{defs = load(Name, Defs)});
+            S#state{defs = load(Name, Defs)};
         {command, cache_on} ->
             ice_cache:create(),
-            loop(S#state{cache = keep});
+            S#state{cache = keep};
         {command, cache_off} ->
-             ice_cache:delete(),
-            loop(S#state{cache = clear});
+            ice_cache:delete(),
+            S#state{cache = clear};
         {command, print_cache_state} ->
-            io:format("***cache ~p\n", [C]),
-            loop(S);
-         {badcommand, C} ->
-            io:format("*** Bad command: `~s'\n", [C]),
-            loop(S)
+            io:format("*** Cache ~p\n", [C]),
+            S;
+         {badcommand, BadC} ->
+            io:format("*** Bad command: `~s'\n", [BadC]),
+            S
+    catch
+	    throw:{parse_error, {error, {_, _, ["syntax error before: ",[]]}}} ->
+        	{need_more, L, S};
+	    throw:{parse_error, {error, {_, _, Desc}}} ->
+		    io:format("*** ~s\n", [Desc]),
+		    S
     end.
 
 check_line(S) ->
@@ -96,48 +168,56 @@ check_command(S) ->
 check_def(S) ->
     case re:run(S, "^\\s*(fun|var|dim)\\s+(\\w+)", [{capture, [2],list}]) of
         {match, [Name]} ->
-            {def, {Name, S}};
+            {Name, Def} = get_name(parse_line(S)),
+            {def, {Name, Def}};
         nomatch ->
-            {query, S}
+            {query, parse_line(S)}
     end.
+
+parse_line(S) ->
+	{ok, [X]} = ice_parser:string(S),
+	X.
 
 load(Name, OrigDefs) ->
     try
-        {ok, Bin} = file:read_file(Name),
-        lists:foldl(fun do_file_line/2,
+        {ok, AST0} = ice_parser:file(Name),
+        lists:foldl(fun (D, Defs) -> lists:keystore(Name, 1, Defs, D) end,
                     OrigDefs,
-                    [S ++ "\n" || S <- string:tokens(binary_to_list(Bin), "\n")])
-    catch _ : E ->
+                    [get_name(D) || D <- AST0])
+    catch
+        _:E ->
             io:format("*** error while loading  `~s': ~p\n", [Name, E]),
             OrigDefs
     end.
 
-do_file_line(L, Defs) ->
-    case check_line(L) of
-        empty ->
-            Defs;
-        {def, {Name, _} = D} ->
-            lists:keystore(Name, 1, Defs, D);
-        Other ->
-            throw(Other)
-    end.
+get_name({declaration, _,
+          {dim_decl, _, {id, _, Name}, _Body}= Decl}) ->
+    {Name, Decl};
+get_name({declaration, _,
+          {var_decl, _, {id, _, Name}, _Body} = Decl}) ->
+    {Name, Decl};
+get_name({declaration, _,
+          {fun_decl, _, {id, _, Name}, _Params, _Body} = Decl}) ->
+    {Name, Decl};
+get_name(X) ->
+    {nodecl, X}.
 
-where_defs(Defs) ->
-    XDefs = [Def || {_Name, Def} <- Defs],
-    lists:flatten(["  where\n\t", string:join(XDefs, "\t"), "  end\n"]).
+expr_where_defs(Expr, Defs) ->
+    Dims = [Def || {_Name, {dim_decl, _, _, _} = Def} <- Defs],
+    Vars = [Def || {_Name, Def} <- Defs ] -- Dims,
+    ice_ast:transform([{expr, 0, {where, 0, Expr, Dims, Vars}}]).
 
 print(Defs) ->
-    [io:format("~s", [Def]) || {_Name, Def} <- Defs],
+    [io:format("~s: ~p\n", [Name, Def]) || {Name, Def} <- Defs],
     ok.
 
-eval(String, C) ->
-    Tree = ice_string:parse(String),
+eval(AST, C) ->
     case C of
-              clear ->
-                  ice_cache:create(),
-                  Res = ice:eval(Tree),
-                  ice_cache:delete(),
-                  Res;
-              keep ->
-                  ice:eval(Tree)
-              end.
+        clear ->
+            ice_cache:create(),
+            Res = ice:eval(AST),
+            ice_cache:delete(),
+            Res;
+        keep ->
+            ice:eval(AST)
+    end.
