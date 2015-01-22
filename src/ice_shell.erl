@@ -4,7 +4,8 @@
 -record(state, {prompt= "",
                 prompt2 = "",
                 cache = clear,
-                defs = []}).
+                defs = [],
+                tstamp = os:timestamp()}).
 
 start() ->
     Args = init:get_plain_arguments(),
@@ -57,7 +58,7 @@ interactive(S0) ->
                        {error, enotsup} ->
                            {"", ""}
                    end,
-    loop(S0#state{prompt = Prompt, prompt2 = P2}).
+    loop(S0#state{prompt = Prompt, prompt2 = P2, tstamp = erlang:now()}).
 
 loop({quit, S}) ->
 	{quit, S};
@@ -84,7 +85,7 @@ do_cont(L, #state{prompt2 = P} = S) -> %% FIXME!
             do_line(L ++ Line, S)
     end.
 
-do_line(L, #state{defs = Defs, cache = C} = S) ->
+do_line(L, #state{defs = Defs, cache = C, tstamp = TStamp} = S) ->
     try check_line(L) of
         empty ->
             S;
@@ -92,17 +93,7 @@ do_line(L, #state{defs = Defs, cache = C} = S) ->
             NewDefs = lists:keystore(Name, 1, Defs, D),
             S#state{defs = NewDefs};
         {query, Q} ->
-            try
-		QQ = expr_where_defs(Q, Defs),
-		{Res, _} = eval(QQ,C),
-                io:format("~p\n", [Res]),
-                S
-            catch Class:Err ->
-                io:format("*** ~p:~p in ~p\n~p\n",
-                          [Class, Err, Q, erlang:get_stacktrace()]),
-                catch ice_cache:delete(),
-                S#state{cache = clear}
-            end;
+             do_query(Q, S, no_tc);
         {command, d} ->
             S#state{defs = []};
         {command, q} ->
@@ -110,6 +101,13 @@ do_line(L, #state{defs = Defs, cache = C} = S) ->
         {command, p} ->
             print(Defs),
             S;
+        {command, time} ->
+            Now = erlang:now(),
+            io:format("~fs\n", [timer:now_diff(Now, TStamp)/1000/1000]),
+            S#state{tstamp = Now};
+        {command, {time_expr, Expr}} ->
+            QQ = parse_line(Expr),
+             do_query(QQ, S, tc);
         {command, {l, Name}} ->
             S#state{defs = load(Name, Defs)};
         {command, cache_on} ->
@@ -148,15 +146,19 @@ check_command(S) ->
             {command, p};
         {match, ["q", ""]} ->
             {command, q};
+        {match, ["t", ""]} ->
+            {command, time};
+        {match, ["t", Expr]} ->
+            {command, {time_expr, Expr}};
         {match, ["c", OnOff]} ->
             case string:strip(OnOff) of
                 "on"++ _ ->
                     {command, cache_on};
-                 "off" ++ _ ->
-                     {command, cache_off};
-                 _ ->
-                     {command, print_cache_state}
-             end;
+                "off" ++ _ ->
+                    {command, cache_off};
+                _ ->
+                    {command, print_cache_state}
+            end;
         {match, ["l", File]} ->
             {command, {l, File}};
         {match, [C|_]} ->
@@ -210,6 +212,26 @@ expr_where_defs(Expr, Defs) ->
 print(Defs) ->
     [io:format("~s: ~p\n", [Name, Def]) || {Name, Def} <- Defs],
     ok.
+
+do_query(Q, #state{defs = Defs, cache = C} = S, TC) ->
+    try
+        QQ = expr_where_defs(Q, Defs),
+        case TC of
+            no_tc ->
+                {Res, _} = eval(QQ,C),
+                io:format("~p\n", [Res]);
+            tc ->
+                {US, {R, _}} = timer:tc(fun() -> eval(QQ,C) end),
+                io:format("(~fs) ~p\n", [US/1000/1000, R])
+        end,
+        S
+    catch
+        Class:Err ->
+            io:format("*** ~p:~p in ~p\n~p\n",
+                      [Class, Err, Q, erlang:get_stacktrace()]),
+            catch ice_cache:delete(),
+            S#state{cache = clear}
+    end.
 
 eval(AST, C) ->
     case C of
