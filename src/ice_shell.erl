@@ -1,5 +1,5 @@
 -module(ice_shell).
--export([start/0]).
+-export([start/0, main/1]).
 
 -record(state, {prompt= "",
                 prompt2 = "",
@@ -7,8 +7,12 @@
                 defs = [],
                 tstamp = os:timestamp()}).
 
+
 start() ->
     Args = init:get_plain_arguments(),
+    main(Args).
+
+main(Args) ->
     {Lines, Files} = arg_parse(Args, [], []),
     S0 = load_files(Files, #state{}),
     error_logger:tty(false),
@@ -97,7 +101,7 @@ do_line(L, #state{defs = Defs, cache = C, tstamp = TStamp} = S) ->
         {command, d} ->
             S#state{defs = []};
         {command, q} ->
-            init:stop();
+            {quit, S};
         {command, p} ->
             print(Defs),
             S;

@@ -13,13 +13,17 @@ debug: compile
 	erl -pa ebin -pa deps/*/ebin -env ERL_MAX_ETS_TABLES 256000
 .PHONY: debug
 
-shell: compile
+shell: bin/ice_shell
 	./bin/icesh
 .PHONY: shell
 
 test: compile
 	./rebar skip_deps=true eunit
 .PHONY: test
+
+bin/ice_shell: compile
+	./rebar escriptize
+	mv ice_shell bin/ice_shell
 
 # Grammar compilation / debugging
 ANTLR4_JAR=antlr-4.1-complete.jar

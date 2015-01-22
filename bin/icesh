@@ -1,7 +1,7 @@
 #!/bin/sh
 # start an ICE shell session
 
-ice_root="`dirname $0`/.."
+ice_root="`dirname $0`"
 
 if rlwrap -v >/dev/null 2>&1
   then
@@ -10,5 +10,5 @@ if rlwrap -v >/dev/null 2>&1
 	else  RL=rlwrap; fi
   else RL=''; fi
 
-$RL erl -pa "$ice_root/ebin" -noshell -s ice_shell -extra "$@"
+exec $RL "$ice_root/ice_shell" "$@"
 
