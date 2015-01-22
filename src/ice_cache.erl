@@ -34,13 +34,16 @@ find(X, K, D, {Id0, _} = W0, _T) ->
       %% io:format("Inserted X = ~p, KD = ~p, {calc, ~p}~n", [X, KD, W0]),
       {{calc,W0}, 0};
     {false, {calc, {Id1,_} = W1} = V} ->
-      case lists:prefix(Id1, Id0) of
-        true ->
-          hang;
-        false ->
-          %% io:format("Found X = ~p, KD = ~p, {calc, ~p}~n", [X, KD, W1]),
-          {V, 0}
-      end;
+      {V, 0};
+
+    %% FIXME: Possibly add this to a 'debugging' mode
+    %% case lists:prefix(Id1, Id0) of
+    %%   true ->
+    %%     hang;
+    %%   false ->
+    %%     {V, 0}
+    %% end;
+
     {false, V} ->
       %% io:format("Found X = ~p, KD = ~p, " ++ ?FMT_D(V) ++ "~n", [X,KD,V]),
       {V, 0}

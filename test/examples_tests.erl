@@ -532,10 +532,10 @@ temperatureAtInuvik_wo_string_comparison() ->
 %% Internals
 
 setup() ->
-  ice_cache:create().
+  ice:start().
 
 cleanup(_) ->
-  ice_cache:delete().
+  ice:stop().
 
 eval(S) when is_list(S) ->
   T = ice_string:parse(S),

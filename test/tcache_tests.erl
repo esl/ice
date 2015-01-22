@@ -66,10 +66,10 @@ try_to_find_wo_knowing_enough_needed_dims() ->
 %% Internals
 
 setup() ->
-  ice_cache:create().
+  ice:start().
 
 cleanup(Pid) ->
-  ice_cache:delete().
+  ice:stop().
 
 eval(S) when is_list(S) ->
   T = ice_string:parse(S),

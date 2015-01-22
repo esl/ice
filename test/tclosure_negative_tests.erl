@@ -143,10 +143,10 @@ unmock_ice_primop_eval() ->
 %% Internals
 
 setup() ->
-  ice_cache:create().
+  ice:start().
 
 cleanup(Pid) ->
-  ice_cache:delete().
+  ice:stop().
 
 s(S) ->
   ice_string:parse(S).

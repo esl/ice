@@ -211,10 +211,10 @@ next_out_of_wheredim_test_() ->
 %% Internals
 
 setup() ->
-  ice_cache:create().
+  ice:start().
 
 cleanup(_) ->
-  ice_cache:delete().
+  ice:stop().
 
 s(S) ->
   ice_string:parse(S).

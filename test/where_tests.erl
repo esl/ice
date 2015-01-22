@@ -93,10 +93,10 @@ unmock_ice_par() ->
 
 %% Internals
 setup() ->
-  ice_cache:create().
+  ice:start().
 
 cleanup(_) ->
-  ice_cache:delete().
+  ice:stop().
 
 s(S) ->
   ice_string:parse(S).

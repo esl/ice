@@ -78,19 +78,10 @@ primop_returns_as_missing_only_needed_unknown_dims() ->
 %% Internals
 
 setup() ->
-  ice_cache:create().
+  ice:start().
 
-cleanup(Pid) ->
-  ice_cache:delete().
-
-tcache_stop(Pid) ->
-  catch tcache:stop(),
-  case is_process_alive(Pid) of
-    false ->
-      ok;
-    true ->
-      tcache_stop(Pid)
-  end.
+cleanup(_Pid) ->
+  ice:stop().
 
 s(S) ->
   ice_string:parse(S).
@@ -102,7 +93,10 @@ t1(T) ->
   ice_t1:transform(T).
 
 ice_core_eval(T, K, D) ->
-  ice_core:eval(T,[],[],K,D,{[],self()},0).
+  ice_counter:start_link(),
+  R = ice_core:eval(T,[],[],K,D,{[],self()},0),
+  ice_counter:stop(),
+  R.
 
 eval(S) when is_list(S) ->
   T = ice_string:parse(S),

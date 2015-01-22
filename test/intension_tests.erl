@@ -108,10 +108,10 @@ intention_application_w_missing_frozen_dim() ->
 %% Internals
 
 setup() ->
-  ice_cache:create().
+  ice:start().
 
 cleanup(_) ->
-  ice_cache:delete().
+  ice:stop().
 
 s(S) ->
   ice_string:parse(S).

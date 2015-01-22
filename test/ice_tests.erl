@@ -95,7 +95,10 @@ s(S) ->
   ice_string:parse(S).
 
 eval(S) when is_list(S) ->
+  ice_counter:start_link(),
   T = ice_string:parse(S),
-  ice:eval(T).
+  V = ice:eval(T),
+  ice_counter:stop(),
+  V.
 
 %% End of Module.

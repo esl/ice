@@ -111,10 +111,10 @@ base_funs_mutually_recursing_on_params() ->
 %% Internals
 
 setup() ->
-  ice_cache:create().
+  ice:start().
 
 cleanup(_) ->
-  ice_cache:delete().
+  ice:stop().
 
 eval(S) when is_list(S) ->
   T = ice_string:parse(S),
