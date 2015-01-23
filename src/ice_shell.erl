@@ -197,7 +197,7 @@ expr_where_defs(Expr, Defs) ->
     ice_ast:transform([{expr, 0, {where, 0, Expr, Dims, Vars}}]).
 
 print(Defs) ->
-    [io:format("~s ~s: ~p\n", [T, Name, Def]) || {Name, T, Def} <- Defs],
+    [io:format("~s\n", [ice_pp:pretty_print(ice_ast:transform([Def]))]) || {_Name, _T, Def} <- Defs],
     ok.
 
 do_query(Q, #state{defs = Defs} = S, TC) ->
@@ -224,6 +224,9 @@ new_cache() ->
     try ice_cache:delete() of
         true ->
             ice_cache:create()
-    catch exit:{noproc, _} ->
+    catch 
+          exit:{noproc, _} ->
+              ice_cache:create();
+         _:{badmatch, {aborted, _}} -> %% Mnesia
             ice_cache:create()
     end.
