@@ -3,10 +3,8 @@
 
 -record(state, {prompt= "",
                 prompt2 = "",
-                cache = clear,
                 defs = [],
                 tstamp = os:timestamp()}).
-
 
 start() ->
     Args = init:get_plain_arguments(),
@@ -16,6 +14,7 @@ main(Args) ->
     {Lines, Files} = arg_parse(Args, [], []),
     S0 = load_files(Files, #state{}),
     error_logger:tty(false),
+    new_cache(),
     case Lines of
         [] ->
             interactive(S0);
@@ -89,11 +88,12 @@ do_cont(L, #state{prompt2 = P} = S) -> %% FIXME!
             do_line(L ++ Line, S)
     end.
 
-do_line(L, #state{defs = Defs, cache = C, tstamp = TStamp} = S) ->
+do_line(L, #state{defs = Defs, tstamp = TStamp} = S) ->
     try check_line(L) of
         empty ->
             S;
-        {def, {Name, _} = D} ->
+        {def, {Name, Type, _} = D} ->
+            if Type =:= var -> new_cache(); true -> ok end,
             NewDefs = lists:keystore(Name, 1, Defs, D),
             S#state{defs = NewDefs};
         {query, Q} ->
@@ -113,16 +113,8 @@ do_line(L, #state{defs = Defs, cache = C, tstamp = TStamp} = S) ->
             QQ = parse_line(Expr),
              do_query(QQ, S, tc);
         {command, {l, Name}} ->
+            new_cache(),
             S#state{defs = load(Name, Defs)};
-        {command, cache_on} ->
-            ice_cache:create(),
-            S#state{cache = keep};
-        {command, cache_off} ->
-            ice_cache:delete(),
-            S#state{cache = clear};
-        {command, print_cache_state} ->
-            io:format("*** Cache ~p\n", [C]),
-            S;
          {badcommand, BadC} ->
             io:format("*** Bad command: `~s'\n", [BadC]),
             S
@@ -154,15 +146,6 @@ check_command(S) ->
             {command, time};
         {match, ["t", Expr]} ->
             {command, {time_expr, Expr}};
-        {match, ["c", OnOff]} ->
-            case string:strip(OnOff) of
-                "on"++ _ ->
-                    {command, cache_on};
-                "off" ++ _ ->
-                    {command, cache_off};
-                _ ->
-                    {command, print_cache_state}
-            end;
         {match, ["l", File]} ->
             {command, {l, File}};
         {match, [C|_]} ->
@@ -174,8 +157,8 @@ check_command(S) ->
 check_def(S) ->
     case re:run(S, "^\\s*(fun|var|dim)\\s+(\\w+)", [{capture, [2],list}]) of
         {match, [Name]} ->
-            {Name, Def} = get_name(parse_line(S)),
-            {def, {Name, Def}};
+            {Name, Type, Def} = get_name(parse_line(S)),
+            {def, {Name, Type, Def}};
         nomatch ->
             {query, parse_line(S)}
     end.
@@ -198,34 +181,34 @@ load(Name, OrigDefs) ->
 
 get_name({declaration, _,
           {dim_decl, _, {id, _, Name}, _Body}= Decl}) ->
-    {Name, Decl};
+    {Name, dim, Decl};
 get_name({declaration, _,
           {var_decl, _, {id, _, Name}, _Body} = Decl}) ->
-    {Name, Decl};
+    {Name, var, Decl};
 get_name({declaration, _,
           {fun_decl, _, {id, _, Name}, _Params, _Body} = Decl}) ->
-    {Name, Decl};
+    {Name, var, Decl};
 get_name(X) ->
-    {nodecl, X}.
+    throw({nodecl, expr, X}).
 
 expr_where_defs(Expr, Defs) ->
-    Dims = [Def || {_Name, {dim_decl, _, _, _} = Def} <- Defs],
-    Vars = [Def || {_Name, Def} <- Defs ] -- Dims,
+    Dims = [Def || {_Name, dim, Def} <- Defs],
+    Vars = [Def || {_Name, var, Def} <- Defs ],
     ice_ast:transform([{expr, 0, {where, 0, Expr, Dims, Vars}}]).
 
 print(Defs) ->
-    [io:format("~s: ~p\n", [Name, Def]) || {Name, Def} <- Defs],
+    [io:format("~s ~s: ~p\n", [T, Name, Def]) || {Name, T, Def} <- Defs],
     ok.
 
-do_query(Q, #state{defs = Defs, cache = C} = S, TC) ->
+do_query(Q, #state{defs = Defs} = S, TC) ->
     try
         QQ = expr_where_defs(Q, Defs),
         case TC of
             no_tc ->
-                {Res, _} = eval(QQ,C),
+                {Res, _} = ice:eval(QQ),
                 io:format("~p\n", [Res]);
             tc ->
-                {US, {R, _}} = timer:tc(fun() -> eval(QQ,C) end),
+                {US, {R, _}} = timer:tc(ice, eval, [QQ]),
                 io:format("(~fs) ~p\n", [US/1000/1000, R])
         end,
         S
@@ -233,17 +216,14 @@ do_query(Q, #state{defs = Defs, cache = C} = S, TC) ->
         Class:Err ->
             io:format("*** ~p:~p in ~p\n~p\n",
                       [Class, Err, Q, erlang:get_stacktrace()]),
-            catch ice_cache:delete(),
-            S#state{cache = clear}
+            new_cache(),
+            S
     end.
 
-eval(AST, C) ->
-    case C of
-        clear ->
-            ice_cache:create(),
-            Res = ice:eval(AST),
-            ice_cache:delete(),
-            Res;
-        keep ->
-            ice:eval(AST)
+new_cache() ->
+    try ice_cache:delete() of
+        true ->
+            ice_cache:create()
+    catch exit:{noproc, _} ->
+            ice_cache:create()
     end.
