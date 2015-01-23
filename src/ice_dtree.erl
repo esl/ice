@@ -29,7 +29,7 @@ new() ->
 %% @doc Delete the ets table
 %%------------------------------------------------------------------------------
 delete() ->
-  catch exit(whereis(?MODULE), shutdown),
+  ok = gen_server:call(?MODULE, stop),
   ets:delete(?TABLE_NAME).
 
 %%------------------------------------------------------------------------------
@@ -95,6 +95,8 @@ sort_dims(Dims) -> lists:sort(Dims).
 init([]) ->
 	{ok, empty_state}.
 
+handle_call(stop, _From, S) ->
+	{stop, normal, ok, S};
 handle_call({insert, Key, Value}, _From, S) ->
         Reply =  insert_seq(Key, Value),
 	%%io:format("~p <- ~p (~p)\n", [Key, Value, Reply]),
