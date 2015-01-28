@@ -7,6 +7,7 @@
 -export([start/0, stop/0]).
 -export([eval/1]).
 -export([i/1, f/1]).
+-export([transform/1]).
 
 start() ->
   ice_counter:start_link(),
@@ -20,10 +21,15 @@ stop() ->
 eval(T) ->
   T0 = ice_t0:transform(T),
   T1 = ice_t1:transform(T0),
-  ice_counter:start_link(),
-  V = ice_core:eval(T1,[],[],[],[],{[],self()},0),
-  ice_counter:stop(),
+%%  io:format("Evaluating ~p~n", [T1]),
+  {Ms, V} = timer:tc(ice_core, eval, [T1, [], [], [], [], {0, self()}]),
+  io:format("time: ~p~n", [Ms / 1000000]), 
   V.
+
+transform(Path) ->
+  Ast0 = ice_file:parse(Path),
+  Ast1 = ice_t0:transform(Ast0),
+  ice_t1:transform(Ast1).
 
 -spec i(string()) -> term().
 i(String) ->
