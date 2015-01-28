@@ -70,7 +70,7 @@ union_d(Dis) ->
     true ->
       {true, union_d(Dis, [])};
     false ->
-      {false, Dis}
+      false
   end.
 
 union_d([], UDis) ->
@@ -107,9 +107,7 @@ identical(A,B) ->
 %%-------------------------------------------------------------------------------------
 %% @doc Check whether A is a set of known dimensions
 %%-------------------------------------------------------------------------------------
-is_d({dim, {_Pos,_Idx}, A}) when is_list(A) orelse is_atom(A) ->
-  true;
-is_d({phi, A}) when is_list(A) orelse is_atom(A) ->
+is_d({dim, P}) when is_list(P) ->
   true;
 is_d(_) ->
   false.
