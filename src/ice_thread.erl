@@ -3,7 +3,7 @@
 %%-------------------------------------------------------------------------------------
 -module(ice_thread).
 
--export([spawn_n/2, join/8]).
+-export([spawn_n/2, join/7]).
 -export([spawn_n_debug/2]).
 -export([evaluator/1]).
 
@@ -15,8 +15,11 @@
 %% The processes must be ordered for the cache to work. 
 %%-------------------------------------------------------------------------------------
 
+spawn_n(0, Lim) ->
+  spawn_n({0, self()}, Lim, gb_trees:empty());
 spawn_n({_N, _Su} = W, Lim) ->
   spawn_n(W, Lim, gb_trees:empty()).
+
 
 spawn_n(_W, 0, Tree) ->
   Tree;
@@ -43,17 +46,17 @@ spawn_n_debug({P, Su} = W, N, Lim, Pids) ->
 %% @doc Join sorted processes into ordered evaluated values.
 %%-------------------------------------------------------------------------------------
 
-join(Tree, Xs, I, E, K, D, W, T) ->
+join(Tree, Xs, I, E, K, D, W) ->
   %% FIXME: Maybe add an assertion here that checks that length(Xs) == length(Tree)
   Iter = gb_trees:iterator(Tree),
-  join(Iter, Xs, I, E, K, D, W, T, length(Xs)).
+  join(Iter, Xs, I, E, K, D, W, length(Xs)).
 
-join([], _Xs, _I, _E, _K, _D, _W, _T, Lim) ->
+join([], _Xs, _I, _E, _K, _D, _W, Lim) ->
   sync(Lim);
-join(Iter, [X|Xs], I, E, K, D, W, T, Lim) ->
-  {N, Pid, NextIter} = gb_trees:next(Iter),
-  Pid ! {{N, Pid}, X, I, E, K, D, W, T},
-  join(NextIter, Xs, I, E, K, D, W, T, Lim).
+join(Iter, [X|Xs], I, E, K, D, W, Lim) ->
+  {PidN, Pid, NextIter} = gb_trees:next(Iter),
+  Pid ! {{PidN, Pid}, X, I, E, K, D, W},
+  join(NextIter, Xs, I, E, K, D, W, Lim).
 
 %%-------------------------------------------------------------------------------------
 %% @doc Synchronize thread W with threads W + 1 to Wn - 1 by receiving their results.
@@ -63,15 +66,7 @@ sync(N) ->
   sync(N, gb_trees:empty()).
 
 sync(0, Tree) ->
-  case gb_trees:is_empty(Tree) of
-    true ->
-      {[], 0};
-    false ->
-      Ord = gb_trees:values(Tree),
-      %% FIXME: Since we do not care about time, this should also be removed
-      {Vs0, Ts0} = lists:unzip(Ord),
-      {Vs0, lists:max(Ts0)}
-  end;
+  gb_trees:values(Tree);
 sync(N, Tree) ->
   {Id, Value} = receive M -> M end,
   sync(N-1, gb_trees:insert(Id, Value, Tree)).
@@ -80,10 +75,10 @@ sync(N, Tree) ->
 %% Internal
 %%-------------------------------------------------------------------------------------
 evaluator(Su) ->
-  {W1, X, I, E, K, D, _, T} = receive M -> M end,
-  evaluator(Su, X, I, E, K, D, W1, T).
+  {W1, X, I, E, K, D, _} = receive M -> M end,
+  evaluator(Su, X, I, E, K, D, W1).
 				    
-evaluator(Su, X, I, E, K, D, Wi, T) ->
-  {D0, T0} = ice_core:eval(X, I, E, K, D, Wi, T),
-  Su ! {Wi, {D0, T0}}.
+evaluator(Su, X, I, E, K, D, Wi) ->
+  D0 = ice_core:eval(X, I, E, K, D, Wi),
+  Su ! {Wi, D0}.
 
