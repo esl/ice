@@ -129,12 +129,10 @@ t0({fn_call, FnE, Params}, NPs) ->
 %%------------------------------------------------------------------------------
 %% Where
 %%------------------------------------------------------------------------------
-t0({where, E0, VDisEis}, NPs0) ->
-  Dims = [{Xi, t0(Ei, NPs0)} || {dim,Xi,Ei} <- VDisEis],
+t0({where, E0, Dims, Vars}, NPs0) ->
   NPs1 = ice_sets:difference(NPs0, element(1, lists:unzip(Dims))),
-  Vars0 = [{Xi,Ei} || {var,Xi,Ei} <- VDisEis],
-  NPs2 = ice_sets:difference(NPs1, element(1, lists:unzip(Vars0))),
-  Vars1 = [{Xi, t0(Ei, NPs2)} || {Xi,Ei} <- Vars0],
+  NPs2 = ice_sets:difference(NPs1, element(1, lists:unzip(Vars))),
+  Vars1 = [{Xi, t0(Ei, NPs2)} || {Xi,Ei} <- Vars],
   %% We should probably signal an error when the body contains other elements..
   t0_where(Vars1, Dims, E0, NPs2);
 
