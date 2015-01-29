@@ -22,7 +22,6 @@ transform(E) ->
 
 t1({id, Xi}, _Q, _P, _H, X) ->
   case lists:keyfind({id, Xi}, 1, X) of
-
     {{id, Xi}, P1} ->
       {'?', hidden_dimension(P1)};
     false ->
@@ -70,34 +69,46 @@ t1({'#', E0}, Q, P, H, X) ->
   {'#', t1(E0, Q, P, H, X)};
 
 t1({b_abs, Intensions, Args, E0}, Q, P, H, X) ->
-  %% Limits
-  IntensLim = length(Intensions),
-  ArgStart = default_n(IntensLim),
-  ArgLim = IntensLim + length(Args),
+  io:format("Intensions = ~p~nArgs = ~p~nE0 = ~p~n", [Intensions, Args, E0]),
+
+  %% Generate the indices required for generating intensions / args predictably
+  HLim = length(Intensions) + length(Args),
+  IMap = lists:seq(1, HLim),
+
+  %% Split the indices between Intension / Args
+  {IntensIs, ArgIs} = 
+    lists:splitwith(fun (N) -> N =< length(Intensions) end, IMap),
+
   %% Transform the intensions
-  TIntensions = map_position(Intensions, 1, IntensLim, Q, P, H, X),
+  TIntens = map_explicit_position(Intensions, IntensIs, Q, P, H, X),
   %% Transform the arguments into dimensions which can be retrieved predictably
-  {XArgs, TArgs} = lists:unzip(generate_dimensions(Args, ArgStart, ArgLim, P)),
-  {b_abs, TIntensions, H, TArgs, 
-    t1(E0, Q, [0|P], ice_sets:union(TArgs, H), ice_sets:union(XArgs, X))};
+  {XArgs, TArgs} = generate_dimensions(Args, ArgIs, P),
+
+  {b_abs, TIntens, H, TArgs, 
+   t1(E0, Q, [0|P], ice_sets:union(TArgs, H), ice_sets:union(XArgs, X)),
+   P};
 
 t1({b_apply, E0, Eis}, Q, P, H, X) ->
   TEis = map_position(Eis, 1, length(Eis), Q, P, H, X),
-  {b_apply, t1(E0, Q, [0|P], H, X), TEis, P};
+  {b_apply, t1(E0, Q, [0|P], H, X), TEis};
 
 t1({v_abs, Intensions, Args, E0}, Q, P, H, X) ->
   %% Identical to the base abstraction transform
-  IntensLim = length(Intensions),
-  ArgStart = default_n(IntensLim),
-  ArgLim = IntensLim + length(Args),
-  TIntensions = map_position(Intensions, 1, IntensLim, Q, P, H, X),
-  {XArgs, TArgs} = lists:unzip(generate_dimensions(Args, ArgStart, ArgLim, P)),
-  {v_abs, TIntensions, H, TArgs,
-    t1(E0, Q, [0|P], ice_sets:union(TArgs, H), ice_sets:union(XArgs, X))};
+  HLim = length(Intensions) + length(Args),
+  IMap = lists:seq(1, HLim),
+  {IntensIs, ArgIs} = 
+    lists:splitwith(fun (N) -> N =< length(Intensions) end, IMap),
+  %% Transform the intensions
+  TIntens = map_explicit_position(Intensions, IntensIs, Q, P, H, X),
+  %% Transform the arguments into dimensions which can be retrieved predictably
+  {XArgs, TArgs} = generate_dimensions(Args, ArgIs, P),
+  {v_abs, TIntens, H, TArgs,
+   t1(E0, Q, [0|P], ice_sets:union(TArgs, H), ice_sets:union(XArgs, X)),
+   P};
 
 t1({v_apply, E0, Eis}, Q, P, H, X) ->
   TEis = map_position(Eis, 1, length(Eis), Q, P, H, X),
-  {v_apply, t1(E0, Q, [0|P], H, X), TEis, P};
+  {v_apply, t1(E0, Q, [0|P], H, X), TEis};
 
 t1({i_abs, Intensions, E0}, Q, P, H, X) ->
   TIntensions = map_position(Intensions, 1, length(Intensions), Q, P, H, X),
@@ -117,10 +128,6 @@ t1({wheredim, E0, XiEis}, Q, P, H, X) ->
    TXiEis}.
 
 %%------------------------------------------------------------------------------
-default_n(0) -> 1;
-default_n(N) -> N.
-
-%%------------------------------------------------------------------------------
 %% @doc The most basic implementation of hidden dimensions simply uses the 
 %% current position in the evaluation tree as the value of the dimension.
 %%------------------------------------------------------------------------------
@@ -137,13 +144,14 @@ hidden_dimension(P) ->
 %% at a deeper scope can be substituted with the generated dimension.
 %%------------------------------------------------------------------------------
 
-generate_dimensions(Xis, Start, End, P) ->
-  Is = lists:seq(Start, End),
-  lists:map(
-    fun ({Xi, I}) ->
-        {{Xi, [I|P]}, hidden_dimension([I|P])}
-    end, lists:zip(Xis, Is)
-   ).
+generate_dimensions(Xis, Is, P) ->
+  HMap = 
+    lists:map(
+      fun ({Xi, I}) ->
+          {{Xi, [I|P]}, hidden_dimension([I|P])}
+      end, lists:zip(Xis, Is)
+     ),
+  lists:unzip(HMap).
 
 %%------------------------------------------------------------------------------
 %% @doc Transforms a series of expressions.
@@ -156,6 +164,13 @@ map_position(Eis, Start, End, Q, P, H, X) ->
         t1(Ei, Q, [I|P], H, X)
     end,
     lists:zip(Eis, Is)
+   ).
+
+map_explicit_position(Eis, Indices, Q, P, H, X) ->
+  lists:map(
+    fun ({Ei, I}) ->
+        t1(Ei, Q, [I|P], H, X)
+    end, lists:zip(Eis, Indices)
    ).
 
 %%------------------------------------------------------------------------------
