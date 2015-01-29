@@ -7,18 +7,17 @@
 %% Transform AST to what the evaluator expects (FIXME)
 %%------------------------------------------------------------------------------
 transform(Es) when is_list(Es) ->
-  map_prepare(Es);
-transform(E) ->
-  prepare(E).
+  [X] = map_prepare(Es),
+  X.
 
 prepare({expr, _, E}) ->
   prepare(E);
 prepare({b_abs, _, Intens, Args, Body}) ->
-  {b_abs, transform(Intens), transform(Args), transform(Body)};
+  {b_abs, map_prepare(Intens), map_prepare(Args), prepare(Body)};
 prepare({v_abs, _, Intens, Args, Body}) ->
-  {v_abs, transform(Intens), transform(Args), transform(Body)};
+  {v_abs, map_prepare(Intens), map_prepare(Args), prepare(Body)};
 prepare({intension_creation, _, Intens, Body}) ->
-  {i_abs, transform(Intens), transform(Body)};
+  {i_abs, map_prepare(Intens), prepare(Body)};
 prepare({intension_evaluation, _, E}) ->
   {i_apply, prepare(E)};
 prepare({call, _, FunExpr, Params}) ->
