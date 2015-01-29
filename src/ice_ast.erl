@@ -20,8 +20,8 @@ prepare({intension_creation, _, Intens, Body}) ->
   {i_abs, map_prepare(Intens), prepare(Body)};
 prepare({intension_evaluation, _, E}) ->
   {i_apply, prepare(E)};
-prepare({call, _, FunExpr, Params}) ->
-  bind_primop_to_base_fn_call(FunExpr, Params);
+prepare({call, _, Abs, Params}) ->
+  {fn_call, prepare(Abs), map_prepare(Params)};
 prepare({where, _, E0, Xis, Eis}) ->
   Xis1 = [{prepare(Di), prepare(Ei)} 
           || {dim_decl, _, Di, Ei} <- Xis],
@@ -44,34 +44,50 @@ prepare({'#.', _, Val}) ->
 prepare({';', _, X, Y}) ->
   {seq, prepare(X), prepare(Y)};
 prepare({tuple, _, Assocs}) -> 
-  {t, Assocs};
+  {t, map_prepare(Assocs)};
 prepare({tuple_element, _, Lhs, Rhs}) -> 
-  {Lhs, Rhs};
+  {prepare(Lhs), prepare(Rhs)};
 
-prepare({'==',  _, A, B}) -> ice_primop:eq(A, B);
-prepare({'!=',  _, A, B}) -> ice_primop:neq(A, B);
-prepare({'<',   _, A, B}) -> ice_primop:lt(A, B);
-prepare({'<=',  _, A, B}) -> ice_primop:lte(A, B);
-prepare({'>',   _, A, B}) -> ice_primop:gt(A, B);
-prepare({'>=',  _, A, B}) -> ice_primop:gte(A, B);
+prepare({'==',  _, A, B}) -> 
+  ice_primop:eq(prepare(A), prepare(B));
+prepare({'!=',  _, A, B}) -> 
+  ice_primop:neq(prepare(A), prepare(B));
+prepare({'<',   _, A, B}) -> 
+  ice_primop:lt(prepare(A), prepare(B));
+prepare({'<=',  _, A, B}) -> 
+  ice_primop:lte(prepare(A), prepare(B));
+prepare({'>',   _, A, B}) -> 
+  ice_primop:gt(prepare(A), prepare(B));
+prepare({'>=',  _, A, B}) -> 
+  ice_primop:gte(prepare(A), prepare(B));
 
-prepare({'not', _, A   }) -> ice_primop:'not'(A);
-prepare({'or',  _, A, B}) -> ice_primop:'or'(A, B);
-prepare({'and', _, A, B}) -> ice_primop:'and'(A, B);
-prepare({'+', _, A   }) -> ice_primop:plus(A);
-prepare({'-', _, A   }) -> ice_primop:minus(A);
-prepare({'+', _, A, B}) -> ice_primop:plus(A, B);
-prepare({'-', _, A, B}) -> ice_primop:minus(A, B);
-prepare({'*', _, A, B}) -> ice_primop:times(A, B);
-prepare({'/', _, A, B}) -> ice_primop:divide(A, B);
-prepare({'%', _, A, B}) -> ice_primop:mod(A, B);
+prepare({'not', _, A   }) -> 
+  ice_primop:'not'(prepare(A));
+prepare({'or',  _, A, B}) -> 
+  ice_primop:'or'(prepare(A), prepare(B));
+prepare({'and', _, A, B}) -> 
+  ice_primop:'and'(prepare(A), prepare(B));
+prepare({'+', _, A   }) -> 
+  ice_primop:plus(prepare(A));
+prepare({'-', _, A   }) -> 
+  ice_primop:minus(prepare(A));
+prepare({'+', _, A, B}) -> 
+  ice_primop:plus(prepare(A), prepare(B));
+prepare({'-', _, A, B}) -> 
+  ice_primop:minus(prepare(A), prepare(B));
+prepare({'*', _, A, B}) -> 
+  ice_primop:times(prepare(A), prepare(B));
+prepare({'/', _, A, B}) -> 
+  ice_primop:divide(prepare(A), prepare(B));
+prepare({'%', _, A, B}) -> 
+  ice_primop:mod(prepare(A), prepare(B));
 prepare({bool, _, Bool}) -> {bool, Bool};
 prepare({char, _, Char}) -> {char, Char};
 prepare({int, _, Int}) -> {int, Int};
 prepare({float, _, Float}) -> {float, Float};
 prepare({raw_string, _, S})    -> {string, S};
 prepare({cooked_string, _, S}) -> {string, S};
-prepare({'@', _, A, B}) -> {'@', A, B};
+prepare({'@', _, A, B}) -> {'@', prepare(A), prepare(B)};
 prepare({id,_,Name}) -> {id, Name}.
 
 %%------------------------------------------------------------------------------
@@ -80,23 +96,8 @@ prepare({id,_,Name}) -> {id, Name}.
 map_prepare(Xs) ->
   lists:map(fun ice_ast:prepare/1, Xs).
 
-bind_primop_to_base_fn_call({id, IdString} = Xi, Params) ->
-  case lists:all(fun({Type,_}) -> Type == b_param end, Params) of
-    true ->
-      Ps = lists:map(fun({_,P}) -> P end, Params),
-      try apply(ice_primop, list_to_atom(IdString), Ps) of
-          Primop -> Primop
-      catch
-        error:undef ->
-          {fn_call, Xi, Params}
-      end;
-    false ->
-      {fn_call, Xi, Params}
-  end;
-bind_primop_to_base_fn_call(Xi, Params) ->
-  {fn_call, Xi, Params}.
-
-unwrap_elsifs([{if_expr,_,Cond,Then}|Rest], Else) ->
-  {'if', Cond, Then, unwrap_elsifs(Rest,Else)};
+unwrap_elsifs([{if_expr, _, Cond, Then}|Rest], Else) ->
+  {'if', prepare(Cond), prepare(Then), 
+   unwrap_elsifs(Rest, Else)};
 unwrap_elsifs([], Else) ->
-  Else.
+  prepare(Else).
