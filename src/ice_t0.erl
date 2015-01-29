@@ -88,7 +88,9 @@ t0({'#', E0}, NPs) ->
 %% Base Abstraction
 %%------------------------------------------------------------------------------
 t0({b_abs, Is, Params, E}, NPs) ->
-  {b_abs, [t0(I, NPs) || I <- Is], Params, t0(E, NPs)};
+  {b_abs, [t0(I, NPs) || I <- Is], 
+   lists:map(fun ({b_param, Param}) -> t0(Param, NPs) end, Params), 
+   t0(E, NPs)};
 
 t0({b_apply, E0, Eis}, NPs) ->
   {b_apply, t0(E0, NPs), lists:map(fun(Ei) -> t0(Ei, NPs) end, Eis)};
@@ -97,7 +99,9 @@ t0({b_apply, E0, Eis}, NPs) ->
 %% Value Abstraction
 %%------------------------------------------------------------------------------
 t0({v_abs, Is, Params, E}, NPs) ->
-  {v_abs, [t0(I, NPs) || I <- Is], Params, t0(E, NPs)};
+  {v_abs, [t0(I, NPs) || I <- Is], 
+   lists:map(fun ({v_param, Param}) -> t0(Param, NPs) end, Params), 
+   t0(E, NPs)};
 
 t0({v_apply, E0, Eis}, NPs) ->
   {v_apply, t0(E0, NPs), lists:map(fun(Ei) -> t0(Ei, NPs) end, Eis)};
