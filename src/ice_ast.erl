@@ -23,9 +23,12 @@ prepare({intension_evaluation, _, E}) ->
 prepare({call, _, FunExpr, Params}) ->
   bind_primop_to_base_fn_call(FunExpr, Params);
 prepare({where, _, E0, Xis, Eis}) ->
-  Xis1 = [{dim, Di, Ei} || {dim_decl, _, Di, Ei} <- Xis],
-  Eis1 = [{var, Vi, Ei} || {var_decl, _, Vi, Ei} <- Eis],
-  Funs = [{var, Vi, {fn, [], Args, Body}}
+  Xis1 = [{prepare(Di), prepare(Ei)} 
+          || {dim_decl, _, Di, Ei} <- Xis],
+  Eis1 = [{prepare(Vi), prepare(Ei)} 
+          || {var_decl, _, Vi, Ei} <- Eis],
+  Funs = [{prepare(Vi), 
+           {fn, [], map_prepare(Args), prepare(Body)}}
           || {fun_decl, _, Vi, Args, Body} <- Eis],
   {where, prepare(E0), Xis1, Eis1 ++ Funs};
 prepare({b_param, _, P}) ->
