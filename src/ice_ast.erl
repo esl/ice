@@ -1,87 +1,83 @@
 -module(ice_ast).
 
 -export([transform/1]).
+-export([prepare/1]).
 
 %%------------------------------------------------------------------------------
 %% Transform AST to what the evaluator expects (FIXME)
 %%------------------------------------------------------------------------------
-transform(Tree) ->
-  V = fun
-        ({expr, _, E}) -> E;
+transform(Es) when is_list(Es) ->
+  map_prepare(Es);
+transform(E) ->
+  prepare(E).
 
-        ({lambda, _, FrozenDims, Params, Body}) ->
-          {fn, FrozenDims, Params, Body};
+prepare({expr, _, E}) ->
+  prepare(E);
+prepare({b_abs, _, Intens, Args, Body}) ->
+  {b_abs, transform(Intens), transform(Args), transform(Body)};
+prepare({v_abs, _, Intens, Args, Body}) ->
+  {v_abs, transform(Intens), transform(Args), transform(Body)};
+prepare({intension_creation, _, Intens, Body}) ->
+  {i_abs, transform(Intens), transform(Body)};
+prepare({intension_evaluation, _, E}) ->
+  {i_apply, prepare(E)};
+prepare({call, _, FunExpr, Params}) ->
+  bind_primop_to_base_fn_call(FunExpr, Params);
+prepare({where, _, E0, Xis, Eis}) ->
+  Xis1 = [{dim, Di, Ei} || {dim_decl, _, Di, Ei} <- Xis],
+  Eis1 = [{var, Vi, Ei} || {var_decl, _, Vi, Ei} <- Eis],
+  Funs = [{var, Vi, {fn, [], Args, Body}}
+          || {fun_decl, _, Vi, Args, Body} <- Eis],
+  {where, prepare(E0), Xis1, Eis1 ++ Funs};
+prepare({b_param, _, P}) ->
+  {b_param, prepare(P)};
+prepare({v_param, _, P}) ->
+  {v_param, prepare(P)};
+prepare({n_param, _, P}) ->
+  {n_param, prepare(P)};
+prepare({'if', _, Ifs, Elses}) ->
+  unwrap_elsifs(Ifs, Elses);
+prepare({'#.', _, Val}) -> 
+  {'#', prepare(Val)};
+prepare({';', _, X, Y}) ->
+  {seq, prepare(X), prepare(Y)};
+prepare({tuple, _, Assocs}) -> 
+  {t, Assocs};
+prepare({tuple_element, _, Lhs, Rhs}) -> 
+  {Lhs, Rhs};
 
-        ({intension_creation, _, FrozenDims, Body}) ->
-          {i_abs, FrozenDims, Body};
-        ({intension_evaluation, _, IAbsExpr}) ->
-          {i_apply, IAbsExpr};
+prepare({'==',  _, A, B}) -> ice_primop:eq(A, B);
+prepare({'!=',  _, A, B}) -> ice_primop:neq(A, B);
+prepare({'<',   _, A, B}) -> ice_primop:lt(A, B);
+prepare({'<=',  _, A, B}) -> ice_primop:lte(A, B);
+prepare({'>',   _, A, B}) -> ice_primop:gt(A, B);
+prepare({'>=',  _, A, B}) -> ice_primop:gte(A, B);
 
-        ({call, _, FunExpr, Params}) ->
-          bind_primop_to_base_fn_call(FunExpr, Params);
-
-        ({where, _, Exp, DimDecls, VarDecls}) ->
-          TopExpr = Exp,
-          Dims = [{dim,Dim,N} || {dim_decl,_,Dim,N} <- DimDecls],
-          Funs = [{var,Name,{fn,[],Params,Body}}
-                  || {fun_decl,_,Name,Params,Body} <- VarDecls],
-          Vars = [{var,Var,E} || {var_decl,_,Var,E} <- VarDecls] ++ Funs,
-          {where, TopExpr, Dims ++ Vars};
-
-        ({base_param,  _, P}) -> {b_param, P};
-        ({named_param, _, P}) -> {n_param, P};
-        ({value_param, _, P}) -> {v_param, P};
-
-        ({'if', _, Ifs, Else}) -> unwrap_elsifs(Ifs, Else);
-
-        ({'#.', _, Val}) -> {'#', Val};
-
-	({';', _, X, Y}) ->
-	  {seq, X, Y};
-
-        ({tuple, _, Assocs}) -> {t, Assocs};
-        ({tuple_element, _, Lhs, Rhs}) -> {Lhs, Rhs};
-
-        ({'==',  _, A, B}) -> ice_primop:eq(A, B);
-        ({'!=',  _, A, B}) -> ice_primop:neq(A, B);
-        ({'<',   _, A, B}) -> ice_primop:lt(A, B);
-        ({'<=',  _, A, B}) -> ice_primop:lte(A, B);
-        ({'>',   _, A, B}) -> ice_primop:gt(A, B);
-        ({'>=',  _, A, B}) -> ice_primop:gte(A, B);
-
-        ({'not', _, A   }) -> ice_primop:'not'(A);
-        ({'or',  _, A, B}) -> ice_primop:'or'(A, B);
-        ({'and', _, A, B}) -> ice_primop:'and'(A, B);
-
-        ({'+', _, A   }) -> ice_primop:plus(A);
-        ({'-', _, A   }) -> ice_primop:minus(A);
-        ({'+', _, A, B}) -> ice_primop:plus(A, B);
-        ({'-', _, A, B}) -> ice_primop:minus(A, B);
-        ({'*', _, A, B}) -> ice_primop:times(A, B);
-        ({'/', _, A, B}) -> ice_primop:divide(A, B);
-        ({'%', _, A, B}) -> ice_primop:mod(A, B);
-
-	({bool, _, Bool}) -> {bool, Bool};
-	({char, _, Char}) -> {char, Char};
-	({int, _, Int}) -> {int, Int};
-	({float, _, Float}) -> {float, Float};
-        ({raw_string, _, S})    -> {string, S};
-        ({cooked_string, _, S}) -> {string, S};
-
-        ({'@', _, A, B}) -> {'@', A, B};
-
-        ({id,_,Name}) -> {id, Name}
-      end,
-  case ice_visitor:visit(V, Tree, bottom_up) of
-    [X] ->
-      X;
-    Y ->
-      Y
-  end.
+prepare({'not', _, A   }) -> ice_primop:'not'(A);
+prepare({'or',  _, A, B}) -> ice_primop:'or'(A, B);
+prepare({'and', _, A, B}) -> ice_primop:'and'(A, B);
+prepare({'+', _, A   }) -> ice_primop:plus(A);
+prepare({'-', _, A   }) -> ice_primop:minus(A);
+prepare({'+', _, A, B}) -> ice_primop:plus(A, B);
+prepare({'-', _, A, B}) -> ice_primop:minus(A, B);
+prepare({'*', _, A, B}) -> ice_primop:times(A, B);
+prepare({'/', _, A, B}) -> ice_primop:divide(A, B);
+prepare({'%', _, A, B}) -> ice_primop:mod(A, B);
+prepare({bool, _, Bool}) -> {bool, Bool};
+prepare({char, _, Char}) -> {char, Char};
+prepare({int, _, Int}) -> {int, Int};
+prepare({float, _, Float}) -> {float, Float};
+prepare({raw_string, _, S})    -> {string, S};
+prepare({cooked_string, _, S}) -> {string, S};
+prepare({'@', _, A, B}) -> {'@', A, B};
+prepare({id,_,Name}) -> {id, Name}.
 
 %%------------------------------------------------------------------------------
 %% Internal
 %%------------------------------------------------------------------------------
+map_prepare(Xs) ->
+  lists:map(fun ice_ast:prepare/1, Xs).
+
 bind_primop_to_base_fn_call({id, IdString} = Xi, Params) ->
   case lists:all(fun({Type,_}) -> Type == b_param end, Params) of
     true ->
