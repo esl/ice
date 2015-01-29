@@ -43,8 +43,7 @@ eval({seq, E0, E1}, I, E, K, D, W) ->
 %%-------------------------------------------------------------------------------------
 
 eval({primop, Op, Eis}, I, E, K, D, W) ->
-  Dis = ice_par:eval(Eis, I, E, K, D, W),
-  io:format("Op = ~p, Dis = ~p~n", [Op, Dis]),
+  Dis = ice_par:eval_seq(Eis, I, E, K, D, W),
   case ice_sets:union_d(Dis) of
     {true, Dims} ->
       Dims;
@@ -59,7 +58,7 @@ eval({primop, Op, Eis}, I, E, K, D, W) ->
 eval({t, Es}, I, E, K, D, W) ->
   XiEis = lists:flatmap(fun({Xi, Ei}) -> [Xi, Ei] end, Es),
   %% XXX Does evaluating lhs make sense if dims are not ground values?
-  Dis = ice_par:eval(XiEis, I, E, K, D, W), 
+  Dis = ice_par:eval_seq(XiEis, I, E, K, D, W), 
   case ice_sets:union_d(Dis) of
     {true, Dims} ->
       Dims;
@@ -106,9 +105,8 @@ eval({'if', E0, E1, E2}, I, E, K, D, W) ->
 %% Dimensional Query
 %%-------------------------------------------------------------------------------------
 
-eval({'?', E0}, I, E, K, D, W) ->
+eval({'?', E0}, _I, _E, K, _D, _W) ->
   Di = lookup_ordinate(E0, K),
-  io:format("Looked up ordinate of ~p = ~p~n", [E0, Di]),
   Di;
 
 eval({'#', E0}, I, E, K, D, W) ->
@@ -130,7 +128,7 @@ eval({'#', E0}, I, E, K, D, W) ->
 %%------------------------------------------------------------------------------
 
 eval({b_abs, Intensions, H, ArgDims, E0, P}, I, E, K, D, W) ->
-  Vis = ice_par:eval(Intensions, I, E, K, D, W),
+  Vis = ice_par:eval_seq(Intensions, I, E, K, D, W),
   case ice_sets:union_d(Vis) of
     {true, Dims} ->
       Dims;
@@ -141,7 +139,7 @@ eval({b_abs, Intensions, H, ArgDims, E0, P}, I, E, K, D, W) ->
   end;
 
 eval({b_apply, E0, Eis}, I, E, K, D, W) ->
-  E0Eis = ice_par:eval([E0|Eis], I, E, K, D, W),
+  E0Eis = ice_par:eval_seq([E0|Eis], I, E, K, D, W),
   case ice_sets:union_d(E0Eis) of
     {true, Dims} ->
       Dims;
@@ -157,7 +155,7 @@ eval({b_apply, E0, Eis}, I, E, K, D, W) ->
 %%------------------------------------------------------------------------------
 
 eval({v_abs, Intensions, H, ArgDims, E0, P}, I, E, K, D, W) ->
-  Vis = ice_par:eval(Intensions, I, E, K, D, W),
+  Vis = ice_par:eval_seq(Intensions, I, E, K, D, W),
   case ice_sets:union_d(Vis) of
     {true, Dims} ->
       Dims;
@@ -168,7 +166,7 @@ eval({v_abs, Intensions, H, ArgDims, E0, P}, I, E, K, D, W) ->
   end;
 
 eval({v_apply, E0, Eis}, I, E, K, D, W) ->
-  E0Eis = ice_par:eval([E0|Eis], I, E, K, D, W),
+  E0Eis = ice_par:eval_seq([E0|Eis], I, E, K, D, W),
   case ice_sets:union_d(E0Eis) of
     {true, Dims} ->
       Dims;
@@ -177,7 +175,6 @@ eval({v_apply, E0, Eis}, I, E, K, D, W) ->
       HParams = map_params(P, Eis1),
       K2 = ice_sets:perturb(ice_sets:perturb(K, K1), HParams),
       D2 = ice_sets:union(D, D1),
-      io:format("K = ~p, D = ~p~n", [K2, D2]),
       eval(Body, I, E, K2, D2, W)
   end;
 
@@ -186,7 +183,7 @@ eval({v_apply, E0, Eis}, I, E, K, D, W) ->
 %%------------------------------------------------------------------------------
 
 eval({i_abs, Intensions, H, E0}, I, E, K, D, W) ->
-  Vis = ice_par:eval(Intensions, I, E, K, D, W),
+  Vis = ice_par:eval_seq(Intensions, I, E, K, D, W),
   case ice_sets:union_d(Vis) of
     {true, Dims} ->
       Dims;
@@ -197,7 +194,7 @@ eval({i_abs, Intensions, H, E0}, I, E, K, D, W) ->
   end;
 
 eval({i_apply, E0}, I, E, K, D, W) ->
-  Vi = ice_par:eval([E0], I, E, K, D, W),
+  Vi = ice_par:eval_seq([E0], I, E, K, D, W),
   case ice_sets:union_d(Vi) of
     {true, Dims} ->
       Dims;
@@ -219,9 +216,9 @@ eval({wherevar, E0, XiEis}, I, E, K, D, W) ->
 %% Wheredim
 %%-------------------------------------------------------------------------------------
 
-eval({wheredim, _Q, Rho, E0, XiEis}, I, E, K, D, W) ->
+eval({wheredim, Q, Rho, E0, XiEis}, I, E, K, D, W) ->
   {Xis, Eis} = lists:unzip(XiEis),
-  Vis = ice_par:eval(Eis, I, E, K, D, W),
+  Vis = ice_par:eval_seq(Eis, I, E, K, D, W),
   K1 =
     case lookup_ordinate(Rho, K) of
       false ->
@@ -229,9 +226,13 @@ eval({wheredim, _Q, Rho, E0, XiEis}, I, E, K, D, W) ->
       N ->
         ice_sets:perturb(K, [{Rho, N+1}])
     end,
-  XiVis = lists:zip(Xis, Vis),
-  K2 = ice_sets:perturb(K1, XiVis),
-  eval(E0, I, E, K2, D, W);
+  Indices = lists:seq(1, length(XiEis)),
+  Phis = lists:map(fun (Index) -> {phi, [Q,Index]} end, Indices),
+  XiPhis = lists:zip(Xis, Phis),
+  PhiVis = lists:zip(Phis, Vis),
+  K2 = ice_sets:perturb(K1, XiPhis),
+  K3 = ice_sets:perturb(K2, PhiVis),
+  eval(E0, I, E, K3, D, W);
 
 %%-------------------------------------------------------------------------------------
 %% Variable Identifiers
