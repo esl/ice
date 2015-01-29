@@ -43,9 +43,8 @@ eval({seq, E0, E1}, I, E, K, D, W) ->
 %%-------------------------------------------------------------------------------------
 
 eval({primop, Op, Eis}, I, E, K, D, W) ->
-%%  io:format(user, "Evaluating primop ~p ~p~nK = ~p~nD = ~p~n", [Op, Eis, K, D]),
   Dis = ice_par:eval(Eis, I, E, K, D, W),
-%%  io:format(user, "Primop parameters = ~p~n", [Dis]),
+  io:format("Op = ~p, Dis = ~p~n", [Op, Dis]),
   case ice_sets:union_d(Dis) of
     {true, Dims} ->
       Dims;
@@ -107,7 +106,12 @@ eval({'if', E0, E1, E2}, I, E, K, D, W) ->
 %% Dimensional Query
 %%-------------------------------------------------------------------------------------
 
-eval({Q, E0}, I, E, K, D, W) when Q == '#' orelse Q == '?' ->
+eval({'?', E0}, I, E, K, D, W) ->
+  Di = lookup_ordinate(E0, K),
+  io:format("Looked up ordinate of ~p = ~p~n", [E0, Di]),
+  Di;
+
+eval({'#', E0}, I, E, K, D, W) ->
   D0 = eval(E0, I, E, K, D, W),
   case ice_sets:is_k(D0) of
     true ->
@@ -125,7 +129,7 @@ eval({Q, E0}, I, E, K, D, W) when Q == '#' orelse Q == '?' ->
 %% Base Abstraction
 %%------------------------------------------------------------------------------
 
-eval({b_abs, Intensions, H, ArgDims, E0}, I, E, K, D, W) ->
+eval({b_abs, Intensions, H, ArgDims, E0, P}, I, E, K, D, W) ->
   Vis = ice_par:eval(Intensions, I, E, K, D, W),
   case ice_sets:union_d(Vis) of
     {true, Dims} ->
@@ -133,17 +137,17 @@ eval({b_abs, Intensions, H, ArgDims, E0}, I, E, K, D, W) ->
     false ->
       K1 = ice_sets:restrict_domain(K, ice_sets:union(Vis, H)),
       D1 = ice_sets:union(Vis, ArgDims),
-      {closure, K1, D1, E0}
+      {closure, K1, D1, E0, P}
   end;
 
-eval({b_apply, E0, Eis, [N]}, I, E, K, D, W) ->
+eval({b_apply, E0, Eis}, I, E, K, D, W) ->
   E0Eis = ice_par:eval([E0|Eis], I, E, K, D, W),
   case ice_sets:union_d(E0Eis) of
     {true, Dims} ->
       Dims;
     false ->
-      [{closure, K1, D1, Body}|Eis1] = E0Eis,
-      HParams = map_params([N+1], Eis1),
+      [{closure, K1, D1, Body, P}|Eis1] = E0Eis,
+      HParams = map_params(P, Eis1),
       K2 = ice_sets:perturb(K1, HParams),
       eval(Body, I, E, K2, D1, W)
   end;
@@ -152,7 +156,7 @@ eval({b_apply, E0, Eis, [N]}, I, E, K, D, W) ->
 %% Value Abstraction
 %%------------------------------------------------------------------------------
 
-eval({v_abs, Intensions, H, ArgDims, E0}, I, E, K, D, W) ->
+eval({v_abs, Intensions, H, ArgDims, E0, P}, I, E, K, D, W) ->
   Vis = ice_par:eval(Intensions, I, E, K, D, W),
   case ice_sets:union_d(Vis) of
     {true, Dims} ->
@@ -160,19 +164,20 @@ eval({v_abs, Intensions, H, ArgDims, E0}, I, E, K, D, W) ->
     false ->
       K1 = ice_sets:restrict_domain(K, ice_sets:union(Vis, H)),
       D1 = ice_sets:union(Vis, ArgDims),
-      {closure, K1, D1, E0}
+      {closure, K1, D1, E0, P}
   end;
 
-eval({v_apply, E0, Eis, [N]}, I, E, K, D, W) ->
+eval({v_apply, E0, Eis}, I, E, K, D, W) ->
   E0Eis = ice_par:eval([E0|Eis], I, E, K, D, W),
   case ice_sets:union_d(E0Eis) of
     {true, Dims} ->
       Dims;
     false ->
-      [{closure, K1, D1, Body}|Eis1] = E0Eis,
-      HParams = map_params([N+1], Eis1),
+      [{closure, K1, D1, Body, P}|Eis1] = E0Eis,
+      HParams = map_params(P, Eis1),
       K2 = ice_sets:perturb(ice_sets:perturb(K, K1), HParams),
       D2 = ice_sets:union(D, D1),
+      io:format("K = ~p, D = ~p~n", [K2, D2]),
       eval(Body, I, E, K2, D2, W)
   end;
 
@@ -192,12 +197,12 @@ eval({i_abs, Intensions, H, E0}, I, E, K, D, W) ->
   end;
 
 eval({i_apply, E0}, I, E, K, D, W) ->
-  Vi = eval(E0, I, E, K, D, W),
+  Vi = ice_par:eval([E0], I, E, K, D, W),
   case ice_sets:union_d(Vi) of
     {true, Dims} ->
       Dims;
     false ->
-      {closure, K1, D1, Body} = Vi,
+      [{closure, K1, D1, Body}] = Vi,
       K2 = ice_sets:perturb(K, K1),
       D2 = ice_sets:union(D, D1),
       eval(Body, I, E, K2, D2, W)
