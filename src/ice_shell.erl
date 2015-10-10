@@ -127,7 +127,7 @@ do_line(L, #state{defs = Defs, tstamp = TStamp} = S) ->
     end.
 
 check_line(S) ->
-    case re:run(S, "^\\s*(//.*)?$") of
+    case re:run(S, "^\\s*(//.*)?$", [unicode]) of
         nomatch ->
             check_command(S);
         _ ->
@@ -135,7 +135,7 @@ check_line(S) ->
     end.
 
 check_command(S) ->
-    case re:run(S, "^:(\\w+)\\s+(.*)", [{capture, [1,2], list}]) of
+    case re:run(S, "^:(\\w+)\\s+(.*)", [{capture, [1,2], list}, unicode]) of
         {match, ["d", ""]} ->
             {command, d};
         {match, ["p", ""]} ->
@@ -155,7 +155,8 @@ check_command(S) ->
     end.
 
 check_def(S) ->
-    case re:run(S, "^\\s*(fun|var|dim)\\s+(\\w+)", [{capture, [2],list}]) of
+    case re:run(S, "^\\s*(fun|var|dim)\\s+(\\w+)", [{capture, [2],list},
+                                                    unicode]) of
         {match, [Name]} ->
             {Name, Type, Def} = get_name(parse_line(S)),
             {def, {Name, Type, Def}};
