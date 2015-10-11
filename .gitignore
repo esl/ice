@@ -8,3 +8,4 @@ deps
 erl_crash.dump
 src/ice_parse.erl
 src/ice_scan.erl
+bin/ice_shell

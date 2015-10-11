@@ -1,0 +1,14 @@
+#!/bin/sh
+# start an ICE shell session
+
+ice_root="`dirname $0`"
+
+if rlwrap -v >/dev/null 2>&1
+  then
+	if [ "$TERM" == dumb ]; then RL=''
+	elif  [ "$TERM" == emacs ]; then RL=''
+	else  RL=rlwrap; fi
+  else RL=''; fi
+
+exec $RL "$ice_root/ice_shell" "$@"
+
