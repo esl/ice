@@ -55,6 +55,7 @@ do_script([L | Lines], S0) ->
     end.
 		
 interactive(S0) ->
+    io:setopts([{encoding, unicode}]),
     {Prompt, P2} = case io:columns() of
                        {ok, _} ->
                            {"ICE> ", "ICE? "};
