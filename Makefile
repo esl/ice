@@ -26,10 +26,10 @@ bin/ice_shell: compile
 	mv ice_shell bin/ice_shell
 
 # Grammar compilation / debugging
-ANTLR4_JAR=antlr-4.1-complete.jar
+ANTLR4_JAR=antlr-4.5.1-complete.jar
 ANTLR4_CLASSPATH=".:$(ANTLR4_JAR):$(CLASSPATH)" # Add ANTLRv4 to CLASSPATH
 ANTLR4=java -jar $(ANTLR4_JAR)
-GRUN=java org.antlr.v4.runtime.misc.TestRig
+GRUN=java org.antlr.v4.gui.TestRig
 
 $(ANTLR4_JAR):
 	curl -O http://www.antlr.org/download/$(ANTLR4_JAR)
@@ -40,9 +40,14 @@ compile-grammar: $(ANTLR4_JAR)
 .PHONY: compile-grammar
 
 debug-grammar: $(ANTLR4_JAR)
+	$(info Insert string to be parsed, followed by newline and ^D, on standard input.)
 	CLASSPATH=$(ANTLR4_CLASSPATH) $(GRUN) ICE root -gui -encoding utf8
-	# Insert string to be parsed, followed by newline and ^D, on standard input
 .PHONY: debug-grammar
+
+debug-grammar-cli: $(ANTLR4_JAR)
+	$(info Insert string to be parsed, followed by newline and ^D, on standard input.)
+	CLASSPATH=$(ANTLR4_CLASSPATH) $(GRUN) ICE root -tree -encoding utf8
+.PHONY: debug-grammar-cli
 
 clean-grammar:
 	rm -f *.tokens *.java *.class
